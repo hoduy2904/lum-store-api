@@ -4,5 +4,6 @@
   <Project Path="LumStoreAPI.DataEngine/LumStoreAPI.DataEngine.csproj" Id="7847a09a-3c72-48f9-8a34-91dd5e8343a1" />
   <Project Path="LumStoreAPI.Infrastructure/LumStoreAPI.Infrastructure.csproj" />
   <Project Path="LumStoreAPI.Libraries/LumStoreAPI.Libraries.csproj" />
+  <Project Path="LumStoreAPI.Tasks/LumStoreAPI.Tasks.csproj" Id="611b27ea-c23b-4390-8931-d9450a3d31fb" />
   <Project Path="LumStoreAPI/LumStoreAPI.csproj" />
 </Solution>

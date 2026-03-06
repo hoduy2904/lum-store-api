@@ -9,6 +9,12 @@ namespace LumStoreAPI.Infrastructure.Configurations
         public void Configure(EntityTypeBuilder<DocumentPage> builder)
         {
             builder.HasKey(x => x.PageID);
+
+            builder.Property(x => x.ClassName)
+                .HasMaxLength(50);
+            builder.Property(x => x.DocumentName)
+                .HasMaxLength(100);
+
             builder.UseTptMappingStrategy();
         }
     }

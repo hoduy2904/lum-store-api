@@ -1,0 +1,73 @@
+﻿using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Interfaces.ContentEngine;
+using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Infrastructure.Extensions;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+
+namespace LumStoreAPI.Infrastructure.Repositories.Presentations
+{
+    internal class MediaLibraryRepository : IMediaLibraryRepository
+    {
+        private readonly LumStoreContext _lumStoreContext;
+        public MediaLibraryRepository(LumStoreContext lumStoreContext)
+        {
+            _lumStoreContext = lumStoreContext;
+        }
+        public Task<int> DeleteMediaItem(Guid fileID)
+        {
+            return this.DeleteMediaItems(x => x.FileID == fileID);
+        }
+
+        public Task<int> DeleteMediaItems(Expression<Func<MediaLibrary, bool>> where)
+        {
+            return _lumStoreContext.MediaLibraries.Where(where).ExecuteDeleteAsync();
+        }
+
+        public async Task<MediaLibrary?> GetMediaItemAsync(Guid fileID)
+        {
+            return await _lumStoreContext.MediaLibraries.Include(x => x.MediaLibraryCategory).FirstOrDefaultAsync(x => x.FileID == fileID);
+        }
+
+        public async Task<IEnumerable<MediaLibrary>> GetMediaItemsAsync(Expression<Func<MediaLibrary, bool>>? where = null)
+        {
+            return await _lumStoreContext.MediaLibraries
+                .AsNoTracking()
+                .Include(x => x.MediaLibraryCategory)
+                .Where(where ?? (x => true))
+                .ToListAsync();
+        }
+
+        public Task<IPagedEnumerable<MediaLibrary>> GetMediaItemsAsync(int page, int pageSize, Expression<Func<MediaLibrary, bool>>? where = null)
+        {
+            return _lumStoreContext.MediaLibraries
+                .AsNoTracking()
+                .Where(where ?? (x => true))
+                .Include(x => x.MediaLibraryCategory)
+                .OrderByDescending(x => x.UpdatedAt)
+                .AsQueryable()
+                .GetPagedAsync(page, pageSize);
+        }
+
+        public async Task<MediaLibrary> InsertMediaItem(MediaLibrary mediaLibrary)
+        {
+            _lumStoreContext.MediaLibraries.Add(mediaLibrary);
+            await _lumStoreContext.SaveChangesAsync();
+            return mediaLibrary;
+        }
+
+        public async Task<IEnumerable<MediaLibrary>> InsertMediaItems(IEnumerable<MediaLibrary> mediaLibraries)
+        {
+            _lumStoreContext.AddRange(mediaLibraries);
+            await _lumStoreContext.SaveChangesAsync();
+            return mediaLibraries;
+        }
+
+        public async Task<MediaLibrary> UpdateMediaItem(MediaLibrary mediaLibrary)
+        {
+            _lumStoreContext.MediaLibraries.Update(mediaLibrary);
+            await _lumStoreContext.SaveChangesAsync();
+            return mediaLibrary;
+        }
+    }
+}

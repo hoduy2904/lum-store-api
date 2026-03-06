@@ -2,6 +2,7 @@ using LumStoreAPI.Application;
 using LumStoreAPI.Application.Middlewares;
 using LumStoreAPI.DataEngine;
 using LumStoreAPI.Infrastructure;
+using LumStoreAPI.Tasks;
 using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,10 @@ builder.Services
     .AddDataEngine()
     .AddLumStoreApplicationConfigurations()
     .AddExceptionHandler<GlobalExceptionHandler>()
-    .AddProblemDetails();
+    .AddProblemDetails()
+    .RegisterTasks();
+
+builder.AddLumStoreStaticConfiguration();
 
 var app = builder.Build();
 

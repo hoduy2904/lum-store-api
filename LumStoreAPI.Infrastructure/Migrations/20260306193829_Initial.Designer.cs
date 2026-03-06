@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260304173726_Initial")]
+    [Migration("20260306193829_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -53,7 +53,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("NodeAlias")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("NodeOrder")
                         .HasColumnType("int");
@@ -82,17 +83,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("ClassName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DocumentName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ForeignKeyID")
-                        .HasColumnType("int");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -186,31 +186,37 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("EventCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("EventDescription")
                         .IsRequired()
+                        .HasMaxLength(-1)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("EventLogType")
                         .HasColumnType("int");
 
                     b.Property<string>("EventName")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("EventSource")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("EventUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IPAddress")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("ServerName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -241,7 +247,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Extension")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -254,7 +261,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -282,11 +290,13 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("CategoryName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("FolderName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
 
                     b.HasKey("CategoryID");
 
@@ -302,22 +312,25 @@ namespace LumStoreAPI.Infrastructure.Migrations
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.SettingKeyValue", b =>
                 {
                     b.Property<string>("SettingCode")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
 
                     b.Property<string>("SettingName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
 
                     b.Property<string>("SettingValue")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.HasKey("SettingCode");
 
                     b.ToTable("SettingKeyValues");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.HomePage", b =>
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.HomePage", b =>
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
 
@@ -326,9 +339,78 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("PageTitle")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.ToTable("HomePages");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.Product", b =>
+                {
+                    b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(-1)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Height")
+                        .HasColumnType("float");
+
+                    b.PrimitiveCollection<string>("Images")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Length")
+                        .HasColumnType("float");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SKU")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ShortDescription")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UPC")
+                        .HasMaxLength(14)
+                        .HasColumnType("nvarchar(14)");
+
+                    b.Property<double>("Weight")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Width")
+                        .HasColumnType("float");
+
+                    b.HasIndex("ProductName");
+
+                    b.HasIndex("SKU")
+                        .IsUnique()
+                        .HasFilter("[SKU] IS NOT NULL");
+
+                    b.HasIndex("UPC");
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.ProductCategory", b =>
+                {
+                    b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.ToTable("ProductCategories");
                 });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentEngine.DocumentLinkedNode", b =>
@@ -381,11 +463,29 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("MediaLibraryCategory");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.HomePage", b =>
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.HomePage", b =>
                 {
                     b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage", null)
                         .WithOne()
-                        .HasForeignKey("LumStoreAPI.Core.Entities.HomePage", "PageID")
+                        .HasForeignKey("LumStoreAPI.Core.Entities.Pages.HomePage", "PageID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.Product", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage", null)
+                        .WithOne()
+                        .HasForeignKey("LumStoreAPI.Core.Entities.Pages.Product", "PageID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.ProductCategory", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage", null)
+                        .WithOne()
+                        .HasForeignKey("LumStoreAPI.Core.Entities.Pages.ProductCategory", "PageID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -7,9 +7,8 @@ namespace LumStoreAPI.Core.Entities.DocumentEngine
         public int PageID { get; set; }
         public string DocumentName { get; set; } = default!;
         public int NodeID { get; set; }
-        public int ForeignKeyID { get; set; }
         public bool RequireAuthentication { get; set; }
-        public string ClassName { get; set; } = default!;
+        public virtual string ClassName { get; set; } = "CMS.Folder";
         public bool IsDeleted { get; set; }
         public DateTime? PublishedFrom { get; set; }
         public DateTime? PublishedTo { get; set; }

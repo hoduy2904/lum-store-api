@@ -1,11 +1,14 @@
 ﻿using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Interfaces.ContentEngine;
+using System.Linq.Expressions;
 
 namespace LumStoreAPI.Core.Interfaces.Repositories
 {
     public interface ISettingKeyValueRepository
     {
-        Task<SettingKeyValue> GetSettingKey(string key);
-        Task<SettingKeyValue> GetSettingKeysAsync();
+        Task<SettingKeyValue?> GetSettingKey(string key);
+        Task<IEnumerable<SettingKeyValue>> GetSettingKeysAsync(Expression<Func<SettingKeyValue, bool>> func);
+        Task<IPagedEnumerable<SettingKeyValue>> GetSettingKeysAsync(int page, int pageSize, Expression<Func<SettingKeyValue, bool>> func);
         Task<SettingKeyValue> InsertSettingKeyAsync(SettingKeyValue settingKeyValue);
         Task<SettingKeyValue> UpdateSettingKeyAsync(SettingKeyValue settingKeyValue);
         Task<int> DeleteSettingKeyAsync(string key);

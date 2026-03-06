@@ -1,6 +1,6 @@
-﻿using LumStoreAPI.Core.Entities;
-using LumStoreAPI.Core.Entities.Base;
+﻿using LumStoreAPI.Core.Entities.Base;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +26,8 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<EmailQueue> EmailQueues { get; set; }
         public DbSet<MediaLibraryCategory> MediaLibraryCategories { get; set; }
         public DbSet<MediaLibrary> MediaLibraries { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<ProductCategory> ProductCategories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

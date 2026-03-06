@@ -15,6 +15,12 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.HasOne(x => x.MediaLibraryCategory)
                 .WithMany(x => x.MediaLibraries)
                 .HasForeignKey(x => x.CategoryID);
+
+            builder.Property(x => x.Extension)
+                .HasMaxLength(10);
+
+            builder.Property(x => x.Title)
+                .HasMaxLength(200);
         }
     }
 }

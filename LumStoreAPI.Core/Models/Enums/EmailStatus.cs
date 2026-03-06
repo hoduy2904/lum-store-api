@@ -2,8 +2,8 @@
 {
     public enum EmailStatus
     {
+        Waiting,
         Failed,
         Success,
-        Waiting
     }
 }

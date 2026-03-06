@@ -9,6 +9,14 @@ namespace LumStoreAPI.Infrastructure.Configurations
         public void Configure(EntityTypeBuilder<SettingKeyValue> builder)
         {
             builder.HasKey(x => x.SettingCode);
+
+            builder.Property(x => x.SettingCode)
+                .HasMaxLength(60);
+            builder.Property(x => x.SettingName)
+                .HasMaxLength(60);
+
+            builder.Property(x => x.SettingValue)
+                .HasMaxLength(255);
         }
     }
 }

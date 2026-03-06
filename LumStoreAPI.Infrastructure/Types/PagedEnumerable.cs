@@ -1,7 +1,7 @@
 ﻿using LumStoreAPI.Core.Interfaces.ContentEngine;
 using System.Collections;
 
-namespace LumStoreAPI.DataEngine.Types
+namespace LumStoreAPI.Infrastructure.Types
 {
     internal class PagedEnumerable<T> : IPagedEnumerable<T>
     {
@@ -22,6 +22,11 @@ namespace LumStoreAPI.DataEngine.Types
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public IPagedEnumerable<TResult> Select<TResult>(Func<T, TResult> selector)
+        {
+            return new PagedEnumerable<TResult>(_items.Select(selector), this.TotalRecords);
         }
     }
 }

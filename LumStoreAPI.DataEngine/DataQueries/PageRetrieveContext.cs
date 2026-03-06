@@ -3,9 +3,9 @@ using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.DocumentPages;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.DataEngine.TreeNodeContentEngine;
-using LumStoreAPI.DataEngine.Types;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using LumStoreAPI.Infrastructure.Extensions;
 
 namespace LumStoreAPI.Infrastructure.Presentation
 {
@@ -34,7 +34,7 @@ namespace LumStoreAPI.Infrastructure.Presentation
 
             int totalRecords = await treeContent.AsQueryable().CountAsync();
 
-            return new PagedEnumerable<T>(data, totalRecords);
+            return data.AsPagedEnumerable(totalRecords);
         }
 
         private ITreeNodeContent<T> GetPages<T>(Action<ITreeNodeContent<T>>? where = null) where T : DocumentPage

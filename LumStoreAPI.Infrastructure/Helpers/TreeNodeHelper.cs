@@ -58,7 +58,7 @@ namespace LumStoreAPI.Infrastructure.Helpers
             {
                 return await lumStoreContext.DocumentNodes
                     .Where(x => x.ParentNodeID == null).
-                    MaxAsync(x => x.NodeOrder);
+                    MaxAsync(x => (int?)x.NodeOrder) ?? -1;
             }
             return await lumStoreContext.DocumentNodes
                .Join(lumStoreContext.DocumentLinkedNodes,

@@ -1,9 +1,6 @@
 ﻿using LumStoreAPI.Core.Entities.DocumentEngine;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LumStoreAPI.Infrastructure.Configurations
 {
@@ -34,6 +31,9 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.HasMany(x => x.DescendantNodes)
                 .WithOne(x => x.DescendantNode)
                 .HasForeignKey(x => x.Descendant);
+
+            builder.Property(x => x.NodeAlias)
+                .HasMaxLength(200);
         }
     }
 }

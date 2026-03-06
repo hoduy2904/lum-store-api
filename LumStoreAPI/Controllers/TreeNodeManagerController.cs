@@ -1,4 +1,5 @@
-﻿using LumStoreAPI.Core.Entities.DocumentEngine;
+﻿using LumStoreAPI.Application.DTOs;
+using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -41,14 +42,15 @@ namespace LumStoreAPI.Controllers
         }
 
         [HttpPost("Insert")]
-        public async Task<IActionResult> Insert(string documentName, int? nodeID = null)
+        public async Task<IActionResult> Insert(DocumentPageDTO documentPageDTO)
         {
-            var document = await _treeNodeRepository.InsertAsync(new DocumentPage
+            var documentPage = new DocumentPage()
             {
-                DocumentName = documentName,
-                ClassName = "Default",
+                ClassName = documentPageDTO.ClassName,
+            };
 
-            }, nodeID == null ? null : new DocumentNode { NodeID = nodeID.Value });
+            var document = await _treeNodeRepository.InsertAsync(documentPageDTO.GetEntity()
+                , documentPageDTO.ParentNodeID == null ? null : new DocumentNode { NodeID = documentPageDTO.ParentNodeID.Value });
 
             return Ok(document);
         }

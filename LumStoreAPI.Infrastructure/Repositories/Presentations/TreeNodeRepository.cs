@@ -1,8 +1,10 @@
-﻿using LumStoreAPI.Core.Entities.DocumentEngine;
+﻿using LumStoreAPI.Core.Attributes;
+using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Helpers;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using LumStoreAPI.Libraries.Extensions;
+using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 
@@ -67,6 +69,12 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public async Task<T?> InsertAsync<T>(T page, DocumentNode? parent = null) where T : DocumentPage
         {
             using var tx = await _lumStoreContext.Database.BeginTransactionAsync();
+
+
+            var documentPage = page.GetType().GetProperties()
+                .FirstOrDefault(p => Attribute.IsDefined(p, typeof(DocumentNameAttribute)))?.GetValue(page)?.ToString();
+
+            page.DocumentName = ValidationHelper.GetStringValue(documentPage, "Folder");
             var alias = page.DocumentName.Slug;
 
             var parentNodeId = parent?.NodeID;

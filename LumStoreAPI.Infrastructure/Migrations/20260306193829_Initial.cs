@@ -18,7 +18,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     NodeID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ParentNodeID = table.Column<int>(type: "int", nullable: true),
-                    NodeAlias = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    NodeAlias = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     NodeOrder = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -60,12 +60,12 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     ItemID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     EventLogType = table.Column<int>(type: "int", nullable: false),
-                    EventSource = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    EventCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    EventName = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    EventDescription = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ServerName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IPAddress = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    EventSource = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    EventCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    EventName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    EventDescription = table.Column<string>(type: "nvarchar(max)", maxLength: -1, nullable: false),
+                    ServerName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    IPAddress = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
                     EventUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -81,8 +81,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     CategoryID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    CategoryName = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    FolderName = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    CategoryName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    FolderName = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -93,9 +93,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "SettingKeyValues",
                 columns: table => new
                 {
-                    SettingCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    SettingName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SettingValue = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    SettingCode = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
+                    SettingName = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
+                    SettingValue = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -133,11 +133,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     PageID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    DocumentName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DocumentName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     NodeID = table.Column<int>(type: "int", nullable: false),
-                    ForeignKeyID = table.Column<int>(type: "int", nullable: false),
                     RequireAuthentication = table.Column<bool>(type: "bit", nullable: false),
-                    ClassName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClassName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     PublishedFrom = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PublishedTo = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -161,8 +160,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     FileID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FileName = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Extension = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Extension = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     CategoryID = table.Column<int>(type: "int", nullable: false),
                     Size = table.Column<int>(type: "int", nullable: false),
                     Height = table.Column<int>(type: "int", nullable: false),
@@ -186,7 +185,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 columns: table => new
                 {
                     PageID = table.Column<int>(type: "int", nullable: false),
-                    PageTitle = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PageTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -194,6 +193,52 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     table.PrimaryKey("PK_HomePages", x => x.PageID);
                     table.ForeignKey(
                         name: "FK_HomePages_DocumentPages_PageID",
+                        column: x => x.PageID,
+                        principalTable: "DocumentPages",
+                        principalColumn: "PageID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductCategories",
+                columns: table => new
+                {
+                    PageID = table.Column<int>(type: "int", nullable: false),
+                    CategoryName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductCategories", x => x.PageID);
+                    table.ForeignKey(
+                        name: "FK_ProductCategories_DocumentPages_PageID",
+                        column: x => x.PageID,
+                        principalTable: "DocumentPages",
+                        principalColumn: "PageID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    PageID = table.Column<int>(type: "int", nullable: false),
+                    ProductName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    UPC = table.Column<string>(type: "nvarchar(14)", maxLength: 14, nullable: true),
+                    SKU = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Images = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ShortDescription = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", maxLength: -1, nullable: true),
+                    Length = table.Column<double>(type: "float", nullable: false),
+                    Width = table.Column<double>(type: "float", nullable: false),
+                    Height = table.Column<double>(type: "float", nullable: false),
+                    Weight = table.Column<double>(type: "float", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.PageID);
+                    table.ForeignKey(
+                        name: "FK_Products_DocumentPages_PageID",
                         column: x => x.PageID,
                         principalTable: "DocumentPages",
                         principalColumn: "PageID",
@@ -274,6 +319,23 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 table: "MediaLibraryCategories",
                 column: "FolderName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_ProductName",
+                table: "Products",
+                column: "ProductName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_SKU",
+                table: "Products",
+                column: "SKU",
+                unique: true,
+                filter: "[SKU] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_UPC",
+                table: "Products",
+                column: "UPC");
         }
 
         /// <inheritdoc />
@@ -295,13 +357,19 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "MediaLibraries");
 
             migrationBuilder.DropTable(
+                name: "ProductCategories");
+
+            migrationBuilder.DropTable(
+                name: "Products");
+
+            migrationBuilder.DropTable(
                 name: "SettingKeyValues");
 
             migrationBuilder.DropTable(
-                name: "DocumentPages");
+                name: "MediaLibraryCategories");
 
             migrationBuilder.DropTable(
-                name: "MediaLibraryCategories");
+                name: "DocumentPages");
 
             migrationBuilder.DropTable(
                 name: "DocumentNodes");
