@@ -32,47 +32,50 @@ namespace LumStoreAPI.Tasks.BackgroundServices
                 var emailService = serviceScoped.ServiceProvider.GetRequiredService<IEmailService>();
                 var eventLogService = serviceScoped.ServiceProvider.GetRequiredService<IEventLogService>();
                 var emailQueues = await emailService.GetEmailQueuesAsync(30);
-                var emailConfig = await emailService.GetConfigAsync();
-                foreach (var emailQueue in emailQueues)
+                if (emailQueues.Any())
                 {
-                    var emailMessage = new EmailMessage()
+                    var emailConfig = await emailService.GetConfigAsync();
+                    foreach (var emailQueue in emailQueues)
                     {
-                        EmailBcc = emailQueue.EmailBcc,
-                        EmailBody = emailQueue.EmailBody,
-                        EmailCc = emailQueue.EmailCc,
-                        EmailFrom = emailQueue.EmailFrom,
-                        EmailSubject = emailQueue.EmailSubject,
-                        EmailTo = emailQueue.EmailTo,
-                    };
-                    if (emailQueue.Attachments != null && emailQueue.Attachments.Any())
-                    {
-                        var mediaService = serviceScoped.ServiceProvider.GetRequiredService<IMediaLibraryService>();
-                        var mediaItems = await mediaService.GetMediaItemsAsync(emailQueue.Attachments.Select(x => Guid.Parse(x)).ToArray());
-                        if (mediaItems != null && mediaItems.Any())
+                        var emailMessage = new EmailMessage()
                         {
-                            var semaphore = new SemaphoreSlim(5);
-                            emailMessage.Attachments = await Task.WhenAll(mediaItems.Select(async x =>
+                            EmailBcc = emailQueue.EmailBcc,
+                            EmailBody = emailQueue.EmailBody,
+                            EmailCc = emailQueue.EmailCc,
+                            EmailFrom = emailQueue.EmailFrom,
+                            EmailSubject = emailQueue.EmailSubject,
+                            EmailTo = emailQueue.EmailTo,
+                        };
+                        if (emailQueue.Attachments != null && emailQueue.Attachments.Any())
+                        {
+                            var mediaService = serviceScoped.ServiceProvider.GetRequiredService<IMediaLibraryService>();
+                            var mediaItems = await mediaService.GetMediaItemsAsync(emailQueue.Attachments.Select(x => Guid.Parse(x)).ToArray());
+                            if (mediaItems != null && mediaItems.Any())
                             {
-                                await semaphore.WaitAsync();
-                                try
+                                var semaphore = new SemaphoreSlim(5);
+                                emailMessage.Attachments = await Task.WhenAll(mediaItems.Select(async x =>
                                 {
-                                    var bytes = await MediaLibraryHelper.GetMediaLibraryBytesAsync(x);
-                                    return new EmailAttachment(x.FileName, new MemoryStream(bytes), x.FileID);
-                                }
-                                finally { semaphore.Release(); }
-                            }));
+                                    await semaphore.WaitAsync();
+                                    try
+                                    {
+                                        var bytes = await MediaLibraryHelper.GetMediaLibraryBytesAsync(x);
+                                        return new EmailAttachment(x.FileName, new MemoryStream(bytes), x.FileID);
+                                    }
+                                    finally { semaphore.Release(); }
+                                }));
+                            }
                         }
-                    }
 
-                    try
-                    {
-                        await EmailHelper.SendMail(emailMessage, emailConfig);
-                        await emailService.UpdateEmailStatusAsync(emailQueue.ItemID, EmailStatus.Success);
-                    }
-                    catch (Exception ex)
-                    {
-                        await emailService.UpdateEmailStatusAsync(emailQueue.ItemID, EmailStatus.Failed);
-                        await eventLogService.LogException("EmailSender", "SendEmail", "", ex);
+                        try
+                        {
+                            await EmailHelper.SendMail(emailMessage, emailConfig);
+                            await emailService.UpdateEmailStatusAsync(emailQueue.ItemID, EmailStatus.Success);
+                        }
+                        catch (Exception ex)
+                        {
+                            await emailService.UpdateEmailStatusAsync(emailQueue.ItemID, EmailStatus.Failed);
+                            await eventLogService.LogException("EmailSender", "SendEmail", "", ex);
+                        }
                     }
                 }
             }

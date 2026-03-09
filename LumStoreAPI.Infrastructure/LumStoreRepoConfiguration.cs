@@ -22,6 +22,13 @@ namespace LumStoreAPI.Infrastructure
                 services.AddScoped<ISettingKeyValueRepository, SettingKeyValueRepository>();
                 return services;
             }
+
+            public IServiceCollection AddCMSCache()
+            {
+                services.AddMemoryCache();
+                services.AddSingleton<ICacheService, CacheService>();
+                return services;
+            }
         }
     }
 }

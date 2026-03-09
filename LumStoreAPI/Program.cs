@@ -22,7 +22,8 @@ builder.Services
     .AddLumStoreApplicationConfigurations()
     .AddExceptionHandler<GlobalExceptionHandler>()
     .AddProblemDetails()
-    .RegisterTasks();
+    .RegisterTasks()
+    .AddCMSCache();
 
 builder.AddLumStoreStaticConfiguration();
 
