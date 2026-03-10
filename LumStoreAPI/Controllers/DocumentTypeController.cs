@@ -1,6 +1,6 @@
-﻿using LumStoreAPI.Infrastructure;
-using LumStoreAPI.Libraries.Helpers;
-using Microsoft.AspNetCore.Http;
+﻿using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Core.Interfaces.Services;
+using LumStoreAPI.Core.Models.Systems;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LumStoreAPI.Controllers
@@ -9,24 +9,26 @@ namespace LumStoreAPI.Controllers
     [ApiController]
     public class DocumentTypeController : ControllerBase
     {
-        private readonly LumStoreContext _lumStoreContext;
-        public DocumentTypeController(LumStoreContext lumStoreContext)
+        private readonly IDocumentTableService _documentTableService;
+        public DocumentTypeController(IDocumentTableService documentTableService)
         {
-            _lumStoreContext = lumStoreContext;
+            _documentTableService = documentTableService;
         }
-        [HttpGet]
-        public IActionResult GetSchemaTableFields(string className)
+        [HttpGet("{className}")]
+        public IActionResult GetSchemaTable(string className)
         {
-            return Ok(_lumStoreContext.Model
-                 .FindEntityType(DocumentPageTypeHelper.DocumentPageTypes[className])?
-                 .GetProperties()
-                 .Select(x => new
-                 {
-                     x.Name,
-                     type = x.ClrType.Name,
-                     maxLength = x.GetMaxLength(),
-                     x.IsNullable,
-                 }));
+            var documentTable = _documentTableService.GetSchemaTable(className);
+            if (documentTable == null)
+            {
+                return NotFound(APIResponseBase.Failure(["Cannot found this schema table"]));
+            }
+            return Ok(APIResponse<DocumentTable>.Success(documentTable, ["Success"]));
+        }
+
+        public IActionResult GetSchemaTables()
+        {
+            var documentTables = _documentTableService.GetSchemaTables();
+            return Ok(APIResponse<IEnumerable<DocumentTable>>.Success(documentTables, ["Success"]));
         }
     }
 }

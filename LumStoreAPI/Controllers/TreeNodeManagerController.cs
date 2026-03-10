@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Application.DTOs.DocumentPageDTO;
+using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
@@ -17,31 +18,47 @@ namespace LumStoreAPI.Controllers
             _pageRetrieveContext = pageRetrieveContext;
             _treeNodeRepository = treeNodeRepository;
         }
+
         [HttpGet]
-        public async Task<IActionResult> GetNodes(int page, int pageSize)
+        public async Task<IActionResult> GetNodes([FromQuery] PagingModel model)
         {
             var nodes = (await _pageRetrieveContext.GetPagedPagesAsync<DocumentPage>(query =>
             {
                 query
-                .Paged(page, pageSize)
+                .Paged(model.Page, model.PageSize)
                 .IncludeRelativeUrl()
                 .IncludeQueryable(nw => nw.OrderBy(o => o.Node.NodeOrder));
             }, cache => cache.Dependencies(d => d.Nodes()).Key("getallNodes"))).Select(x => new DocumentPageGetDTO(x));
-            return Ok(new
-            {
-                totalRecords = nodes.TotalRecords,
-                data = nodes
-            });
+            return Ok(PagedResponse<DocumentPageGetDTO>.Success(nodes, model.Page, model.PageSize, ["Success"]));
         }
 
-        [HttpPatch]
+        [HttpGet("{nodeId}")]
+        public async Task<IActionResult> GetNode(int nodeId)
+        {
+            var node = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
+            {
+                query.IncludeRelativeUrl()
+                .Where(x => x.NodeID == nodeId);
+            })).Select(x => new DocumentPageGetDTO(x)).FirstOrDefault();
+
+            if (node == null)
+            {
+                return NotFound(APIResponse<DocumentPageGetDTO>.Failure(["Cannot found node with id: " + nodeId]));
+            }
+
+            return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
+        }
+
+        [HttpPatch("ReOrder")]
         public async Task<IActionResult> ReOrderNode(int nodeID, int? parentNodeID, int? afterNodeID, bool isBefore = true)
         {
             var isOrder = await _treeNodeRepository.MoveAsync(nodeID, parentNodeID, afterNodeID);
-            return Ok(isOrder);
+            if (isOrder)
+                return Ok(APIResponseBase.Success(["Success"]));
+            return Ok(APIResponseBase.Failure(["Please try later"]));
         }
 
-        [HttpPost("Insert")]
+        [HttpPost]
         public async Task<IActionResult> Insert(DocumentPageInsertDTO documentPageDTO)
         {
             var documentPage = new DocumentPage()
@@ -51,18 +68,24 @@ namespace LumStoreAPI.Controllers
 
             var document = await _treeNodeRepository.InsertAsync(documentPageDTO.GetEntity()
                 , documentPageDTO.ParentNodeID == null ? null : new DocumentNode { NodeID = documentPageDTO.ParentNodeID.Value });
-
-            return Ok(document);
+            if (document == null)
+            {
+                return Ok(APIResponseBase.Failure(["Cannot create page, Please try later"]));
+            }
+            return Ok(APIResponse<DocumentPageGetDTO>.Success(new DocumentPageGetDTO(document), ["Created node"]));
         }
 
-        [HttpPut("Update")]
+        [HttpPut]
         public async Task<IActionResult> Update(DocumentPageUpdateDTO documentPageDTO)
         {
-            var alias = await _treeNodeRepository.GetRelativeUrl(documentPageDTO.NodeID);
             var page = await _treeNodeRepository
                   .UpdateAsync(documentPageDTO.ClassName, documentPageDTO.NodeID, documentPageDTO.Fields);
 
-            return Ok(new DocumentPageGetDTO(page));
+            if (page == null)
+            {
+                return Ok(APIResponseBase.Failure(["Cannot update that page, please try later"]));
+            }
+            return Ok(APIResponse<DocumentPageGetDTO>.Success(new DocumentPageGetDTO(page), ["Updated page"]));
         }
     }
 }

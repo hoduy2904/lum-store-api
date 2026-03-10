@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using LumStoreAPI.Infrastructure.Repositories.Presentations;
@@ -20,6 +21,7 @@ namespace LumStoreAPI.Infrastructure
                 services.AddScoped<IEmailService, EmailService>();
                 services.AddScoped<IMediaLibraryRepository, MediaLibraryRepository>();
                 services.AddScoped<ISettingKeyValueRepository, SettingKeyValueRepository>();
+                services.AddScoped<IDocumentTableService, DocumentTableService>();
                 return services;
             }
 

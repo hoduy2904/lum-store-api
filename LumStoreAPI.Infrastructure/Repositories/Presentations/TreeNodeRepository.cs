@@ -1,5 +1,4 @@
-﻿using Azure;
-using LumStoreAPI.Core.Attributes;
+﻿using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Helpers;
