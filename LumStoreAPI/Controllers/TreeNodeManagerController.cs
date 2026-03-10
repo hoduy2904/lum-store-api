@@ -1,4 +1,4 @@
-﻿using LumStoreAPI.Application.DTOs;
+﻿using LumStoreAPI.Application.DTOs.DocumentPageDTO;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
@@ -20,13 +20,13 @@ namespace LumStoreAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetNodes(int page, int pageSize)
         {
-            var nodes = await _pageRetrieveContext.GetPagedPagesAsync<DocumentPage>(query =>
+            var nodes = (await _pageRetrieveContext.GetPagedPagesAsync<DocumentPage>(query =>
             {
                 query
                 .Paged(page, pageSize)
                 .IncludeRelativeUrl()
                 .IncludeQueryable(nw => nw.OrderBy(o => o.Node.NodeOrder));
-            }, cache => cache.Dependencies(d => d.Nodes()).Key("getallNodes"));
+            }, cache => cache.Dependencies(d => d.Nodes()).Key("getallNodes"))).Select(x => new DocumentPageGetDTO(x));
             return Ok(new
             {
                 totalRecords = nodes.TotalRecords,
@@ -34,7 +34,7 @@ namespace LumStoreAPI.Controllers
             });
         }
 
-        [HttpPost]
+        [HttpPatch]
         public async Task<IActionResult> ReOrderNode(int nodeID, int? parentNodeID, int? afterNodeID, bool isBefore = true)
         {
             var isOrder = await _treeNodeRepository.MoveAsync(nodeID, parentNodeID, afterNodeID);
@@ -42,7 +42,7 @@ namespace LumStoreAPI.Controllers
         }
 
         [HttpPost("Insert")]
-        public async Task<IActionResult> Insert(DocumentPageDTO documentPageDTO)
+        public async Task<IActionResult> Insert(DocumentPageInsertDTO documentPageDTO)
         {
             var documentPage = new DocumentPage()
             {
@@ -53,6 +53,16 @@ namespace LumStoreAPI.Controllers
                 , documentPageDTO.ParentNodeID == null ? null : new DocumentNode { NodeID = documentPageDTO.ParentNodeID.Value });
 
             return Ok(document);
+        }
+
+        [HttpPut("Update")]
+        public async Task<IActionResult> Update(DocumentPageUpdateDTO documentPageDTO)
+        {
+            var alias = await _treeNodeRepository.GetRelativeUrl(documentPageDTO.NodeID);
+            var page = await _treeNodeRepository
+                  .UpdateAsync(documentPageDTO.ClassName, documentPageDTO.NodeID, documentPageDTO.Fields);
+
+            return Ok(new DocumentPageGetDTO(page));
         }
     }
 }

@@ -1,11 +1,12 @@
-﻿using LumStoreAPI.Core.Entities.DocumentEngine;
+﻿using LumStoreAPI.Application;
+using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Libraries.Helpers;
 using System.Reflection;
 using System.Text.Json;
 
-namespace LumStoreAPI.Application.DTOs
+namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
 {
-    public class DocumentPageDTO
+    public class DocumentPageInsertDTO
     {
         public string DocumentName { get; set; } = default!;
         public string ClassName { get; set; } = default!;
@@ -16,6 +17,8 @@ namespace LumStoreAPI.Application.DTOs
         {
             var type = DocumentPageTypeHelper.DocumentPageTypes.GetValueOrDefault(this.ClassName, typeof(DocumentPage));
             var entity = (DocumentPage)Activator.CreateInstance(type)!;
+
+            entity.ClassName = type.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder";
 
             foreach (var field in this.Fields)
             {

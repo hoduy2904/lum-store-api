@@ -20,6 +20,5 @@ namespace LumStoreAPI.Core.Entities.Pages
         public double Width { get; set; }
         public double Height { get; set; }
         public double Weight { get; set; }
-        public override string ClassName { get; set; } = CLASS_NAME;
     }
 }

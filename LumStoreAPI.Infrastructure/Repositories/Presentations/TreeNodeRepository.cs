@@ -1,4 +1,5 @@
-﻿using LumStoreAPI.Core.Attributes;
+﻿using Azure;
+using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Helpers;
@@ -7,6 +8,8 @@ using LumStoreAPI.Libraries.Extensions;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
+using System.Reflection;
+using System.Text.Json;
 
 namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 {
@@ -64,6 +67,19 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                         : x.ParentNodeID != null && (nodeIDs.Contains(x.NodeID) || nodeIDs.Contains(x.ParentNodeID.Value))).Select(s => s.NodeID).Contains(x.NodeID))
                     .ExecuteUpdateAsync(x => x.SetProperty(p => p.IsDeleted, true));
             }
+        }
+
+        public async Task<string> GetRelativeUrl(int nodeID)
+        {
+            var data = await _lumStoreContext.DocumentLinkedNodes
+                 .Join(_lumStoreContext.DocumentNodes,
+                 ln => ln.Ancestor,
+                 n => n.NodeID,
+                 (ln, n) => new { alias = n.NodeAlias, nodeOrder = n.NodeOrder, nodeID = ln.Descendant })
+                 .Where(x=>x.nodeID == nodeID)
+                 .ToListAsync();
+
+            return string.Join("/", data.OrderBy(x => x.nodeOrder).Select(x => x.alias));
         }
 
         public async Task<T?> InsertAsync<T>(T page, DocumentNode? parent = null) where T : DocumentPage
@@ -216,6 +232,40 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return (await _lumStoreContext.Set<T>()
                 .Where(x => x.NodeID == nodeID)
                 .ExecuteUpdateAsync(properties)) > 0;
+        }
+
+        public async Task<DocumentPage> UpdateAsync(string className, int nodeID, Dictionary<string, object?> properties)
+        {
+            var type = DocumentPageTypeHelper.DocumentPageTypes.GetValueOrDefault(className, typeof(DocumentPage));
+            var page = await _lumStoreContext
+                 .DocumentPages
+                 .FirstOrDefaultAsync(x => x.ClassName.Equals(className) && x.NodeID == nodeID);
+
+            if (page == null || page.GetType() != type)
+                throw new NullReferenceException($"Cannot found NodeID {nodeID} with class name: {className}");
+
+            foreach (var field in properties)
+            {
+                var prop = type.GetProperty(field.Key,
+        BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+                if (prop != null)
+                {
+                    object? value = field.Value;
+
+                    if (value is JsonElement json)
+                    {
+                        value = JsonSerializer.Deserialize(
+                            json.GetRawText(),
+                            prop.PropertyType
+                        );
+                    }
+                    prop.SetValue(page, Convert.ChangeType(value, prop.PropertyType));
+                }
+            }
+
+            await _lumStoreContext.SaveChangesAsync();
+            return page;
         }
 
         public Task<int> UpdatesAsync<T>(Action<UpdateSettersBuilder<T>> properties) where T : DocumentPage

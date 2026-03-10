@@ -10,8 +10,10 @@ namespace LumStoreAPI.Infrastructure.Repositories.Interfaces
         Task<bool> UpdateAsync<T>(T page) where T : DocumentPage;
         Task<bool> UpdateAsync<T>(int nodeID, Action<UpdateSettersBuilder<T>> properties) where T : DocumentPage;
         Task<int> UpdatesAsync<T>(Action<UpdateSettersBuilder<T>> properties) where T : DocumentPage;
+        Task<DocumentPage> UpdateAsync(string className, int nodeID, Dictionary<string, object?> properties);
         Task<int> DeleteAsync(int nodeID, bool hardDelete = false);
         Task<int> DeletesAsync(int[] nodeIDs, bool hardDelete = false);
         Task<bool> MoveAsync(int nodeID, int? parentId = null, int? nestedNodeID = null);
+        Task<string> GetRelativeUrl(int nodeID);
     }
 }

@@ -10,6 +10,5 @@ namespace LumStoreAPI.Core.Entities.Pages
         [DocumentName]
         public string PageTitle { get; set; } = default!;
         public string? Description { get; set; }
-        public override string ClassName { get; set; } = CLASS_NAME;
     }
 }
