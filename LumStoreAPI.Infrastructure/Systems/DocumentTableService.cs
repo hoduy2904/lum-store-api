@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace LumStoreAPI.Infrastructure.Systems
 {
-    internal class DocumentTableService : IDocumentPageTypeService
+    internal class DocumentTableService : IDocumentTableService
     {
         private readonly LumStoreContext _lumStoreContext;
         public DocumentTableService(LumStoreContext lumStoreContext)
