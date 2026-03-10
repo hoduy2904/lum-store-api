@@ -26,7 +26,7 @@ namespace LumStoreAPI.Controllers
                 .Paged(page, pageSize)
                 .IncludeRelativeUrl()
                 .IncludeQueryable(nw => nw.OrderBy(o => o.Node.NodeOrder));
-            });
+            }, cache => cache.Dependencies(d => d.Nodes()).Key("getallNodes"));
             return Ok(new
             {
                 totalRecords = nodes.TotalRecords,

@@ -18,6 +18,10 @@
         {
             return CustomKey($"node|{className}|all");
         }
+        public CacheDependency Nodes()
+        {
+            return CustomKey("nodes");
+        }
 
         public CacheDependency NodeID(int nodeID)
         {
@@ -27,6 +31,11 @@
         public CacheDependency Children(int parentNodeID)
         {
             return CustomKey($"node|{parentNodeID}|children");
+        }
+
+        public CacheDependency SettingKey(string keyCode)
+        {
+            return CustomKey($"settingkey|bykeycode|{keyCode}");
         }
 
         public CacheDependency NodeOrder()

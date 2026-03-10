@@ -2,6 +2,8 @@
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Riches;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
@@ -11,11 +13,12 @@ namespace LumStoreAPI.Infrastructure
     public class LumStoreContext : DbContext
     {
         protected readonly IConfiguration Configuration;
-
-        public LumStoreContext(DbContextOptions<LumStoreContext> options, IConfiguration configuration)
+        protected readonly ICacheService _cacheService;
+        public LumStoreContext(DbContextOptions<LumStoreContext> options, IConfiguration configuration, ICacheService cacheService)
             : base(options)
         {
             Configuration = configuration;
+            _cacheService = cacheService;
         }
         public DbSet<DocumentNode> DocumentNodes { get; set; }
         public DbSet<DocumentPage> DocumentPages { get; set; }
@@ -59,19 +62,64 @@ namespace LumStoreAPI.Infrastructure
 
         private void UpdateAuditFields()
         {
-            var entries = ChangeTracker.Entries<BaseItem>();
+            var entries = ChangeTracker.Entries();
             var now = DateTime.UtcNow;
 
             foreach (var entry in entries)
             {
                 if (entry.State == EntityState.Added)
                 {
-                    entry.Entity.CreatedAt = now;
-                    entry.Entity.UpdatedAt = now;
+                    if (entry.Entity is BaseItem entity)
+                    {
+                        entity.CreatedAt = now;
+                        entity.UpdatedAt = now;
+                    }
+                    if (entry.Entity is DocumentPage documentPage)
+                    {
+                        foreach (var cache in new CacheDependency().ClassName(documentPage.ClassName).NodeOrder().Nodes().GetDependencies())
+                        {
+                            _cacheService.TouchKey(cache);
+                        }
+                    }
+
                 }
                 else if (entry.State == EntityState.Modified)
                 {
-                    entry.Entity.UpdatedAt = now;
+                    if (entry.Entity is BaseItem entity)
+                    {
+                        entity.UpdatedAt = now;
+                    }
+                    if (entry.Entity is DocumentPage documentPage)
+                    {
+                        foreach (var cache in new CacheDependency().NodeID(documentPage.NodeID).ClassName(documentPage.ClassName).NodeOrder().GetDependencies())
+                        {
+                            _cacheService.TouchKey(cache);
+                        }
+                    }
+                    if (entry.Entity is DocumentNode documentNode)
+                    {
+                        foreach (var cache in new CacheDependency().NodeID(documentNode.NodeID).NodeOrder().Nodes().GetDependencies())
+                        {
+                            _cacheService.TouchKey(cache);
+                        }
+                    }
+                }
+                else if (entry.State == EntityState.Deleted)
+                {
+                    if (entry.Entity is DocumentPage documentPage)
+                    {
+                        foreach (var cache in new CacheDependency().NodeID(documentPage.NodeID).ClassName(documentPage.ClassName).NodeOrder().GetDependencies())
+                        {
+                            _cacheService.TouchKey(cache);
+                        }
+                    }
+                    if (entry.Entity is DocumentNode documentNode)
+                    {
+                        foreach (var cache in new CacheDependency().NodeID(documentNode.NodeID).NodeOrder().Nodes().GetDependencies())
+                        {
+                            _cacheService.TouchKey(cache);
+                        }
+                    }
                 }
             }
         }

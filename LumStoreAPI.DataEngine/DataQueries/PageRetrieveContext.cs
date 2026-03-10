@@ -2,39 +2,48 @@
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.DocumentPages;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.DataEngine.TreeNodeContentEngine;
+using LumStoreAPI.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using LumStoreAPI.Infrastructure.Extensions;
 
 namespace LumStoreAPI.Infrastructure.Presentation
 {
     public class PageRetrieveContext : IPageRetrieveContext
     {
+        private readonly ICacheService _cacheService;
         private readonly LumStoreContext _lumStoreContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public PageRetrieveContext(LumStoreContext lumStoreContext, IHttpContextAccessor httpContextAccessor)
+        public PageRetrieveContext(LumStoreContext lumStoreContext, IHttpContextAccessor httpContextAccessor, ICacheService cacheService)
         {
             _lumStoreContext = lumStoreContext;
             _httpContextAccessor = httpContextAccessor;
+            _cacheService = cacheService;
         }
-        public async Task<IEnumerable<T>> GetPagesAsync<T>(Action<ITreeNodeContent<T>>? where = null) where T : DocumentPage
+        public async Task<IEnumerable<T>> GetPagesAsync<T>(Action<ITreeNodeContent<T>>? where = null, Action<ICacheBuilder>? cacheBuilder = null) where T : DocumentPage
         {
-
-            var treeContent = GetPages(where);
-
-            return await treeContent.ToListAsync();
+            return (await _cacheService.GetCacheAsync<IEnumerable<T>>(async () =>
+            {
+                var treeContent = GetPages(where);
+                return await treeContent.ToListAsync();
+            }, cacheBuilder)) ?? Enumerable.Empty<T>();
         }
 
-        public async Task<IPagedEnumerable<T>> GetPagedPagesAsync<T>(Action<ITreeNodeContent<T>>? where = null) where T : DocumentPage
+        public async Task<IPagedEnumerable<T>> GetPagedPagesAsync<T>(Action<ITreeNodeContent<T>>? where = null, Action<ICacheBuilder>? cacheBuilder = null) where T : DocumentPage
         {
-            var treeContent = GetPages(where);
+            var cacheData = await _cacheService.GetCacheAsync(async () =>
+             {
+                 var treeContent = GetPages(where);
 
-            var data = await treeContent.ToListAsync();
+                 var data = await treeContent.ToListAsync();
 
-            int totalRecords = await treeContent.AsQueryable().CountAsync();
+                 int totalRecords = await treeContent.AsQueryable().CountAsync();
 
-            return data.AsPagedEnumerable(totalRecords);
+                 return data.AsPagedEnumerable(totalRecords);
+             }, cacheBuilder);
+
+            return cacheData ?? Enumerable.Empty<T>().AsPagedEnumerable(0);
         }
 
         private ITreeNodeContent<T> GetPages<T>(Action<ITreeNodeContent<T>>? where = null) where T : DocumentPage

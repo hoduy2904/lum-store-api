@@ -20,8 +20,10 @@ namespace LumStoreAPI.Infrastructure.Systems
             var cts = _tokens.GetOrAdd(key, _ => new CancellationTokenSource());
             return new CancellationChangeToken(cts.Token);
         }
-        public T? GetCache<T>(Func<T> func, Action<ICacheBuilder> cacheBuider)
+        public T? GetCache<T>(Func<T> func, Action<ICacheBuilder>? cacheBuider = null)
         {
+            if (cacheBuider == null)
+                return func();
             var cacheBuilderPr = new CacheBuilder();
             cacheBuider.Invoke(cacheBuilderPr);
 
@@ -49,8 +51,10 @@ namespace LumStoreAPI.Infrastructure.Systems
             return item;
         }
 
-        public async Task<T?> GetCacheAsync<T>(Func<Task<T>> func, Action<ICacheBuilder> cacheBuider)
+        public async Task<T?> GetCacheAsync<T>(Func<Task<T>> func, Action<ICacheBuilder>? cacheBuider = null)
         {
+            if (cacheBuider == null)
+                return await func();
             var cacheBuilderPr = new CacheBuilder();
             cacheBuider.Invoke(cacheBuilderPr);
 

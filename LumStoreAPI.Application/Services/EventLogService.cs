@@ -4,35 +4,52 @@ using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Libraries.Extensions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace LumStoreAPI.Application.Services
 {
     internal class EventLogService : IEventLogService
     {
+        private readonly ILogger<EventLogService> _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly LumStoreContext _lumStoreContext;
-        public EventLogService(LumStoreContext lumStoreContext, IHttpContextAccessor httpContextAccessor)
+        public EventLogService(LumStoreContext lumStoreContext, IHttpContextAccessor httpContextAccessor, ILogger<EventLogService> logger)
         {
             _lumStoreContext = lumStoreContext;
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
         public Task LogEvent(EventLogType type, string source, string code, string name, string description = "")
         {
-            string? ipAddress = _httpContextAccessor?.HttpContext?.Connection.RemoteIpAddress.IPAddressString;
-            var eventLog = new EventLog
+            try
             {
-                EventLogType = type,
-                EventCode = code,
-                EventDescription = description,
-                EventName = name,
-                EventSource = source,
-                IPAddress = ipAddress,
-                ServerName = Environment.MachineName,
-                EventUrl = _httpContextAccessor?.HttpContext == null ? "" : $"{_httpContextAccessor.HttpContext.Request.Path}{_httpContextAccessor?.HttpContext.Request.QueryString}",
-            };
+                string? ipAddress = _httpContextAccessor?.HttpContext?.Connection.RemoteIpAddress.IPAddressString;
+                var eventLog = new EventLog
+                {
+                    EventLogType = type,
+                    EventCode = code,
+                    EventDescription = description,
+                    EventName = name,
+                    EventSource = source,
+                    IPAddress = ipAddress,
+                    ServerName = Environment.MachineName,
+                    EventUrl = _httpContextAccessor?.HttpContext == null ? "" : $"{_httpContextAccessor.HttpContext.Request.Path}{_httpContextAccessor?.HttpContext.Request.QueryString}",
+                };
 
-            _lumStoreContext.Add(eventLog);
-            return _lumStoreContext.SaveChangesAsync();
+                _lumStoreContext.Add(eventLog);
+                return _lumStoreContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "EventLog Error");
+                LogLevel logLevel = LogLevel.Error;
+                if (type == EventLogType.WARNING) logLevel = LogLevel.Warning;
+                if (type == EventLogType.INFORMATION) logLevel = LogLevel.Information;
+
+                _logger.Log(logLevel, "Source: {source} \r\nName: {name} \r\n Description: {description}", source, name, description);
+
+                return Task.CompletedTask;
+            }
         }
 
         public Task LogException(string source, string code, string name, Exception? ex)
