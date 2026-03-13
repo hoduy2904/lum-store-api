@@ -20,6 +20,8 @@ namespace LumStoreAPI.Infrastructure
             Configuration = configuration;
             _cacheService = cacheService;
         }
+        public DbSet<User> Users { get; set; }
+        public DbSet<UserToken> UserTokens { get; set; }
         public DbSet<DocumentNode> DocumentNodes { get; set; }
         public DbSet<DocumentPage> DocumentPages { get; set; }
         public DbSet<DocumentLinkedNode> DocumentLinkedNodes { get; set; }

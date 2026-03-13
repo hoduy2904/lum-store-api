@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Models.Systems;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LumStoreAPI.Controllers
@@ -14,6 +15,7 @@ namespace LumStoreAPI.Controllers
         {
             _documentTableService = documentTableService;
         }
+
         [HttpGet("{className}")]
         public IActionResult GetSchemaTable(string className)
         {
@@ -25,6 +27,9 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponse<DocumentTable>.Success(documentTable, ["Success"]));
         }
 
+
+        [Authorize]
+        [HttpGet]
         public IActionResult GetSchemaTables()
         {
             var documentTables = _documentTableService.GetSchemaTables();

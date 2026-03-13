@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Application;
+using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Application.Services;
 using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
@@ -18,6 +19,8 @@ namespace LumStoreAPI.Application
             {
                 services.AddScoped<IEventLogService, EventLogService>();
                 services.AddScoped<IMediaLibraryService, MediaLibraryService>();
+                services.AddScoped<IAuthService, AuthService>();
+                services.AddScoped<IUserService, UserService>();
                 return services;
             }
         }

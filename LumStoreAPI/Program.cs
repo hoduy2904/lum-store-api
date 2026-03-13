@@ -23,6 +23,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddCustomSettings(builder.Configuration);
 builder.Services
     .AddHttpContextAccessor()
     .AddLumStoreRepoConfigurations()
@@ -32,6 +33,8 @@ builder.Services
     .AddProblemDetails()
     .RegisterTasks()
     .AddCMSCache();
+
+builder.Services.AddJwtAuthentication();
 
 builder.AddLumStoreStaticConfiguration();
 
@@ -47,6 +50,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

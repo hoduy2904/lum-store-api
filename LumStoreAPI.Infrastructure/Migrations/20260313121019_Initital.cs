@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class Initital : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -103,6 +103,35 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserName = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserPassword = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    MiddleName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    LastName = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Avatar = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    IsLocked = table.Column<bool>(type: "bit", nullable: false),
+                    IsVerified = table.Column<bool>(type: "bit", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    TimeLocked = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserLevel = table.Column<int>(type: "int", nullable: false),
+                    VerifyCode = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
+                    IsAdmin = table.Column<bool>(type: "bit", nullable: false),
+                    TimeActionCode = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.ItemID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DocumentLinkedNodes",
                 columns: table => new
                 {
@@ -177,6 +206,26 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         column: x => x.CategoryID,
                         principalTable: "MediaLibraryCategories",
                         principalColumn: "CategoryID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserTokens",
+                columns: table => new
+                {
+                    TokenID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserID = table.Column<int>(type: "int", nullable: false),
+                    RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ValidTo = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserTokens", x => x.TokenID);
+                    table.ForeignKey(
+                        name: "FK_UserTokens_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
+                        principalColumn: "ItemID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -336,6 +385,23 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "IX_Products_UPC",
                 table: "Products",
                 column: "UPC");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_UserName",
+                table: "Users",
+                column: "UserName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserTokens_UserID",
+                table: "UserTokens",
+                column: "UserID");
         }
 
         /// <inheritdoc />
@@ -366,10 +432,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "SettingKeyValues");
 
             migrationBuilder.DropTable(
+                name: "UserTokens");
+
+            migrationBuilder.DropTable(
                 name: "MediaLibraryCategories");
 
             migrationBuilder.DropTable(
                 name: "DocumentPages");
+
+            migrationBuilder.DropTable(
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "DocumentNodes");

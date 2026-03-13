@@ -4,5 +4,7 @@
     {
         public T? Data { get; set; }
         public static APIResponse<T> Success(T data, string[]? messages = null) => new APIResponse<T> { Data = data, Messages = messages ?? [] };
+        public static new APIResponse<T> Failure(string[]? messages = null)
+            => new APIResponse<T> { IsSuccess = false, Messages = messages ?? [] };
     }
 }
