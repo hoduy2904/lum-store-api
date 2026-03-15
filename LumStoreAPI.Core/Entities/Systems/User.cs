@@ -31,5 +31,6 @@ namespace LumStoreAPI.Core.Entities.Systems
         public DateTime? TimeActionCode { get; set; }
 
         public virtual ICollection<UserToken> UserTokens { get; set; } = [];
+        public virtual ICollection<EventLog> EventLogs { get; set; } = [];
     }
 }

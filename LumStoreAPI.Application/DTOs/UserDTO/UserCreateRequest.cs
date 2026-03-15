@@ -14,6 +14,7 @@ namespace LumStoreAPI.Application.DTOs.UserDTO
         [MaxLength(50)]
         public string UserName { get; set; } = default!;
         public string Password { get; set; } = default!;
+        [JsonIgnore]
         public string PasswordHash => HashHelper.HashPassword(Password);
 
         [JsonIgnore]

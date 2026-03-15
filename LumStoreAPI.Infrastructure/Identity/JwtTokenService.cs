@@ -1,5 +1,6 @@
 ﻿using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Services;
+using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -20,6 +21,7 @@ namespace LumStoreAPI.Infrastructure.Identity
                 new Claim(JwtRegisteredClaimNames.Name, user.FullName),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Role, user.IsAdmin ? nameof(UserRole.ADMIN) : nameof(UserRole.USER))
             };
 
             var symmetricSecurityKey = new SymmetricSecurityKey(AppConfiguration.JwtSettings.EncodingKey);

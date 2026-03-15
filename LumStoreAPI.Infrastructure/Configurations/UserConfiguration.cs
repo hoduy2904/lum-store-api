@@ -36,6 +36,10 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.HasMany(x => x.UserTokens)
                 .WithOne(x => x.User)
                 .HasForeignKey(x => x.UserID);
+
+            builder.HasMany(x => x.EventLogs)
+                .WithOne(x => x.User)
+                .HasForeignKey(x => x.UserID);
         }
     }
 }

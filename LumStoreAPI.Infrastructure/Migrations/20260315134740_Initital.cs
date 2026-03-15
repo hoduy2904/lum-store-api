@@ -54,28 +54,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "EventLogs",
-                columns: table => new
-                {
-                    ItemID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EventLogType = table.Column<int>(type: "int", nullable: false),
-                    EventSource = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    EventCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    EventName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    EventDescription = table.Column<string>(type: "nvarchar(max)", maxLength: -1, nullable: false),
-                    ServerName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    IPAddress = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    EventUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EventLogs", x => x.ItemID);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "MediaLibraryCategories",
                 columns: table => new
                 {
@@ -207,6 +185,34 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         principalTable: "MediaLibraryCategories",
                         principalColumn: "CategoryID",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EventLogs",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EventLogType = table.Column<int>(type: "int", nullable: false),
+                    EventSource = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    EventCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    EventName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    EventDescription = table.Column<string>(type: "nvarchar(max)", maxLength: -1, nullable: false),
+                    ServerName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    IPAddress = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
+                    EventUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserID = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EventLogs", x => x.ItemID);
+                    table.ForeignKey(
+                        name: "FK_EventLogs_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
+                        principalColumn: "ItemID");
                 });
 
             migrationBuilder.CreateTable(
@@ -345,6 +351,11 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "IX_EventLogs_IPAddress",
                 table: "EventLogs",
                 column: "IPAddress");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EventLogs_UserID",
+                table: "EventLogs",
+                column: "UserID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MediaLibraries_CategoryID",

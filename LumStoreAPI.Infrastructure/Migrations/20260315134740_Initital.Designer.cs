@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260313121019_Initital")]
+    [Migration("20260315134740_Initital")]
     partial class Initital
     {
         /// <inheritdoc />
@@ -221,6 +221,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("UserID")
+                        .HasColumnType("int");
+
                     b.HasKey("ItemID");
 
                     b.HasIndex("EventCode");
@@ -230,6 +233,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasIndex("EventSource");
 
                     b.HasIndex("IPAddress");
+
+                    b.HasIndex("UserID");
 
                     b.ToTable("EventLogs");
                 });
@@ -556,6 +561,15 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("Node");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.EventLog", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
+                        .WithMany("EventLogs")
+                        .HasForeignKey("UserID");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.MediaLibrary", b =>
                 {
                     b.HasOne("LumStoreAPI.Core.Entities.Systems.MediaLibraryCategory", "MediaLibraryCategory")
@@ -623,6 +637,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.User", b =>
                 {
+                    b.Navigation("EventLogs");
+
                     b.Navigation("UserTokens");
                 });
 #pragma warning restore 612, 618

@@ -28,9 +28,13 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
             builder.Property(x => x.EventDescription)
                 .HasMaxLength(-1);
+                
             builder.Property(x => x.ServerName)
                 .HasMaxLength(100);
 
+            builder.HasOne(x=>x.User)
+                .WithMany(x=>x.EventLogs)
+                .HasForeignKey(x=>x.UserID);
         }
     }
 }

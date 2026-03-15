@@ -1,0 +1,8 @@
+root = true
+
+[*.cs]
+csharp_space_around_binary_operators = before_and_after
+csharp_space_after_colon_in_conditional_expression = true
+csharp_space_after_question_mark_in_conditional_expression = true
+csharp_space_before_colon_in_conditional_expression = true
+csharp_space_before_question_mark_in_conditional_expression = true

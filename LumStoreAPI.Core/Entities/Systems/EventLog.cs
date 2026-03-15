@@ -13,5 +13,8 @@ namespace LumStoreAPI.Core.Entities.Systems
         public string ServerName { get; set; } = default!;
         public string? IPAddress { get; set; }
         public string? EventUrl { get; set; }
+        public int? UserID { get; set; }
+
+        public virtual User? User { get; set; }
     }
 }
