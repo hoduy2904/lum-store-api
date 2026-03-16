@@ -1,6 +1,8 @@
 ﻿using LumStoreAPI.Application.DTOs.AuthDTO;
+using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.UserDTO;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,10 +14,12 @@ namespace LumStoreAPI.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IUserRepository _userRepository;
-        public AuthController(IAuthService authService, IUserRepository userRepository)
+        private readonly IUserService _userService;
+        public AuthController(IAuthService authService, IUserRepository userRepository, IUserService userService)
         {
             _authService = authService;
             _userRepository = userRepository;
+            _userService = userService;
         }
 
         [HttpPost("Register")]
@@ -30,6 +34,20 @@ namespace LumStoreAPI.Controllers
         {
             var token = await _authService.AuthenticateAsync(auth);
             return Ok(token);
+        }
+
+        [HttpPost("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await _authService.LogoutAsync();
+            return NoContent();
+        }
+
+        [HttpGet("CurrentUser")]
+        public async Task<IActionResult> CurrentUser()
+        {
+            var user = await _userService.GetCurrentUserAsync();
+            return Ok(APIResponse<User?>.Success(user));
         }
     }
 }

@@ -3,7 +3,9 @@ using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Services;
+using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Libraries.Helpers;
+using Microsoft.AspNetCore.Http;
 
 namespace LumStoreAPI.Application.Services
 {
@@ -12,12 +14,28 @@ namespace LumStoreAPI.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IUserTokenRepository _userTokenRepository;
-        public AuthService(IUserRepository userRepository, IJwtTokenService jwtTokenService, IUserTokenRepository userTokenRepository)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public AuthService(
+            IUserRepository userRepository,
+            IJwtTokenService jwtTokenService,
+            IUserTokenRepository userTokenRepository,
+            IHttpContextAccessor httpContextAccessor)
         {
             _userRepository = userRepository;
             _jwtTokenService = jwtTokenService;
             _userTokenRepository = userTokenRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
+
+        DateTime REFRESH_TOKEN_TIME => DateTime.UtcNow.AddDays(7);
+        CookieOptions cookieOptions => new CookieOptions()
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Path = "/"
+        };
+
         public async Task<APIResponse<TokenResponse>> AuthenticateAsync(AuthRequest request)
         {
             var user = (await _userRepository.GetUsersAsync(query =>
@@ -58,6 +76,8 @@ namespace LumStoreAPI.Application.Services
                 ValidTo = DateTime.UtcNow.AddDays(7)
             });
 
+            SetCookies(accessToken, response.RefreshToken);
+
             return APIResponse<TokenResponse>.Success(response, ["Authenticated"]);
 
         }
@@ -65,6 +85,16 @@ namespace LumStoreAPI.Application.Services
         public Task<bool> IsValidCodeAsync(int userID, string code)
         {
             return _userRepository.CheckUserAsync(x => x.ItemID == userID && !string.IsNullOrEmpty(x.VerifyCode) && x.VerifyCode.Equals(code.Trim()));
+        }
+
+        public Task LogoutAsync()
+        {
+            var logoutCookieOpt = cookieOptions;
+
+            _httpContextAccessor.HttpContext?.Response.Cookies.Delete(AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME);
+            _httpContextAccessor.HttpContext?.Response.Cookies.Delete(AuthSystemConstants.REFRESH_TOKEN_COOKIE_NAME);
+
+            return Task.CompletedTask;
         }
 
         public async Task<APIResponse<TokenResponse>> RefreshTokenAsync(TokenRequest request)
@@ -106,12 +136,27 @@ namespace LumStoreAPI.Application.Services
                     RefreshToken = response.RefreshToken,
                     TokenID = Guid.Parse(securityToken.Id),
                     UserID = user.ItemID,
-                    ValidTo = DateTime.UtcNow.AddDays(7)
+                    ValidTo = REFRESH_TOKEN_TIME
                 });
 
+                SetCookies(accessToken, response.RefreshToken);
                 return APIResponse<TokenResponse>.Success(response, ["Authenticated"]);
             }
             return APIResponse<TokenResponse>.Failure(["Invalid user or token"]);
+        }
+
+        private void SetCookies(string accessToken, string refreshToken)
+        {
+            var securityToken = JwtTokenHelper.GetJwtSecurityToken(accessToken);
+
+            var accessCookieOption = cookieOptions;
+            accessCookieOption.Expires = securityToken.ValidTo;
+            _httpContextAccessor?.HttpContext?.Response.Cookies.Append(AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken, accessCookieOption);
+
+
+            var refreshCookieOption = cookieOptions;
+            accessCookieOption.Expires = REFRESH_TOKEN_TIME;
+            _httpContextAccessor?.HttpContext?.Response.Cookies.Append(AuthSystemConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken, refreshCookieOption);
         }
     }
 }

@@ -7,6 +7,7 @@ namespace LumStoreAPI.Application.Interfaces
     {
         Task<APIResponse<TokenResponse>> AuthenticateAsync(AuthRequest request);
         Task<APIResponse<TokenResponse>> RefreshTokenAsync(TokenRequest request);
+        Task LogoutAsync();
         Task<bool> IsValidCodeAsync(int userID, string code);
     }
 }

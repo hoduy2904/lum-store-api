@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure.Identity;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
@@ -57,6 +58,25 @@ namespace LumStoreAPI.Infrastructure
                             ValidateLifetime = false,
                             ValidateIssuerSigningKey = true,
                             IssuerSigningKey = new SymmetricSecurityKey(AppConfiguration.JwtSettings.EncodingKey)
+                        };
+
+                        opt.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
+                            {
+                                var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                                if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+                                {
+                                    context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                                    return Task.CompletedTask;
+                                }
+                                if (context.Request.Cookies.ContainsKey(AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME))
+                                {
+                                    context.Token = context.Request.Cookies[AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME];
+                                }
+
+                                return Task.CompletedTask;
+                            }
                         };
                     });
 
