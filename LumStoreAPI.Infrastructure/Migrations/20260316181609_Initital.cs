@@ -45,6 +45,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     EmailBcc = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EmailCc = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Attachments = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NextRetryTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },

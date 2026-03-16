@@ -54,7 +54,8 @@ namespace LumStoreAPI.Infrastructure.Systems
             return await _emailRepository.GetEmailQueuesAsync(
                 x => x.OrderBy(x => x.ItemID)
                 .ThenBy(x => x.EmailStatus)
-                .Where(x => x.EmailStatus != Core.Models.Enums.EmailStatus.Success)
+                .Where(x => x.EmailStatus != Core.Models.Enums.EmailStatus.Success
+                && (x.NextRetryTime == null || x.NextRetryTime < DateTime.UtcNow))
                 .Take(topN));
         }
 

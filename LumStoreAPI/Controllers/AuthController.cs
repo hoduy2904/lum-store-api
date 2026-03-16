@@ -2,8 +2,8 @@
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.UserDTO;
 using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LumStoreAPI.Controllers
@@ -25,8 +25,15 @@ namespace LumStoreAPI.Controllers
         [HttpPost("Register")]
         public async Task<IActionResult> Register(UserCreateRequest userCreateRequest)
         {
-            var user = await _userRepository.InsertUserAsync(userCreateRequest.GetEntity);
+            var user = await _authService.RegisterUserAsync(userCreateRequest);
             return Ok(user);
+        }
+
+        [HttpPost("Verify")]
+        [Authorize(Roles = "pre")]
+        public async Task<IActionResult> VerifyCode(string code)
+        {
+            return Ok(await _authService.VerifyCode(code));
         }
 
         [HttpPost("Login")]
@@ -47,7 +54,7 @@ namespace LumStoreAPI.Controllers
         public async Task<IActionResult> CurrentUser()
         {
             var user = await _userService.GetCurrentUserAsync();
-            return Ok(APIResponse<User?>.Success(user));
+            return Ok(APIResponse<UserDTO?>.Success(user));
         }
     }
 }

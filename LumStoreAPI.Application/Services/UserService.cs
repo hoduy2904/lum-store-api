@@ -1,6 +1,8 @@
-﻿using LumStoreAPI.Application.Interfaces;
+﻿using LumStoreAPI.Application.DTOs.UserDTO;
+using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Http;
 
 namespace LumStoreAPI.Application.Services
@@ -14,13 +16,24 @@ namespace LumStoreAPI.Application.Services
             _httpContextAccessor = httpContextAccessor;
             _userRepository = userRepository;
         }
-        public Task<User?> GetCurrentUserAsync()
+
+        public async Task<AccountStatus?> CheckAccountStatusAsync(int userID)
+        {
+            var user = await _userRepository.GetUserAsync(userID);
+            if (user == null || !user.IsEnabled)
+                return null;
+            return user.IsLocked ? AccountStatus.LOCKED : !user.IsVerified ? AccountStatus.INACTIVE : AccountStatus.ACTIVE;
+        }
+
+        public async Task<UserDTO?> GetCurrentUserAsync()
         {
             if (!int.TryParse(_httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(x => x.Type.Equals("id"))?.Value, out int userId))
             {
-                return Task.FromResult<User?>(null);
+                return null;
             }
-            return _userRepository.GetUserAsync(userId);
+            var user = await _userRepository.GetUserAsync(userId);
+
+            return user == null ? null : new UserDTO(user);
         }
     }
 }

@@ -21,7 +21,7 @@ namespace LumStoreAPI.Infrastructure.Identity
                 new Claim(JwtRegisteredClaimNames.Name, user.FullName),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Role, user.IsAdmin ? nameof(UserRole.ADMIN) : nameof(UserRole.USER))
+                new Claim(ClaimTypes.Role, (user.IsLocked || !user.IsVerified) ? "pre" : user.IsAdmin ? nameof(UserRole.ADMIN) : nameof(UserRole.USER))
             };
 
             var symmetricSecurityKey = new SymmetricSecurityKey(AppConfiguration.JwtSettings.EncodingKey);

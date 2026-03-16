@@ -26,6 +26,7 @@ namespace LumStoreAPI.Application.DTOs.UserDTO
             LastName = LastName,
             MiddleName = MiddleName,
             UserPassword = PasswordHash,
+            IsEnabled = true
         };
 
     }

@@ -58,7 +58,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public Task<int> UpdateEmailAsync(int emailID, EmailStatus emailStatus)
         {
             return _lumStoreContext.EmailQueues.Where(x => x.ItemID == emailID)
-                .ExecuteUpdateAsync(x => x.SetProperty(p => p.EmailStatus, emailStatus));
+                .ExecuteUpdateAsync(x => x.SetProperty(p => p.EmailStatus, emailStatus)
+                .SetProperty(p => p.NextRetryTime, p => emailStatus == EmailStatus.Failed ? DateTime.UtcNow.AddMinutes(15) : null));
         }
     }
 }

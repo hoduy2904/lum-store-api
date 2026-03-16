@@ -5,7 +5,6 @@ using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Linq;
 
 namespace LumStoreAPI.Tasks.BackgroundServices
 {
@@ -73,7 +72,14 @@ namespace LumStoreAPI.Tasks.BackgroundServices
                         }
                         catch (Exception ex)
                         {
-                            await emailService.UpdateEmailStatusAsync(emailQueue.ItemID, EmailStatus.Failed);
+                            try
+                            {
+                                await emailService.UpdateEmailStatusAsync(emailQueue.ItemID, EmailStatus.Failed);
+                            }
+                            catch (Exception updateEx)
+                            {
+                                await eventLogService.LogException("EmailSender", "Update Status", "", updateEx);
+                            }
                             await eventLogService.LogException("EmailSender", "SendEmail", "", ex);
                         }
                     }

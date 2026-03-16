@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260315134740_Initital")]
+    [Migration("20260316181609_Initital")]
     partial class Initital
     {
         /// <inheritdoc />
@@ -160,6 +160,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<string>("EmailTo")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("NextRetryTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");

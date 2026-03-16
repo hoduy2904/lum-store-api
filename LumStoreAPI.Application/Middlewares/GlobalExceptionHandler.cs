@@ -1,9 +1,14 @@
-﻿using LumStoreAPI.Core.Interfaces.Sytems;
+﻿using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Application.Exceptions;
+using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Constants.Systems;
+using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
+using System.Net;
 
 namespace LumStoreAPI.Application.Middlewares
 {
@@ -18,6 +23,21 @@ namespace LumStoreAPI.Application.Middlewares
 
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
+            if (exception is ForbidException || exception is AuthInvalidException)
+            {
+                httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                if (exception is AuthInvalidException authInvalidException)
+                {
+                    string status = ErrorStatusNameConstants.ACCOUNT_LOCKED;
+                    if (authInvalidException.Status == Core.Models.Enums.AccountStatus.INACTIVE)
+                    {
+                        status = ErrorStatusNameConstants.ACCOUNT_INACTIVE;
+                    }
+
+                    await httpContext.Response.WriteAsJsonAsync(APIResponseBase.Failure(status, [authInvalidException.Message]));
+                }
+                return true;
+            }
             var stackTrace = new StackTrace(exception, true);
             var frame = stackTrace.GetFrame(0);
             var method = frame?.GetMethod();

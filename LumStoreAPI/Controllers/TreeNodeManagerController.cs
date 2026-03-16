@@ -2,6 +2,7 @@
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,7 +44,7 @@ namespace LumStoreAPI.Controllers
 
             if (node == null)
             {
-                return NotFound(APIResponse<DocumentPageGetDTO>.Failure(["Cannot found node with id: " + nodeId]));
+                return NotFound(APIResponse<DocumentPageGetDTO>.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Cannot found node with id: " + nodeId]));
             }
 
             return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
@@ -55,7 +56,7 @@ namespace LumStoreAPI.Controllers
             var isOrder = await _treeNodeRepository.MoveAsync(nodeID, parentNodeID, afterNodeID);
             if (isOrder)
                 return Ok(APIResponseBase.Success(["Success"]));
-            return Ok(APIResponseBase.Failure(["Please try later"]));
+            return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR, ["Please try later"]));
         }
 
         [HttpPost]
@@ -70,7 +71,7 @@ namespace LumStoreAPI.Controllers
                 , documentPageDTO.ParentNodeID == null ? null : new DocumentNode { NodeID = documentPageDTO.ParentNodeID.Value });
             if (document == null)
             {
-                return Ok(APIResponseBase.Failure(["Cannot create page, Please try later"]));
+                return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR, ["Cannot create page, Please try later"]));
             }
             return Ok(APIResponse<DocumentPageGetDTO>.Success(new DocumentPageGetDTO(document), ["Created node"]));
         }
@@ -83,7 +84,7 @@ namespace LumStoreAPI.Controllers
 
             if (page == null)
             {
-                return Ok(APIResponseBase.Failure(["Cannot update that page, please try later"]));
+                return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR, ["Cannot update that page, please try later"]));
             }
             return Ok(APIResponse<DocumentPageGetDTO>.Success(new DocumentPageGetDTO(page), ["Updated page"]));
         }
