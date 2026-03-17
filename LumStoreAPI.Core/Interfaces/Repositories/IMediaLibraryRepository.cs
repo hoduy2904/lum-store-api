@@ -8,7 +8,9 @@ namespace LumStoreAPI.Core.Interfaces.Repositories
     {
         Task<MediaLibrary?> GetMediaItemAsync(Guid fileID);
         Task<IEnumerable<MediaLibrary>> GetMediaItemsAsync(Expression<Func<MediaLibrary, bool>>? where = null);
-        Task<IPagedEnumerable<MediaLibrary>> GetMediaItemsAsync(int page, int pageSize,Expression<Func<MediaLibrary, bool>>? where = null);
+        Task<IEnumerable<string>> GetMediaDirectFilePaths(Guid[] fileIds);
+        Task<IEnumerable<string>> GetMediaDirectFilePaths(Expression<Func<MediaLibrary, bool>>? where = null);
+        Task<IPagedEnumerable<MediaLibrary>> GetMediaItemsAsync(int page, int pageSize, Expression<Func<MediaLibrary, bool>>? where = null);
         Task<MediaLibrary> InsertMediaItem(MediaLibrary mediaLibrary);
         Task<IEnumerable<MediaLibrary>> InsertMediaItems(IEnumerable<MediaLibrary> mediaLibraries);
         Task<MediaLibrary> UpdateMediaItem(MediaLibrary mediaLibrary);

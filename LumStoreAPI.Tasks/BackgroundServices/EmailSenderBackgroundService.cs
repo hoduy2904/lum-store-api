@@ -1,4 +1,5 @@
-﻿using LumStoreAPI.Core.Interfaces.Services;
+﻿using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
@@ -47,7 +48,7 @@ namespace LumStoreAPI.Tasks.BackgroundServices
                         };
                         if (emailQueue.Attachments != null && emailQueue.Attachments.Any())
                         {
-                            var mediaService = serviceScoped.ServiceProvider.GetRequiredService<IMediaLibraryService>();
+                            var mediaService = serviceScoped.ServiceProvider.GetRequiredService<IMediaService>();
                             var mediaItems = await mediaService.GetMediaItemsAsync(emailQueue.Attachments.Select(x => Guid.Parse(x)).ToArray());
                             if (mediaItems != null && mediaItems.Any())
                             {
@@ -57,8 +58,8 @@ namespace LumStoreAPI.Tasks.BackgroundServices
                                     await semaphore.WaitAsync();
                                     try
                                     {
-                                        var bytes = await MediaLibraryHelper.GetMediaLibraryBytesAsync(x);
-                                        return new EmailAttachment(x.FileName, new MemoryStream(bytes), x.FileID);
+                                        var streamData = MediaLibraryHelper.GetFileStream(x.FullDirectPath);
+                                        return new EmailAttachment(x.FileName, streamData, x.FileID);
                                     }
                                     finally { semaphore.Release(); }
                                 }));

@@ -1,4 +1,5 @@
-﻿using LumStoreAPI.Core.Models.Systems;
+﻿using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Models.Systems;
 
 namespace LumStoreAPI.Libraries.Helpers
 {
@@ -7,27 +8,35 @@ namespace LumStoreAPI.Libraries.Helpers
         public static string RootMediaPath { get; set; } = string.Empty;
 
         public static string GetDirectPath(string path) => Path.Combine(RootMediaPath, path);
-
-        public static Task<byte[]> GetMediaLibraryBytesAsync(MediaItem mediaItem)
+        public static string GetDirectMediaFilePath(MediaLibrary mediaLibrary)
         {
-            var directPath = Path.Combine(RootMediaPath, mediaItem.CategoryPath ?? "", $"{mediaItem.FileID.ToString()}{mediaItem.Extension}");
+            return GetDirectPath(Path.Combine(mediaLibrary.MediaLibraryCategory.FolderName, $"{mediaLibrary.FileID}{mediaLibrary.Extension}"));
+        }
+
+        public static Task<byte[]> GetMediaLibraryBytesAsync(MediaLibrary mediaLibrary)
+        {
+            var directPath = GetDirectMediaFilePath(mediaLibrary);
             return File.ReadAllBytesAsync(directPath);
         }
 
-        public static Stream GetMediaLibraryStream(MediaItem mediaItem)
+        public static Stream GetMediaLibraryStream(MediaLibrary mediaLibrary)
         {
-            var directPath = Path.Combine(RootMediaPath, mediaItem.CategoryPath ?? "", $"{mediaItem.FileID.ToString()}{mediaItem.Extension}");
-            return new FileStream(directPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var directPath = GetDirectMediaFilePath(mediaLibrary);
+            return GetFileStream(directPath);
         }
-        public static byte[] GetMediaLibraryBytes(MediaItem mediaItem)
+        public static Stream GetFileStream(string path)
         {
-            var directPath = Path.Combine(RootMediaPath, mediaItem.CategoryPath ?? "", $"{mediaItem.FileID.ToString()}{mediaItem.Extension}");
-            return File.ReadAllBytes(directPath);
+            return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+        public static byte[] GetMediaLibraryBytes(MediaLibrary mediaLibrary)
+        {
+            var directPath = GetDirectMediaFilePath(mediaLibrary); return File.ReadAllBytes(directPath);
         }
 
-        public static string GetFileURL(MediaItem mediaItem)
+        public static string GetFileURL(MediaLibrary mediaLibrary)
         {
-            return $"/api/media/getFile?fileId={mediaItem.FileID}&format={mediaItem.Extension}";
+            return $"/api/media/getFile?fileId={mediaLibrary.FileID}&format={mediaLibrary.Extension}";
         }
+
     }
 }

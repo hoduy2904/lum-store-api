@@ -1,33 +1,99 @@
 ﻿using LumStoreAPI.Application.DTOs.MediaDTO;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
-using LumStoreAPI.Core.Interfaces.Services;
-using LumStoreAPI.Core.Models.Systems;
+using LumStoreAPI.Libraries.Extensions;
 using LumStoreAPI.Libraries.Helpers;
 
 namespace LumStoreAPI.Application.Services
 {
     internal class MediaService : IMediaService
     {
-        private readonly IMediaLibraryService _mediaLibraryService;
         private readonly IMediaLibraryCategoryRepository _mediaLibraryCategoryRepository;
-        public MediaService(IMediaLibraryService mediaLibraryService, IMediaLibraryCategoryRepository mediaLibraryCategoryRepository)
+        private readonly IMediaLibraryRepository _mediaLibraryRepository;
+
+        public MediaService(IMediaLibraryCategoryRepository mediaLibraryCategoryRepository, IMediaLibraryRepository mediaLibraryRepository)
         {
-            _mediaLibraryService = mediaLibraryService;
             _mediaLibraryCategoryRepository = mediaLibraryCategoryRepository;
-        }
-        public Task<MediaItem?> GetMediaItemAsync(Guid fileID)
-        {
-            return _mediaLibraryService.GetMediaItemAsync(fileID);
+            _mediaLibraryRepository = mediaLibraryRepository;
         }
 
-        public async Task<IEnumerable<MediaItem>> InsertMediaItemAsync(MediaItemInsertRequest request)
+        public async Task<MediaFolderDTO> CreateMediaFolderAsync(MediaFolderRequest mediaFolder)
+        {
+            var folder = await _mediaLibraryCategoryRepository.InsertCategory(new MediaLibraryCategory
+            {
+                CategoryName = mediaFolder.FolderName,
+                FolderName = mediaFolder.FolderName.Slug
+            });
+
+            return new MediaFolderDTO(folder);
+        }
+
+        public Task<int> DeleteFile(Guid fileID)
+        {
+            return this.DeleteFiles([fileID]);
+        }
+
+        public Task<int> DeleteFiles(Guid[] fileIDs)
+        {
+            if (fileIDs.Any())
+                return _mediaLibraryRepository.DeleteMediaItems(x => fileIDs.Contains(x.FileID));
+            return Task.FromResult(0);
+        }
+
+        public Task<int> DeleteFolder(int folderID)
+        {
+            return DeleteFolders([folderID]);
+        }
+
+        public async Task<int> DeleteFolders(int[] folderIds)
+        {
+            var mediaDirectPaths = await _mediaLibraryRepository.GetMediaDirectFilePaths(x => folderIds.Contains(x.CategoryID));
+
+            var result = await _mediaLibraryCategoryRepository.DeleteCategories(x => folderIds.Contains(x.CategoryID));
+            if (result > 0)
+            {
+                Parallel.ForEach(mediaDirectPaths, File.Delete);
+            }
+            return result;
+        }
+
+        public async Task<MediaItemDTO?> GetMediaItemAsync(Guid fileID)
+        {
+            var mediaLibraryItem = await _mediaLibraryRepository.GetMediaItemAsync(fileID);
+            if (mediaLibraryItem == null)
+            {
+                return null;
+            }
+            return new MediaItemDTO(mediaLibraryItem);
+        }
+
+        public async Task<IPagedEnumerable<MediaItemDTO>> GetMediaItemsAsync(int categoryId, int page, int pageSize, string? q = "")
+        {
+            var mediaItems = await _mediaLibraryRepository.GetMediaItemsAsync(page, pageSize,
+                x => x.CategoryID == categoryId && (string.IsNullOrWhiteSpace(q) || x.FileName.Contains(q))
+             );
+
+            return mediaItems.Select(x => new MediaItemDTO(x));
+        }
+
+        public async Task<IEnumerable<MediaItemDTO>> GetMediaItemsAsync(Guid[] fileIds)
+        {
+            if (!fileIds.Any())
+                return Enumerable.Empty<MediaItemDTO>();
+            var mediaItems = await _mediaLibraryRepository.GetMediaItemsAsync(x => fileIds.Contains(x.FileID));
+
+            return mediaItems.Select(x => new MediaItemDTO(x));
+        }
+
+        public async Task<IEnumerable<MediaItemDTO>> InsertMediaItemAsync(MediaItemInsertRequest request)
         {
             var category = await _mediaLibraryCategoryRepository.GetMediaLibraryCategoryAsync(request.CategoryID);
             if (category == null)
-                return Enumerable.Empty<MediaItem>();
+                return Enumerable.Empty<MediaItemDTO>();
 
-            var mediaFiles = new List<MediaItem>();
+            var mediaFiles = new List<MediaLibrary>();
             string categoryPathFolder = MediaLibraryHelper.GetDirectPath(category.FolderName);
             try
             {
@@ -40,14 +106,14 @@ namespace LumStoreAPI.Application.Services
                 {
                     var fileGUID = Guid.NewGuid();
                     string fileName = $"{fileGUID}{Path.GetExtension(file.FileName)}";
-                    mediaFiles.Add(new MediaItem
+                    mediaFiles.Add(new MediaLibrary
                     {
                         CategoryID = category.CategoryID,
                         Extension = Path.GetExtension(file.FileName),
                         FileName = file.FileName,
                         Title = file.Name,
                         Size = file.Length,
-                        FileID = fileGUID,
+                        FileID = fileGUID
                     });
 
                     using (var stream = new FileStream(Path.Combine(categoryPathFolder, fileName), FileMode.Create))
@@ -56,7 +122,8 @@ namespace LumStoreAPI.Application.Services
                     }
                 }
 
-                return await _mediaLibraryService.InsertMediaItemsAsync(mediaFiles);
+                var mediaItemInserts = await _mediaLibraryRepository.InsertMediaItems(mediaFiles);
+                return mediaItemInserts.Select(x => new MediaItemDTO(x));
             }
             catch (Exception ex)
             {
@@ -69,7 +136,54 @@ namespace LumStoreAPI.Application.Services
 
         }
 
-        public Task<MediaItem> UpdateMediaItemAsync(MediaItemUpdateRequest request)
+        public async Task<int> RenameMediaFolderAsync(int categoryId, MediaFolderRequest mediaFolderRequest)
+        {
+            return await _mediaLibraryCategoryRepository.UpdateCategory(categoryId, mediaFolderRequest.FolderName);
+        }
+
+        public async Task<MediaItemDTO?> UpdateMediaItemAsync(MediaItemUpdateRequest request)
+        {
+            var mediaItem = await _mediaLibraryRepository.GetMediaItemAsync(request.FileID);
+            if (mediaItem == null || request.File.Length <= 0)
+                return null;
+
+            var oldPath = MediaLibraryHelper.GetDirectMediaFilePath(mediaItem);
+            mediaItem.FileName = request.File.FileName;
+            mediaItem.Size = request.File.Length;
+            mediaItem.Title = request.File.Name;
+            mediaItem.Extension = Path.GetExtension(request.File.FileName);
+
+            try
+            {
+                var mediaUpdated = await _mediaLibraryRepository.UpdateMediaItem(mediaItem);
+                string categoryPathFolder = MediaLibraryHelper.GetDirectPath(mediaUpdated.MediaLibraryCategory.FolderName);
+                File.Move(oldPath, oldPath + ".temp");
+                if (!Directory.Exists(categoryPathFolder))
+                {
+                    Directory.CreateDirectory(categoryPathFolder);
+                }
+
+                using (var stream = new FileStream(MediaLibraryHelper.GetDirectMediaFilePath(mediaUpdated), FileMode.Create))
+                {
+                    await request.File.CopyToAsync(stream);
+                }
+
+                File.Delete(oldPath + ".temp");
+                return new MediaItemDTO(mediaUpdated);
+            }
+            catch
+            {
+                if (Directory.Exists(oldPath))
+                {
+                    File.Delete(oldPath);
+                }
+
+                File.Move(oldPath + ".temp", oldPath);
+                throw;
+            }
+        }
+
+        Task<IPagedEnumerable<MediaItemDTO>> IMediaService.GetMediaItemsAsync(Guid[] fileIds)
         {
             throw new NotImplementedException();
         }

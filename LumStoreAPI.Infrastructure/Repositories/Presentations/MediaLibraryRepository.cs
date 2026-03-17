@@ -2,6 +2,7 @@
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Infrastructure.Extensions;
+using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -19,9 +20,45 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return this.DeleteMediaItems(x => x.FileID == fileID);
         }
 
-        public Task<int> DeleteMediaItems(Expression<Func<MediaLibrary, bool>> where)
+        public async Task<int> DeleteMediaItems(Expression<Func<MediaLibrary, bool>> where)
         {
-            return _lumStoreContext.MediaLibraries.Where(where).ExecuteDeleteAsync();
+            var result = await _lumStoreContext.MediaLibraries.Where(where).ExecuteDeleteAsync();
+            if (result > 0)
+            {
+                var directPaths = await this.GetMediaDirectFilePaths(where);
+                Parallel.ForEach(directPaths, async path =>
+                {
+                    File.Delete(path);
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<IEnumerable<string>> GetMediaDirectFilePaths(Guid[] fileIds)
+        {
+            var paths = await _lumStoreContext
+                  .MediaLibraries
+                  .Where(x => fileIds.Contains(x.FileID))
+                  .Join(_lumStoreContext.MediaLibraryCategories,
+                  md => md.CategoryID,
+                  fd => fd.CategoryID,
+                  (md, fd) => new { md.Extension, md.FileID, fd.FolderName })
+                  .ToListAsync();
+            return paths.Select(x => MediaLibraryHelper.GetDirectPath(Path.Combine(x.FolderName, $"{x.FileID}{x.Extension}")));
+        }
+
+        public async Task<IEnumerable<string>> GetMediaDirectFilePaths(Expression<Func<MediaLibrary, bool>> where)
+        {
+            var paths = await _lumStoreContext
+                  .MediaLibraries
+                  .Where(where)
+                  .Join(_lumStoreContext.MediaLibraryCategories,
+                  md => md.CategoryID,
+                  fd => fd.CategoryID,
+                  (md, fd) => new { md.Extension, md.FileID, fd.FolderName })
+                  .ToListAsync();
+            return paths.Select(x => MediaLibraryHelper.GetDirectPath(Path.Combine(x.FolderName, $"{x.FileID}{x.Extension}")));
         }
 
         public async Task<MediaLibrary?> GetMediaItemAsync(Guid fileID)

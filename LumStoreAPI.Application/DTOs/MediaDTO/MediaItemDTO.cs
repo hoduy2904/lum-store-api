@@ -1,17 +1,41 @@
-﻿namespace LumStoreAPI.Application.DTOs.MediaDTO
+using System.Text.Json.Serialization;
+using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Libraries.Helpers;
+
+namespace LumStoreAPI.Application.DTOs.MediaDTO;
+
+public class MediaItemDTO
 {
-    public class MediaItemDTO
+    public Guid FileID { get; set; }
+    public string FileName { get; set; } = default!;
+    public int CategoryID { get; set; }
+    [JsonIgnore]
+    public string? CategoryPath { get; set; }
+    [JsonIgnore]
+    public string FullDirectPath { get; internal set; }
+    public string? Extension { get; set; }
+    public int Height { get; set; }
+    public int Width { get; set; }
+    public long Size { get; set; }
+    public string? Title { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public string FileURL { get; internal set; }
+
+    public MediaItemDTO(MediaLibrary mediaLibrary)
     {
-        public Guid FileID { get; set; }
-        public string? Extension { get; set; }
-        public string FileName { get; set; } = default!;
-        public string? Title { get; set; }
-        public int CategoryID { get; set; }
-        public long FileSize { get; set; }
-        public int Height { get; set; }
-        public int Width { get; set; }
-        public DateTime UpdatedAt { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public string FileURL { get; set; } = default!;
+        this.FileID = mediaLibrary.FileID;
+        this.FileName = mediaLibrary.FileName;
+        this.CategoryID = mediaLibrary.CategoryID;
+        this.CategoryPath = mediaLibrary.MediaLibraryCategory.FolderName;
+        this.Extension = mediaLibrary.Extension;
+        this.Height = mediaLibrary.Height;
+        this.Width = mediaLibrary.Width;
+        this.Size = mediaLibrary.Size;
+        this.Title = mediaLibrary.Title;
+        this.CreatedAt = mediaLibrary.CreatedAt;
+        this.UpdatedAt = mediaLibrary.UpdatedAt;
+        this.FullDirectPath = MediaLibraryHelper.GetDirectMediaFilePath(mediaLibrary);
+        this.FileURL = MediaLibraryHelper.GetFileURL(mediaLibrary);
     }
 }

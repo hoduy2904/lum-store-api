@@ -1,5 +1,7 @@
 ﻿using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Libraries.Extensions;
+using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -42,16 +44,27 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return category;
         }
 
-        public Task<int> UpdateCategory(int categoryID, string categoryName)
+        public async Task<int> UpdateCategory(int categoryID, string categoryName)
         {
             if (string.IsNullOrWhiteSpace(categoryName))
             {
                 throw new InvalidDataException("Category name cannot null or empty");
             }
+            var oldCategory = await GetMediaLibraryCategoryAsync(categoryID);
+            if (oldCategory == null)
+                return 0;
 
-            return _lumStoreContext.MediaLibraryCategories
+            var result = await _lumStoreContext.MediaLibraryCategories
                   .Where(x => x.CategoryID == categoryID)
-                  .ExecuteUpdateAsync(x => x.SetProperty(p => p.CategoryName, categoryName));
+                  .ExecuteUpdateAsync(x =>
+                  x.SetProperty(p => p.CategoryName, categoryName)
+                  .SetProperty(p => p.FolderName, categoryName.Slug));
+
+            if (result > 0)
+            {
+                File.Move(MediaLibraryHelper.GetDirectPath(oldCategory.FolderName), MediaLibraryHelper.GetDirectPath(categoryName.Slug));
+            }
+            return result;
         }
     }
 }

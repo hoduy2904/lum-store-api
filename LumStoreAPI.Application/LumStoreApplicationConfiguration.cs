@@ -4,7 +4,6 @@ using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Application.Middlewares;
 using LumStoreAPI.Application.Services;
-using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
@@ -27,7 +26,6 @@ namespace LumStoreAPI.Application
             public IServiceCollection AddLumStoreApplicationConfigurations()
             {
                 services.AddScoped<IEventLogService, EventLogService>();
-                services.AddScoped<IMediaLibraryService, MediaLibraryService>();
                 services.AddScoped<IAuthService, AuthService>();
                 services.AddScoped<IUserService, UserService>();
                 services.AddScoped<IMediaService, MediaService>();
