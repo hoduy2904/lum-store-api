@@ -51,6 +51,7 @@ namespace LumStoreAPI.Controllers
         }
 
         [HttpGet("CurrentUser")]
+        [Authorize]
         public async Task<IActionResult> CurrentUser()
         {
             var user = await _userService.GetCurrentUserAsync();

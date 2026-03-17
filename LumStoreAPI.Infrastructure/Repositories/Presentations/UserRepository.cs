@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Riches;
 using LumStoreAPI.Infrastructure.Types;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,11 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
     internal class UserRepository : IUserRepository
     {
         private readonly LumStoreContext _lumStoreContext;
-
-        public UserRepository(LumStoreContext lumStoreContext)
+        private readonly ICacheService _cacheService;
+        public UserRepository(LumStoreContext lumStoreContext, ICacheService cacheService)
         {
             _lumStoreContext = lumStoreContext;
+            _cacheService = cacheService;
         }
 
         public Task<bool> CheckUserAsync(Expression<Func<User, bool>> condition)
@@ -56,6 +58,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         {
             _lumStoreContext.Users.Add(user);
             await _lumStoreContext.SaveChangesAsync();
+            _cacheService.TouchKey(new CacheDependency().Users().GetDependencies().ToArray());
             return user;
         }
 
@@ -63,6 +66,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         {
             _lumStoreContext.AddRange(users);
             await _lumStoreContext.SaveChangesAsync();
+            _cacheService.TouchKey(new CacheDependency().Users().GetDependencies().ToArray());
             return users;
         }
 
@@ -75,15 +79,16 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             update(user);
 
             await _lumStoreContext.SaveChangesAsync();
+            _cacheService.TouchKey(new CacheDependency().User(userID).GetDependencies().ToArray());
             return user;
         }
 
-        public Task<int> UpdateUsersAsync(Expression<Func<User, bool>> condition, Action<SetterBuilder<User>> action)
+        public async Task<int> UpdateUsersAsync(Expression<Func<User, bool>> condition, Action<SetterBuilder<User>> action)
         {
             var builder = new SetterBuilder<User>();
             action.Invoke(builder);
 
-            return _lumStoreContext.Set<User>()
+            var result = await _lumStoreContext.Set<User>()
                   .Where(condition)
                   .ExecuteUpdateAsync(x =>
                   {
@@ -94,6 +99,11 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 #pragma warning restore EF1001 // Internal EF Core API usage.
                       }
                   });
+            if (result > 0)
+            {
+                _cacheService.TouchKey(new CacheDependency().Users().GetDependencies().ToArray());
+            }
+            return result;
         }
     }
 }

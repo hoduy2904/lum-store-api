@@ -11,8 +11,13 @@ namespace LumStoreAPI.Core.Models.Systems
         public string? Extension { get; set; }
         public int Height { get; set; }
         public int Width { get; set; }
-        public int Size { get; set; }
+        public long Size { get; set; }
         public string? Title { get; set; }
+
+        public MediaItem()
+        {
+            
+        }
 
         public MediaItem(MediaLibrary mediaLibrary)
         {

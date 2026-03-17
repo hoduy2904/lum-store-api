@@ -82,12 +82,15 @@ namespace LumStoreAPI.Infrastructure.Systems
             return item;
         }
 
-        public void TouchKey(string key)
+        public void TouchKey(params string[] keys)
         {
-            if (_tokens.TryRemove(key, out var cts))
+            foreach (var key in keys)
             {
-                cts.Cancel();
-                cts.Dispose();
+                if (_tokens.TryRemove(key, out var cts))
+                {
+                    cts.Cancel();
+                    cts.Dispose();
+                }
             }
         }
     }

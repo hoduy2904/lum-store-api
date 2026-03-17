@@ -1,5 +1,7 @@
 ﻿using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Riches;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Helpers;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
@@ -14,10 +16,12 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 {
     internal class TreeNodeRepository : ITreeNodeRepository
     {
+        private readonly ICacheService _cacheService;
         private readonly LumStoreContext _lumStoreContext;
-        public TreeNodeRepository(LumStoreContext lumStoreContext)
+        public TreeNodeRepository(LumStoreContext lumStoreContext, ICacheService cacheService)
         {
             _lumStoreContext = lumStoreContext;
+            _cacheService = cacheService;
         }
         public Task<int> DeleteAsync(int nodeID, bool hardDelete = false)
         {
@@ -26,12 +30,12 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 
         public async Task<int> DeletesAsync(int[] nodeIDs, bool hardDelete = false)
         {
+            int result = 0;
             if (nodeIDs.Length == 0)
                 return 0;
             if (hardDelete)
             {
                 using var tx = await _lumStoreContext.Database.BeginTransactionAsync();
-                int result = 0;
                 try
                 {
                     await _lumStoreContext.DocumentLinkedNodes
@@ -55,17 +59,27 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                     throw;
                 }
                 tx.Commit();
-                return result;
             }
             else
             {
-                return await _lumStoreContext
+                result = await _lumStoreContext
                     .DocumentPages
                     .Where(x => _lumStoreContext.DocumentNodes
                     .Where(x => nodeIDs.Length == 1 ? (x.NodeID == nodeIDs[0] || x.ParentNodeID == nodeIDs[0])
                         : x.ParentNodeID != null && (nodeIDs.Contains(x.NodeID) || nodeIDs.Contains(x.ParentNodeID.Value))).Select(s => s.NodeID).Contains(x.NodeID))
                     .ExecuteUpdateAsync(x => x.SetProperty(p => p.IsDeleted, true));
             }
+
+            if (result > 0)
+            {
+                var cacheDependencies = new CacheDependency();
+                foreach (var nodeId in nodeIDs)
+                {
+                    cacheDependencies.NodeID(nodeId);
+                }
+                _cacheService.TouchKey(cacheDependencies.GetDependencies().ToArray());
+            }
+            return result;
         }
 
         public async Task<string> GetRelativeUrl(int nodeID)
@@ -75,7 +89,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                  ln => ln.Ancestor,
                  n => n.NodeID,
                  (ln, n) => new { alias = n.NodeAlias, nodeOrder = n.NodeOrder, nodeID = ln.Descendant })
-                 .Where(x=>x.nodeID == nodeID)
+                 .Where(x => x.nodeID == nodeID)
                  .ToListAsync();
 
             return string.Join("/", data.OrderBy(x => x.nodeOrder).Select(x => x.alias));
@@ -117,6 +131,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 await _lumStoreContext.SaveChangesAsync();
 
                 await TreeNodeHelper.InsertClosureTable(_lumStoreContext, [page.NodeID], parentNodeId);
+                _cacheService.TouchKey(new CacheDependency().ClassName(page.ClassName).NodeID(page.NodeID).GetDependencies().ToArray());
             }
             catch
             {
@@ -158,6 +173,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 
             var maxOrder = await TreeNodeHelper.GetMaxOrderAsync(_lumStoreContext, parentNodeId);
 
+            var cacheDependencies = new CacheDependency();
             for (int i = 0; i < pages.Length; i++)
             {
                 var newNode = new DocumentNode
@@ -168,6 +184,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 };
                 maxOrder++;
                 pages[i].Node = newNode;
+
+                cacheDependencies.ClassName(pages[i].ClassName);
             }
 
             try
@@ -176,6 +194,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 await _lumStoreContext.SaveChangesAsync();
 
                 await TreeNodeHelper.InsertClosureTable(_lumStoreContext, pages.Select(x => x.NodeID).ToArray(), parentNodeId);
+                _cacheService.TouchKey(cacheDependencies.GetDependencies().ToArray());
+
             }
             catch
             {
@@ -211,6 +231,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 }
                 await _lumStoreContext.SaveChangesAsync();
                 await tx.CommitAsync();
+
+                _cacheService.TouchKey(new CacheDependency().NodeID(nodeID).NodeOrder().GetDependencies().ToArray());
                 return true;
             }
             catch
@@ -223,14 +245,30 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public async Task<bool> UpdateAsync<T>(T page) where T : DocumentPage
         {
             _lumStoreContext.Update(page);
-            return await _lumStoreContext.SaveChangesAsync() > 0;
+            var isSuccess = await _lumStoreContext.SaveChangesAsync() > 0;
+            if (isSuccess)
+            {
+                _cacheService.TouchKey(new CacheDependency().NodeID(page.NodeID).ClassName(page.ClassName).GetDependencies().ToArray());
+            }
+
+            return isSuccess;
         }
 
         public async Task<bool> UpdateAsync<T>(int nodeID, Action<UpdateSettersBuilder<T>> properties) where T : DocumentPage
         {
-            return (await _lumStoreContext.Set<T>()
+            var isSuccess = (await _lumStoreContext.Set<T>()
                 .Where(x => x.NodeID == nodeID)
                 .ExecuteUpdateAsync(properties)) > 0;
+
+            if (isSuccess)
+            {
+                var type = typeof(T);
+
+                string className = type.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder";
+                _cacheService.TouchKey(new CacheDependency().NodeID(nodeID).ClassName(className).GetDependencies().ToArray());
+            }
+
+            return isSuccess;
         }
 
         public async Task<DocumentPage> UpdateAsync(string className, int nodeID, Dictionary<string, object?> properties)
@@ -264,12 +302,20 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             }
 
             await _lumStoreContext.SaveChangesAsync();
+            _cacheService.TouchKey(new CacheDependency().NodeID(nodeID).ClassName(className).GetDependencies().ToArray());
             return page;
         }
 
-        public Task<int> UpdatesAsync<T>(Action<UpdateSettersBuilder<T>> properties) where T : DocumentPage
+        public async Task<int> UpdatesAsync<T>(Action<UpdateSettersBuilder<T>> properties) where T : DocumentPage
         {
-            return _lumStoreContext.Set<T>().ExecuteUpdateAsync(properties);
+
+            var count = await _lumStoreContext.Set<T>().ExecuteUpdateAsync(properties);
+            if (count > 0)
+            {
+                string className = typeof(T).GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder";
+                _cacheService.TouchKey(new CacheDependency().ClassName(className).GetDependencies().ToArray());
+            }
+            return count;
         }
     }
 }

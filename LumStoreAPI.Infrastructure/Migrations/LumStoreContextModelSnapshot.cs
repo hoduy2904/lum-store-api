@@ -262,8 +262,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<int>("Height")
                         .HasColumnType("int");
 
-                    b.Property<int>("Size")
-                        .HasColumnType("int");
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)

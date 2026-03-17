@@ -9,7 +9,7 @@ namespace LumStoreAPI.Core.Entities.Systems
         public string? Title { get; set; }
         public string? Extension { get; set; }
         public int CategoryID { get; set; }
-        public int Size { get; set; }
+        public long Size { get; set; }
         public int Height { get; set; }
         public int Width { get; set; }
 

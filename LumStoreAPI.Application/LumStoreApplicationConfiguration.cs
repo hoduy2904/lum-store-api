@@ -30,6 +30,7 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IMediaLibraryService, MediaLibraryService>();
                 services.AddScoped<IAuthService, AuthService>();
                 services.AddScoped<IUserService, UserService>();
+                services.AddScoped<IMediaService, MediaService>();
                 services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizeHandler>();
                 return services;
             }

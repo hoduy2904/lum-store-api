@@ -20,6 +20,7 @@ namespace LumStoreAPI.Infrastructure
                 services.AddScoped<IEmailRepository, EmailRepository>();
                 services.AddScoped<IEmailService, EmailService>();
                 services.AddScoped<IMediaLibraryRepository, MediaLibraryRepository>();
+                services.AddScoped<IMediaLibraryCategoryRepository, MediaLibraryCategoryRepository>();
                 services.AddScoped<ISettingKeyValueRepository, SettingKeyValueRepository>();
                 services.AddScoped<IDocumentTableService, DocumentTableService>();
                 services.AddScoped<IUserRepository, UserRepository>();

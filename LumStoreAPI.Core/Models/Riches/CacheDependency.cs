@@ -16,6 +16,7 @@
 
         public CacheDependency ClassName(string className)
         {
+            Nodes();
             return CustomKey($"node|{className}|all");
         }
         public CacheDependency Nodes()
@@ -25,23 +26,42 @@
 
         public CacheDependency NodeID(int nodeID)
         {
+            Nodes();
             return CustomKey($"node|byid|{nodeID}");
         }
 
         public CacheDependency Children(int parentNodeID)
         {
+            Nodes();
             return CustomKey($"node|{parentNodeID}|children");
         }
 
         public CacheDependency SettingKey(string keyCode)
         {
+            SettingKeys();
             return CustomKey($"settingkey|bykeycode|{keyCode}");
+        }
+        public CacheDependency SettingKeys()
+        {
+            return CustomKey($"settingkeys");
         }
 
         public CacheDependency NodeOrder()
         {
+            Nodes();
             _isNodeOrder = true;
             return this;
+        }
+
+        public CacheDependency Users()
+        {
+            return CustomKey("users");
+        }
+
+        public CacheDependency User(int userID)
+        {
+            Users();
+            return CustomKey("users|byid|" + userID);
         }
 
         public IEnumerable<string> GetDependencies()

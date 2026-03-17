@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260316181609_Initital")]
+    [Migration("20260317120045_Initital")]
     partial class Initital
     {
         /// <inheritdoc />
@@ -265,8 +265,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<int>("Height")
                         .HasColumnType("int");
 
-                    b.Property<int>("Size")
-                        .HasColumnType("int");
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)

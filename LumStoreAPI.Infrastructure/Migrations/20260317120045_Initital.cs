@@ -171,7 +171,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Extension = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     CategoryID = table.Column<int>(type: "int", nullable: false),
-                    Size = table.Column<int>(type: "int", nullable: false),
+                    Size = table.Column<long>(type: "bigint", nullable: false),
                     Height = table.Column<int>(type: "int", nullable: false),
                     Width = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),

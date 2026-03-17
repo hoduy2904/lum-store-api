@@ -1,15 +1,19 @@
 ﻿using LumStoreAPI.Application.DTOs.DocumentPageDTO;
 using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Application.DTOs.TreeNodeManageDTO;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Models.Constants.Systems;
+using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = nameof(UserRole.ADMIN))]
     public class TreeNodeManagerController : ControllerBase
     {
         private readonly IPageRetrieveContext _pageRetrieveContext;
@@ -21,16 +25,37 @@ namespace LumStoreAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetNodes([FromQuery] PagingModel model)
+        public async Task<IActionResult> GetNodes([FromQuery] TreeNodeManageRequest request)
         {
             var nodes = (await _pageRetrieveContext.GetPagedPagesAsync<DocumentPage>(query =>
             {
                 query
-                .Paged(model.Page, model.PageSize)
+                .Paged(request.Page, request.PageSize)
                 .IncludeRelativeUrl()
                 .IncludeQueryable(nw => nw.OrderBy(o => o.Node.NodeOrder));
-            }, cache => cache.Dependencies(d => d.Nodes()).Key("getallNodes"))).Select(x => new DocumentPageGetDTO(x));
-            return Ok(PagedResponse<DocumentPageGetDTO>.Success(nodes, model.Page, model.PageSize, ["Success"]));
+
+                if (request.ParentID != null)
+                {
+                    query
+                    .Where(x => x.NodeID == request.ParentID);
+
+                    if (request.IsFullNode)
+                    {
+                        query.GetDescendants();
+                    }
+                    else
+                    {
+                        query.GetDescendants(1);
+                    }
+                }
+
+                query.Where(x =>
+                    (string.IsNullOrEmpty(request.Search) || x.DocumentName.Contains(request.Search))
+                    && (string.IsNullOrEmpty(request.ClassName) || x.ClassName.Equals(request.ClassName)));
+
+            }, cache => cache.Dependencies(d => d.Nodes()).Key($"getallNodes|{request.ParentID}|{request.Search}|{request.Page}|{request.PageSize}|{request.IsFullNode}|{request.ClassName}")))
+                .Select(x => new DocumentPageGetDTO(x));
+            return Ok(PagedResponse<DocumentPageGetDTO>.Success(nodes, request.Page, request.PageSize, ["Success"]));
         }
 
         [HttpGet("{nodeId}")]

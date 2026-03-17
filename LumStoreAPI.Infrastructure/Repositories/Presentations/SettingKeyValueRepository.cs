@@ -1,6 +1,8 @@
 ﻿using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Riches;
 using LumStoreAPI.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -10,18 +12,36 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
     internal class SettingKeyValueRepository : ISettingKeyValueRepository
     {
         private readonly LumStoreContext _lumStoreContext;
-        public SettingKeyValueRepository(LumStoreContext lumStoreContext)
+        private readonly ICacheService _cacheService;
+        public SettingKeyValueRepository(LumStoreContext lumStoreContext, ICacheService cacheService)
         {
             _lumStoreContext = lumStoreContext;
+            _cacheService = cacheService;
         }
-        public Task<int> DeleteSettingKeyAsync(string key)
+        public async Task<int> DeleteSettingKeyAsync(string key)
         {
-            return _lumStoreContext.SettingKeyValues.Where(x => x.SettingCode.Equals(key)).ExecuteDeleteAsync();
+            var count = await _lumStoreContext.SettingKeyValues.Where(x => x.SettingCode.Equals(key)).ExecuteDeleteAsync();
+            if (count > 0)
+            {
+                _cacheService.TouchKey(new CacheDependency().SettingKey(key).GetDependencies().ToArray());
+            }
+            return count;
         }
 
-        public Task<int> DeleteSettingKeysAsync(string[] keys)
+        public async Task<int> DeleteSettingKeysAsync(string[] keys)
         {
-            return _lumStoreContext.SettingKeyValues.Where(x => keys.Contains(x.SettingCode)).ExecuteDeleteAsync();
+            var count = await _lumStoreContext.SettingKeyValues.Where(x => keys.Contains(x.SettingCode)).ExecuteDeleteAsync();
+            if (count > 0)
+            {
+                var cacheDepenencies = new CacheDependency();
+                foreach (var key in keys)
+                {
+                    cacheDepenencies.SettingKey(key);
+                }
+
+                _cacheService.TouchKey(cacheDepenencies.GetDependencies().ToArray());
+            }
+            return count;
         }
 
         public async Task<SettingKeyValue?> GetSettingKey(string key)
@@ -48,6 +68,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         {
             _lumStoreContext.SettingKeyValues.Add(settingKeyValue);
             await _lumStoreContext.SaveChangesAsync();
+            _cacheService.TouchKey(new CacheDependency().SettingKeys().GetDependencies().ToArray());
+
             return settingKeyValue;
         }
 
@@ -55,6 +77,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         {
             _lumStoreContext.SettingKeyValues.Update(settingKeyValue);
             await _lumStoreContext.SaveChangesAsync();
+
+            _cacheService.TouchKey(new CacheDependency().SettingKey(settingKeyValue.SettingCode).GetDependencies().ToArray());
             return settingKeyValue;
         }
     }

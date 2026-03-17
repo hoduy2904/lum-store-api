@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize(Roles = nameof(UserRole.ADMIN))]
     [ApiController]
     public class DocumentTypeController : ControllerBase
     {
@@ -29,8 +30,6 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponse<DocumentTable>.Success(documentTable, ["Success"]));
         }
 
-
-        [Authorize]
         [HttpGet]
         public IActionResult GetSchemaTables()
         {
