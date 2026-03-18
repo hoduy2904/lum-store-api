@@ -2,7 +2,6 @@
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Riches;
-using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Helpers;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using LumStoreAPI.Libraries.Extensions;
@@ -240,6 +239,13 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 await tx.RollbackAsync();
                 throw;
             }
+        }
+
+        public Task<int> RenameNodeAsync(int nodeID, string name)
+        {
+            return _lumStoreContext.DocumentPages.Where(x => x.NodeID == nodeID)
+                  .ExecuteUpdateAsync(x => x.SetProperty(p => p.DocumentName, name));
+
         }
 
         public async Task<bool> UpdateAsync<T>(T page) where T : DocumentPage

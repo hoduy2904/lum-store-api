@@ -1,5 +1,7 @@
 ﻿using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Infrastructure.Extensions;
 using LumStoreAPI.Libraries.Extensions;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -24,12 +26,28 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return this.DeleteCategories(x => x.CategoryID == categoryID);
         }
 
-        public async Task<IEnumerable<MediaLibraryCategory>> GetMediaLibraryCategories(Expression<Func<MediaLibraryCategory, bool>>? where = null)
+        public async Task<IEnumerable<MediaLibraryCategory>> GetMediaLibraryCategoriesAsync(Expression<Func<MediaLibraryCategory, bool>>? where = null)
         {
             return await _lumStoreContext.MediaLibraryCategories
                 .AsNoTracking()
                 .Where(where ?? (x => true))
                 .ToArrayAsync();
+        }
+
+        public async Task<IPagedEnumerable<MediaLibraryCategory>> GetMediaLibraryCategoriesAsync(int page, int pageSize, Expression<Func<MediaLibraryCategory, bool>>? where = null)
+        {
+            var categories = _lumStoreContext.MediaLibraryCategories.AsQueryable();
+            if (where != null)
+            {
+                categories = categories.Where(where);
+            }
+            int count = await categories.CountAsync();
+            var data = await categories.OrderByDescending(x => x.CategoryID)
+                        .Take(pageSize)
+                        .Skip((page - 1) * pageSize)
+                        .ToArrayAsync();
+
+            return data.AsPagedEnumerable(count);
         }
 
         public async Task<MediaLibraryCategory?> GetMediaLibraryCategoryAsync(int categoryID)

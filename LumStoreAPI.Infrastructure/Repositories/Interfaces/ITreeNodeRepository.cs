@@ -15,5 +15,6 @@ namespace LumStoreAPI.Infrastructure.Repositories.Interfaces
         Task<int> DeletesAsync(int[] nodeIDs, bool hardDelete = false);
         Task<bool> MoveAsync(int nodeID, int? parentId = null, int? nestedNodeID = null);
         Task<string> GetRelativeUrl(int nodeID);
+        Task<int> RenameNodeAsync(int nodeID, string name);
     }
 }

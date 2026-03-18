@@ -84,6 +84,17 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR, ["Please try later"]));
         }
 
+        [HttpPatch("Rename")]
+        public async Task<IActionResult> RenameNode(DocumentPageRenameRequest request)
+        {
+            var result = await _treeNodeRepository.RenameNodeAsync(request.NodeID, request.DocumentName);
+            if (result > 0)
+            {
+                return Ok(APIResponseBase.Success(["Success"]));
+            }
+            return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Not found this nodeID or Something error"]));
+        }
+
         [HttpPost]
         public async Task<IActionResult> Insert(DocumentPageInsertDTO documentPageDTO)
         {

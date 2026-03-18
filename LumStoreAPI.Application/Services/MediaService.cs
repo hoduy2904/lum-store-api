@@ -30,24 +30,24 @@ namespace LumStoreAPI.Application.Services
             return new MediaFolderDTO(folder);
         }
 
-        public Task<int> DeleteFile(Guid fileID)
+        public Task<int> DeleteFileAsync(Guid fileID)
         {
-            return this.DeleteFiles([fileID]);
+            return this.DeleteFilesAsync([fileID]);
         }
 
-        public Task<int> DeleteFiles(Guid[] fileIDs)
+        public Task<int> DeleteFilesAsync(Guid[] fileIDs)
         {
             if (fileIDs.Any())
                 return _mediaLibraryRepository.DeleteMediaItems(x => fileIDs.Contains(x.FileID));
             return Task.FromResult(0);
         }
 
-        public Task<int> DeleteFolder(int folderID)
+        public Task<int> DeleteFolderAsync(int folderID)
         {
-            return DeleteFolders([folderID]);
+            return DeleteFoldersAsync([folderID]);
         }
 
-        public async Task<int> DeleteFolders(int[] folderIds)
+        public async Task<int> DeleteFoldersAsync(int[] folderIds)
         {
             var mediaDirectPaths = await _mediaLibraryRepository.GetMediaDirectFilePaths(x => folderIds.Contains(x.CategoryID));
 
@@ -57,6 +57,17 @@ namespace LumStoreAPI.Application.Services
                 Parallel.ForEach(mediaDirectPaths, File.Delete);
             }
             return result;
+        }
+
+        public async Task<IPagedEnumerable<MediaFolderDTO>> GetFoldersAsync(int page, int pageSize, string? search = null)
+        {
+            var folders = await _mediaLibraryCategoryRepository.GetMediaLibraryCategoriesAsync(page, pageSize,
+
+                x => string.IsNullOrWhiteSpace(search) || x.CategoryName.Contains(search));
+
+            var data = folders.Select(x => new MediaFolderDTO(x));
+
+            return data;
         }
 
         public async Task<MediaItemDTO?> GetMediaItemAsync(Guid fileID)
@@ -69,10 +80,12 @@ namespace LumStoreAPI.Application.Services
             return new MediaItemDTO(mediaLibraryItem);
         }
 
-        public async Task<IPagedEnumerable<MediaItemDTO>> GetMediaItemsAsync(int categoryId, int page, int pageSize, string? q = "")
+        public async Task<IPagedEnumerable<MediaItemDTO>> GetMediaItemsAsync(MediaItemListingRequest request)
         {
-            var mediaItems = await _mediaLibraryRepository.GetMediaItemsAsync(page, pageSize,
-                x => x.CategoryID == categoryId && (string.IsNullOrWhiteSpace(q) || x.FileName.Contains(q))
+            var mediaItems = await _mediaLibraryRepository.GetMediaItemsAsync(request.Page, request.PageSize,
+                x => x.CategoryID == request.CategoryID &&
+                 (string.IsNullOrWhiteSpace(request.Search) || x.FileID.Equals(request.Search) || x.FileName.Contains(request.Search)
+                 && string.IsNullOrWhiteSpace(request.Extensions) || x.Extension != null && x.Extension.Equals(request.Extensions))
              );
 
             return mediaItems.Select(x => new MediaItemDTO(x));
@@ -181,11 +194,6 @@ namespace LumStoreAPI.Application.Services
                 File.Move(oldPath + ".temp", oldPath);
                 throw;
             }
-        }
-
-        Task<IPagedEnumerable<MediaItemDTO>> IMediaService.GetMediaItemsAsync(Guid[] fileIds)
-        {
-            throw new NotImplementedException();
         }
     }
 }
