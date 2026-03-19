@@ -144,7 +144,7 @@ namespace LumStoreAPI.Application.Services
                 var mediaItemInserts = await _mediaLibraryRepository.InsertMediaItems(mediaFiles);
                 return mediaItemInserts.Select(x => new MediaItemDTO(x));
             }
-            catch (Exception ex)
+            catch
             {
                 foreach (var mediaFile in mediaFiles)
                 {

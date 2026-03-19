@@ -1,11 +1,11 @@
 ﻿using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Riches;
 using LumStoreAPI.Infrastructure.Models.Riches;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 
 namespace LumStoreAPI.Infrastructure.Systems
@@ -104,10 +104,34 @@ namespace LumStoreAPI.Infrastructure.Systems
 
             var options = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(cacheBuilderPr.CacheSetting.CacheMinutes));
+            var childrenPathReg = new Regex(@"node\|\d+\|children");
 
+            var childrenParents = new CacheDependency();
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LumStoreContext>();
             foreach (var dependency in cacheBuilderPr.CacheDependency.GetDependencies())
             {
                 options.AddExpirationToken(this.GetToken(dependency));
+                if (childrenPathReg.IsMatch(dependency))
+                {
+                    var value = dependency.Split('|')[1];
+                    if (int.TryParse(value, out int nodeId))
+                    {
+                        var childrenNodeIds = await context.DocumentLinkedNodes.Where(x => x.Ancestor == nodeId)
+                          .Select(x => x.Descendant)
+                          .ToArrayAsync();
+
+                        foreach (var childrenNodeId in childrenNodeIds)
+                        {
+                            childrenParents.NodeID(childrenNodeId);
+                        }
+                    }
+                }
+            }
+
+            foreach (var nodeIdCache in childrenParents.GetDependencies())
+            {
+                options.AddExpirationToken(this.GetToken(nodeIdCache));
             }
             _memoryCache.Set(cacheBuilderPr.CacheSetting.CacheKey, item, options);
 
