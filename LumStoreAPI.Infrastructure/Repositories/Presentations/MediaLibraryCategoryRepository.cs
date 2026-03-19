@@ -55,10 +55,17 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return await _lumStoreContext.MediaLibraryCategories.FindAsync(categoryID);
         }
 
+        public async Task<IEnumerable<string>> GetMediaLibraryFolderPaths(int[] categoryIds)
+        {
+            var data = await _lumStoreContext.MediaLibraryCategories.Where(x => categoryIds.Contains(x.CategoryID)).Select(x => x.FolderName).ToArrayAsync();
+            return data.Select(x => MediaLibraryHelper.GetDirectPath(x));
+        }
+
         public async Task<MediaLibraryCategory> InsertCategory(MediaLibraryCategory category)
         {
             _lumStoreContext.MediaLibraryCategories.Add(category);
             await _lumStoreContext.SaveChangesAsync();
+            Directory.CreateDirectory(MediaLibraryHelper.GetDirectPath(category.FolderName));
             return category;
         }
 

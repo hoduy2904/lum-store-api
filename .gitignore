@@ -49,4 +49,5 @@ package-lock.json
 package.json
 
 appsettings.Development.json
-wwwroot/*
+wwwroot/
+LumStoreAPI/logs

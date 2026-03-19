@@ -7,7 +7,7 @@ namespace LumStoreAPI.Libraries.Helpers
     {
         public static string RootMediaPath { get; set; } = string.Empty;
 
-        public static string GetDirectPath(string path) => Path.Combine(RootMediaPath, path);
+        public static string GetDirectPath(string path) => Path.Combine(RootMediaPath, path).ToLowerInvariant();
         public static string GetDirectMediaFilePath(MediaLibrary mediaLibrary)
         {
             return GetDirectPath(Path.Combine(mediaLibrary.MediaLibraryCategory.FolderName, $"{mediaLibrary.FileID}{mediaLibrary.Extension}"));

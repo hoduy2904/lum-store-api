@@ -22,10 +22,10 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 
         public async Task<int> DeleteMediaItems(Expression<Func<MediaLibrary, bool>> where)
         {
+            var directPaths = await this.GetMediaDirectFilePaths(where);
             var result = await _lumStoreContext.MediaLibraries.Where(where).ExecuteDeleteAsync();
             if (result > 0)
             {
-                var directPaths = await this.GetMediaDirectFilePaths(where);
                 Parallel.ForEach(directPaths, async path =>
                 {
                     File.Delete(path);
@@ -48,8 +48,9 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return paths.Select(x => MediaLibraryHelper.GetDirectPath(Path.Combine(x.FolderName, $"{x.FileID}{x.Extension}")));
         }
 
-        public async Task<IEnumerable<string>> GetMediaDirectFilePaths(Expression<Func<MediaLibrary, bool>> where)
+        public async Task<IEnumerable<string>> GetMediaDirectFilePaths(Expression<Func<MediaLibrary, bool>>? where = null)
         {
+            where ??= x => true;
             var paths = await _lumStoreContext
                   .MediaLibraries
                   .Where(where)

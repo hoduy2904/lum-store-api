@@ -124,5 +124,12 @@ namespace LumStoreAPI.Controllers
             }
             return Ok(APIResponse<DocumentPageGetDTO>.Success(new DocumentPageGetDTO(page), ["Updated page"]));
         }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteNode(int nodeID)
+        {
+            var result = await _treeNodeRepository.DeleteAsync(nodeID, true);
+            return Ok(result);
+        }
     }
 }

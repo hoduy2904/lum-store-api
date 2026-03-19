@@ -49,12 +49,18 @@ namespace LumStoreAPI.Application.Services
 
         public async Task<int> DeleteFoldersAsync(int[] folderIds)
         {
-            var mediaDirectPaths = await _mediaLibraryRepository.GetMediaDirectFilePaths(x => folderIds.Contains(x.CategoryID));
+            var mediaDirectPaths = await _mediaLibraryCategoryRepository.GetMediaLibraryFolderPaths(folderIds);
 
             var result = await _mediaLibraryCategoryRepository.DeleteCategories(x => folderIds.Contains(x.CategoryID));
             if (result > 0)
             {
-                Parallel.ForEach(mediaDirectPaths, File.Delete);
+                Parallel.ForEach(mediaDirectPaths, path =>
+                {
+                    if (Directory.Exists(path))
+                    {
+                        Directory.Delete(path, true);
+                    }
+                });
             }
             return result;
         }

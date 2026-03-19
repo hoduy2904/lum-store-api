@@ -23,7 +23,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var count = await _lumStoreContext.SettingKeyValues.Where(x => x.SettingCode.Equals(key)).ExecuteDeleteAsync();
             if (count > 0)
             {
-                _cacheService.TouchKey(new CacheDependency().SettingKey(key).GetDependencies().ToArray());
+                _cacheService.TouchKey(new CacheDependency().SettingKeys().SettingKey(key).GetDependencies().ToArray());
             }
             return count;
         }
@@ -33,7 +33,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var count = await _lumStoreContext.SettingKeyValues.Where(x => keys.Contains(x.SettingCode)).ExecuteDeleteAsync();
             if (count > 0)
             {
-                var cacheDepenencies = new CacheDependency();
+                var cacheDepenencies = new CacheDependency().SettingKeys();
                 foreach (var key in keys)
                 {
                     cacheDepenencies.SettingKey(key);
@@ -78,7 +78,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             _lumStoreContext.SettingKeyValues.Update(settingKeyValue);
             await _lumStoreContext.SaveChangesAsync();
 
-            _cacheService.TouchKey(new CacheDependency().SettingKey(settingKeyValue.SettingCode).GetDependencies().ToArray());
+            _cacheService.TouchKey(new CacheDependency().SettingKeys().SettingKey(settingKeyValue.SettingCode).GetDependencies().ToArray());
             return settingKeyValue;
         }
     }

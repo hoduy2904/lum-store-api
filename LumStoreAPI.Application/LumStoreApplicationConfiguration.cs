@@ -26,6 +26,7 @@ namespace LumStoreAPI.Application
             public IServiceCollection AddLumStoreApplicationConfigurations()
             {
                 services.AddScoped<IEventLogService, EventLogService>();
+                services.AddScoped<IEventLogData, EventLogData>();
                 services.AddScoped<IAuthService, AuthService>();
                 services.AddScoped<IUserService, UserService>();
                 services.AddScoped<IMediaService, MediaService>();

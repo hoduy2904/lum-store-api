@@ -79,7 +79,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             update(user);
 
             await _lumStoreContext.SaveChangesAsync();
-            _cacheService.TouchKey(new CacheDependency().User(userID).GetDependencies().ToArray());
+            _cacheService.TouchKey(new CacheDependency().Users().User(userID).GetDependencies().ToArray());
             return user;
         }
 
