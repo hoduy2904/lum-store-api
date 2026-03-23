@@ -111,5 +111,11 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
                 .Where(x => !_context.DocumentLinkedNodes.Any(n => n.Descendant == x.NodeID && n.Ancestor != x.NodeID));
             return this;
         }
+
+        public ITreeNodeContent<T> Select(Expression<Func<T, T>> selector)
+        {
+            _selector = selector;
+            return this;
+        }
     }
 }

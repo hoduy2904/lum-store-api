@@ -50,8 +50,8 @@ namespace LumStoreAPI.Infrastructure.Presentation
         {
 
             var data = _lumStoreContext.Set<T>()
-                  .Include(x => x.Node)
-                  .AsNoTracking();
+            .Include(x => x.Node)
+            .AsNoTracking();
 
             ITreeNodeContent<T> treeContent = new TreeNodeContent<T>(_lumStoreContext, data, _httpContextAccessor);
 

@@ -52,5 +52,7 @@ namespace LumStoreAPI.Core.Interfaces.DocumentPages
         ITreeNodeContent<T> Published(TreeNodePublished treeNodePublished = TreeNodePublished.All);
         ITreeNodeContent<T> FindByNodeAlias(string nodeAlias);
         ITreeNodeContent<T> Roots();
+
+        ITreeNodeContent<T> Select(Expression<Func<T, T>> selector);
     }
 }

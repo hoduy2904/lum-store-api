@@ -1,4 +1,5 @@
-﻿using LumStoreAPI.Core.Models.Enums;
+﻿using System.Linq.Expressions;
+using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.DataEngine.Models;
 using LumStoreAPI.Infrastructure;
 using Microsoft.AspNetCore.Http;
@@ -17,6 +18,8 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
         private TreeNodePublished _treeNodePublished = TreeNodePublished.Published;
         private bool _checkAuthentication = true;
         private bool _hasPagination => _currentPage > 0 && _pageSize > 0;
+
+        private Expression<Func<T, T>> _selector = null;
 
         private IQueryable<DocumentLinkAliasModel> _relativeQuery
         {
@@ -37,7 +40,6 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             get
             {
                 var dataQuery = _query
-                    .Include(x => x.Node)
                     .AsSplitQuery()
                   .GroupJoin(_relativeQuery,
                   node => node.NodeID,

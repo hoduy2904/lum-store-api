@@ -2,7 +2,6 @@
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.UserDTO;
 using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Core.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,12 +12,10 @@ namespace LumStoreAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly IUserRepository _userRepository;
         private readonly IUserService _userService;
-        public AuthController(IAuthService authService, IUserRepository userRepository, IUserService userService)
+        public AuthController(IAuthService authService, IUserService userService)
         {
             _authService = authService;
-            _userRepository = userRepository;
             _userService = userService;
         }
 

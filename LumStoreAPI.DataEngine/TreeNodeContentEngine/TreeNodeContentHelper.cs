@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.DataEngine.Models;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
@@ -47,6 +48,10 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             {
                 var isAuthentication = _httpContextAccessor?.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
                 _query = _query.Where(x => !x.RequireAuthentication || isAuthentication);
+            }
+            if (_selector != null)
+            {
+                _query = _query.Select(_selector);
             }
         }
 
