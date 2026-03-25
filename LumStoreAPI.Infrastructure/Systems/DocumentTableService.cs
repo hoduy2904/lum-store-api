@@ -38,7 +38,8 @@ namespace LumStoreAPI.Infrastructure.Systems
 
             var dataTypes = _lumStoreContext.Model
                   .FindEntityType(DocumentPageTypeHelper.DocumentPageTypes[className])?
-                  .GetProperties()
+                  .GetDeclaredProperties()
+                  .Reverse()
                   .Select(x => new DocumentPageType
                   {
                       Name = x.Name,
@@ -65,7 +66,7 @@ namespace LumStoreAPI.Infrastructure.Systems
                 .Select(x => new DocumentTable
                 {
                     ClassName = x.ClrType.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder",
-                    PageTypes = x.GetProperties().Select(x => new DocumentPageType
+                    PageTypes = x.GetDeclaredProperties().Reverse().Select(x => new DocumentPageType
                     {
                         Name = x.Name,
                         DataType = x.ClrType.Name,
