@@ -11,7 +11,7 @@ namespace LumStoreAPI.Core.Interfaces.DocumentPages
         /// </summary>
         /// <param name="level"></param>
         /// <returns></returns>
-        ITreeNodeContent<T> GetAncestor(int level);
+        ITreeNodeContent<T> GetAncestor(int nodeId, int level);
         /// <summary>
         /// Convert to Entity framework prodivder
         /// Warning, some features of ITreeNodeContent will be lost
@@ -23,13 +23,13 @@ namespace LumStoreAPI.Core.Interfaces.DocumentPages
         /// Get all parents of current nodes
         /// </summary>
         /// <returns></returns>
-        ITreeNodeContent<T> GetAncestors();
+        ITreeNodeContent<T> GetAncestors(int nodeId);
         /// <summary>
         /// Get all children nodes of current nodes
         /// </summary>
         /// <returns></returns>
-        ITreeNodeContent<T> GetDescendants();
-        ITreeNodeContent<T> GetDescendants(int level);
+        ITreeNodeContent<T> GetDescendants(int parentNodeId);
+        ITreeNodeContent<T> GetDescendants(int parentNodeId, int level);
         /// <summary>
         /// Included relative url
         /// </summary>

@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Core.Attributes;
+using LumStoreAPI.Core.Entities.DocumentEngine;
 using System.Reflection;
 
 namespace LumStoreAPI.Libraries.Helpers

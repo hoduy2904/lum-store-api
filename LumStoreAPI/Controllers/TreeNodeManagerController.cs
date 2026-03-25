@@ -34,19 +34,21 @@ namespace LumStoreAPI.Controllers
                 .IncludeRelativeUrl()
                 .IncludeQueryable(nw => nw.OrderBy(o => o.Node.NodeOrder));
 
-                if (request.ParentID != null)
+                if (request.ParentID.HasValue)
                 {
-                    query
-                    .Where(x => x.NodeID == request.ParentID);
 
                     if (request.IsFullNode)
                     {
-                        query.GetDescendants();
+                        query.GetDescendants(request.ParentID.Value);
                     }
                     else
                     {
-                        query.GetDescendants(1);
+                        query.GetDescendants(request.ParentID.Value, 1);
                     }
+                }
+                else
+                {
+                    query.Where(x => x.Node.ParentNodeID == null);
                 }
 
                 query.Where(x =>

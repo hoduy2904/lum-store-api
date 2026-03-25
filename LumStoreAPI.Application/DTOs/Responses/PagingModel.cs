@@ -8,8 +8,8 @@ namespace LumStoreAPI.Application.DTOs.Responses
     public class PagingModel
     {
         [Range(1, int.MaxValue)]
-        public int Page { get; set; }
+        public int Page { get; set; } = 1;
         [Range(1, 500)]
-        public int PageSize { get; set; }
+        public int PageSize { get; set; } = 6;
     }
 }

@@ -1,4 +1,5 @@
-﻿using LumStoreAPI.Core.Interfaces.Services;
+﻿using LumStoreAPI.Core.Attributes;
+using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Helpers;
 using System.Reflection;
@@ -14,6 +15,27 @@ namespace LumStoreAPI.Infrastructure.Systems
         }
         public DocumentTable? GetSchemaTable(string className)
         {
+            if (className.Equals("CMS.Folder", StringComparison.OrdinalIgnoreCase))
+            {
+                return new DocumentTable
+                {
+                    ClassName = className,
+                    PageTypes = [
+                    new DocumentPageType{
+                        Name = "DocumentName",
+                        DataType = "String",
+                        MaxLength = 100,
+                        IsNullable = false
+                    }
+                ]
+                };
+            }
+
+            if (!DocumentPageTypeHelper.DocumentPageTypes.ContainsKey(className))
+            {
+                return null;
+            }
+
             var dataTypes = _lumStoreContext.Model
                   .FindEntityType(DocumentPageTypeHelper.DocumentPageTypes[className])?
                   .GetProperties()
@@ -24,6 +46,7 @@ namespace LumStoreAPI.Infrastructure.Systems
                       IsNullable = x.IsNullable,
                       MaxLength = x.GetMaxLength()
                   });
+
 
             if (dataTypes == null)
                 return null;
@@ -38,9 +61,10 @@ namespace LumStoreAPI.Infrastructure.Systems
         public IEnumerable<DocumentTable> GetSchemaTables()
         {
             var tables = _lumStoreContext.Model.GetEntityTypes()
+            .Where(x => x.ClrType.GetCustomAttribute<RegisterPageTypeAttribute>() != null)
                 .Select(x => new DocumentTable
                 {
-                    ClassName = x.GetType().GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder",
+                    ClassName = x.ClrType.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder",
                     PageTypes = x.GetProperties().Select(x => new DocumentPageType
                     {
                         Name = x.Name,
@@ -50,7 +74,11 @@ namespace LumStoreAPI.Infrastructure.Systems
                     })
                 });
 
-            return tables;
+            return tables.Union([new DocumentTable
+            {
+                ClassName = "CMS.Folder",
+                PageTypes = []
+            }]);
         }
     }
 }

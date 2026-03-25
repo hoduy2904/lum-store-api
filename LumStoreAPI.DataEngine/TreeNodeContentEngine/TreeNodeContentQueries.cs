@@ -7,12 +7,17 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
 {
     internal partial class TreeNodeContent<T>
     {
-        public ITreeNodeContent<T> GetAncestor(int level)
+        public ITreeNodeContent<T> GetAncestor(int nodeId, int level)
         {
             level += 1;
             _query = _query
-                .Where(x => _context.DocumentLinkedNodes.Any(l => l.Depth == level && l.Descendant == x.NodeID));
-
+           .Join(_context.DocumentLinkedNodes,
+           n => n.NodeID,
+           ln => ln.Descendant,
+           (n, ln) => new { n, ln }
+           )
+              .Where(x => x.ln.Descendant == nodeId && x.ln.Depth == level)
+              .Select(x => x.n);
             return this;
         }
 
@@ -27,10 +32,16 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             return _query;
         }
 
-        public ITreeNodeContent<T> GetAncestors()
+        public ITreeNodeContent<T> GetAncestors(int nodeId)
         {
-            _query = _query = _query
-                .Where(x => _context.DocumentLinkedNodes.Any(l => l.Depth > 0 && l.Descendant == x.NodeID));
+            _query = _query
+           .Join(_context.DocumentLinkedNodes,
+           n => n.NodeID,
+           ln => ln.Descendant,
+           (n, ln) => new { n, ln }
+           )
+              .Where(x => x.ln.Descendant == nodeId && x.ln.Depth > 0)
+              .Select(x => x.n);
             return this;
         }
 
@@ -40,18 +51,30 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             return this;
         }
 
-        public ITreeNodeContent<T> GetDescendants()
+        public ITreeNodeContent<T> GetDescendants(int parentNodeId)
         {
             _query = _query
-               .Where(x => _context.DocumentLinkedNodes.Any(l => l.Depth > 0 && l.Ancestor == x.NodeID));
+            .Join(_context.DocumentLinkedNodes,
+            n => n.NodeID,
+            ln => ln.Descendant,
+            (n, ln) => new { n, ln }
+            )
+               .Where(x => x.ln.Ancestor == parentNodeId && x.ln.Depth > 0)
+               .Select(x => x.n);
 
             return this;
         }
 
-        public ITreeNodeContent<T> GetDescendants(int level)
+        public ITreeNodeContent<T> GetDescendants(int parentNodeId, int level)
         {
             _query = _query
-               .Where(x => _context.DocumentLinkedNodes.Any(l => l.Depth == level && l.Ancestor == x.NodeID));
+            .Join(_context.DocumentLinkedNodes,
+            n => n.NodeID,
+            ln => ln.Descendant,
+            (n, ln) => new { n, ln }
+            )
+               .Where(x => x.ln.Ancestor == parentNodeId && x.ln.Depth == level)
+               .Select(x => x.n);
 
             return this;
         }

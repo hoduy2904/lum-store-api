@@ -110,7 +110,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var documentPage = page.GetType().GetProperties()
                 .FirstOrDefault(p => Attribute.IsDefined(p, typeof(DocumentNameAttribute)))?.GetValue(page)?.ToString();
 
-            page.DocumentName = ValidationHelper.GetStringValue(documentPage, "Folder");
+            page.DocumentName = ValidationHelper.GetStringValue(documentPage, page.DocumentName);
             var alias = page.DocumentName.Slug;
 
             var parentNodeId = parent?.NodeID;
