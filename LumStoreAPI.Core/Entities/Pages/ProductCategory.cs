@@ -1,4 +1,5 @@
-﻿using LumStoreAPI.Core.Attributes;
+﻿using System.ComponentModel;
+using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 
 namespace LumStoreAPI.Core.Entities.Pages
@@ -8,6 +9,7 @@ namespace LumStoreAPI.Core.Entities.Pages
     {
         public const string CLASS_NAME = "Pages.ProductCategory";
         [DocumentName]
+        [DisplayName("Category Name")]
         public string CategoryName { get; set; } = default!;
     }
 }

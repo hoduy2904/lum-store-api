@@ -2,6 +2,7 @@
 using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Helpers;
+using System.ComponentModel;
 using System.Reflection;
 
 namespace LumStoreAPI.Infrastructure.Systems
@@ -25,7 +26,8 @@ namespace LumStoreAPI.Infrastructure.Systems
                         Name = "DocumentName",
                         DataType = "String",
                         MaxLength = 100,
-                        IsNullable = false
+                        IsNullable = false,
+                        DisplayName = "Document Name"
                     }
                 ]
                 };
@@ -43,6 +45,7 @@ namespace LumStoreAPI.Infrastructure.Systems
                   .Select(x => new DocumentPageType
                   {
                       Name = x.Name,
+                      DisplayName = x.PropertyInfo?.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
                       DataType = x.ClrType.Name,
                       IsNullable = x.IsNullable,
                       MaxLength = x.GetMaxLength()
@@ -69,6 +72,7 @@ namespace LumStoreAPI.Infrastructure.Systems
                     PageTypes = x.GetDeclaredProperties().Reverse().Select(x => new DocumentPageType
                     {
                         Name = x.Name,
+                        DisplayName = x.ClrType.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
                         DataType = x.ClrType.Name,
                         IsNullable = x.IsNullable,
                         MaxLength = x.GetMaxLength()
