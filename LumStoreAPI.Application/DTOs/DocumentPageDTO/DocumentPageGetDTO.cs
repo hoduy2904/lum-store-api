@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Libraries.Extensions;
 
 namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
 {
@@ -12,8 +13,8 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
         public int NodeOrder { get; set; }
         public string NodeAlias { get; set; } = default!;
         public bool RequireAuthentication { get; set; }
-        public DateTime? PublishedFrom { get; set; }
-        public DateTime? PublishedTo { get; set; }
+        public DateTimeOffset? PublishedFrom { get; set; }
+        public DateTimeOffset? PublishedTo { get; set; }
         public Dictionary<string, object?> Fields { get; set; } = [];
 
         public DocumentPageGetDTO(DocumentPage documentPage)
@@ -38,7 +39,7 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
             {
                 if (!this.Fields.ContainsKey(property.Name))
                 {
-                    this.Fields.Add(property.Name, property.GetValue(documentPage));
+                    this.Fields.Add(property.Name.ToCamelCase(), property.GetValue(documentPage));
                 }
             }
         }

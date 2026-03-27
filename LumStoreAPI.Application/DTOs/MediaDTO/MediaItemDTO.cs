@@ -18,8 +18,8 @@ public class MediaItemDTO
     public int Width { get; set; }
     public long Size { get; set; }
     public string? Title { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
     public string FileURL { get; internal set; }
 
     public MediaItemDTO(MediaLibrary mediaLibrary)

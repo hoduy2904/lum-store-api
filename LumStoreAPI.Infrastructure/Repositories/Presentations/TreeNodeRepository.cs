@@ -313,18 +313,38 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 var prop = type.GetProperty(field.Key,
         BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
+                if (prop == null && DocumentPageTypeHelper.IsAllowSystemField(field.Key))
+                {
+                    prop = type.GetProperty(field.Key);
+                }
                 if (prop != null)
                 {
                     object? value = field.Value;
-
                     if (value is JsonElement json)
                     {
-                        value = JsonSerializer.Deserialize(
-                            json.GetRawText(),
-                            prop.PropertyType
-                        );
+                        if (prop.PropertyType == typeof(DateTime?))
+                        {
+                            value = JsonSerializer.Deserialize(
+                                json.GetDateTime(),
+                                prop.PropertyType
+                            );
+                        }
+                        else if (prop.PropertyType == typeof(DateTimeOffset?))
+                        {
+                            value = JsonSerializer.Deserialize(
+                               json.GetDateTimeOffset(),
+                               prop.PropertyType
+                           );
+                        }
+                        else
+                        {
+                            value = JsonSerializer.Deserialize(
+                                json.GetRawText(),
+                                prop.PropertyType
+                            );
+                        }
                     }
-                    prop.SetValue(page, Convert.ChangeType(value, prop.PropertyType));
+                    prop.SetValue(page, value == null ? null : Convert.ChangeType(value, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType));
                 }
             }
 

@@ -30,18 +30,18 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             }
             if (_treeNodePublished != Core.Models.Enums.TreeNodePublished.All)
             {
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
                 if (_treeNodePublished == Core.Models.Enums.TreeNodePublished.Published)
                 {
                     _query = _query.Where(x =>
-                    (x.PublishedFrom == null || x.PublishedFrom >= now)
-                    && x.PublishedTo == null || x.PublishedTo <= now);
+                    (x.PublishedFrom == null || x.PublishedFrom <= now)
+                    && x.PublishedTo == null || x.PublishedTo >= now);
                 }
                 else
                 {
                     _query = _query.Where(x =>
-                    (x.PublishedFrom != null && x.PublishedFrom < now)
-                    || (x.PublishedTo != null && x.PublishedTo > now));
+                    (x.PublishedFrom != null && x.PublishedFrom > now)
+                    || (x.PublishedTo != null && x.PublishedTo < now));
                 }
             }
             if (_checkAuthentication)

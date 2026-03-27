@@ -45,9 +45,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     EmailBcc = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EmailCc = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Attachments = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    NextRetryTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    NextRetryTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -97,13 +97,13 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     IsLocked = table.Column<bool>(type: "bit", nullable: false),
                     IsVerified = table.Column<bool>(type: "bit", nullable: false),
                     IsEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    TimeLocked = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TimeLocked = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UserLevel = table.Column<int>(type: "int", nullable: false),
                     VerifyCode = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
                     IsAdmin = table.Column<bool>(type: "bit", nullable: false),
-                    TimeActionCode = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    TimeActionCode = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -146,10 +146,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     RequireAuthentication = table.Column<bool>(type: "bit", nullable: false),
                     ClassName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    PublishedFrom = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PublishedTo = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    PublishedTo = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    PublishedFrom = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -174,8 +174,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     Size = table.Column<long>(type: "bigint", nullable: false),
                     Height = table.Column<int>(type: "int", nullable: false),
                     Width = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -203,8 +203,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     IPAddress = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
                     EventUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserID = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -223,7 +223,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     TokenID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserID = table.Column<int>(type: "int", nullable: false),
                     RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ValidTo = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    ValidTo = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {

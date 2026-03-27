@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Models.Systems;
+using LumStoreAPI.Libraries.Extensions;
 using LumStoreAPI.Libraries.Helpers;
 using System.ComponentModel;
 using System.Reflection;
@@ -57,7 +58,7 @@ namespace LumStoreAPI.Infrastructure.Systems
                     .Where(p => p.PropertyInfo?.GetCustomAttribute<JsonIgnoreAttribute>(true) is null)
                    .Select(x => new DocumentPageType
                    {
-                       Name = x.Name,
+                       Name = x.Name.ToCamelCase(),
                        DisplayName = x.PropertyInfo?.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
                        DataType = (Nullable.GetUnderlyingType(x.ClrType) ?? x.ClrType).Name,
                        IsNullable = x.IsNullable,

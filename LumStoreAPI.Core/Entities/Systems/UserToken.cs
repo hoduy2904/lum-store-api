@@ -5,7 +5,7 @@
         public int UserID { get; set; }
         public Guid TokenID { get; set; }
         public string? RefreshToken { get; set; }
-        public DateTime ValidTo { get; set; }
+        public DateTimeOffset ValidTo { get; set; }
 
         public virtual User User { get; set; } = default!;
     }

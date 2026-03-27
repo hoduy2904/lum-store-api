@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace LumStoreAPI.Libraries.Extensions
@@ -32,6 +33,11 @@ namespace LumStoreAPI.Libraries.Extensions
                     .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
                     .ToArray();
                 return new string(chars).Normalize(NormalizationForm.FormC);
+            }
+
+            public string ToCamelCase()
+            {
+                return JsonNamingPolicy.CamelCase.ConvertName(input);
             }
         }
     }

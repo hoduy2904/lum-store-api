@@ -83,8 +83,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("DocumentName")
                         .IsRequired()
@@ -97,17 +97,17 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<int>("NodeID")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("PublishedFrom")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("PublishedFrom")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTime?>("PublishedTo")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("PublishedTo")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<bool>("RequireAuthentication")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("PageID");
 
@@ -129,8 +129,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<string>("Attachments")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("EmailBcc")
                         .HasColumnType("nvarchar(max)");
@@ -158,11 +158,11 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime?>("NextRetryTime")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("NextRetryTime")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("ItemID");
 
@@ -181,8 +181,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("EventCode")
                         .IsRequired()
@@ -218,8 +218,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int?>("UserID")
                         .HasColumnType("int");
@@ -248,8 +248,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<int>("CategoryID")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Extension")
                         .HasMaxLength(10)
@@ -269,8 +269,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int>("Width")
                         .HasColumnType("int");
@@ -347,8 +347,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -381,14 +381,14 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<DateTime?>("TimeActionCode")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("TimeActionCode")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTime>("TimeLocked")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("TimeLocked")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int>("UserLevel")
                         .HasColumnType("int");
@@ -429,8 +429,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<int>("UserID")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("ValidTo")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("ValidTo")
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("TokenID");
 

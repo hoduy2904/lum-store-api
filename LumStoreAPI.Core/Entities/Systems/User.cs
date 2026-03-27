@@ -24,11 +24,11 @@ namespace LumStoreAPI.Core.Entities.Systems
         public bool IsLocked { get; set; }
         public bool IsVerified { get; set; }
         public bool IsEnabled { get; set; }
-        public DateTime TimeLocked { get; set; }
+        public DateTimeOffset TimeLocked { get; set; }
         public int UserLevel { get; set; }
         public string? VerifyCode { get; set; }
         public bool IsAdmin { get; set; }
-        public DateTime? TimeActionCode { get; set; }
+        public DateTimeOffset? TimeActionCode { get; set; }
 
         public virtual ICollection<UserToken> UserTokens { get; set; } = [];
         public virtual ICollection<EventLog> EventLogs { get; set; } = [];

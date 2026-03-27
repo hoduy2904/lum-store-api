@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace LumStoreAPI.Libraries.Helpers
 {
@@ -19,6 +20,14 @@ namespace LumStoreAPI.Libraries.Helpers
                 var attr = type.GetCustomAttribute<RegisterPageTypeAttribute>();
                 DocumentPageTypes.Add(attr!.ClassName, attr.Type);
             }
+        }
+
+        public static bool IsAllowSystemField(string fieldName)
+        {
+            return typeof(DocumentPage)
+                .GetProperties()
+                .Where(x => x.PropertyType.GetCustomAttribute<JsonIgnoreAttribute>(true) is not null)
+                .Any(x => x.Name.Equals(fieldName));
         }
 
     }

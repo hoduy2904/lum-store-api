@@ -13,6 +13,6 @@ namespace LumStoreAPI.Core.Entities.Systems
         public string[]? EmailBcc { get; set; }
         public string[]? EmailCc { get; set; }
         public string[]? Attachments { get; set; }
-        public DateTime? NextRetryTime { get; set; }
+        public DateTimeOffset? NextRetryTime { get; set; }
     }
 }

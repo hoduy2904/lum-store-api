@@ -5,8 +5,8 @@ namespace LumStoreAPI.Core.Entities.Base
     public class BaseItem
     {
         [JsonIgnore]
-        public DateTime CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
         [JsonIgnore]
-        public DateTime UpdatedAt { get; set; }
+        public DateTimeOffset UpdatedAt { get; set; }
     }
 }
