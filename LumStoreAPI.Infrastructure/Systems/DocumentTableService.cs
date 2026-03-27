@@ -4,6 +4,7 @@ using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Helpers;
 using System.ComponentModel;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace LumStoreAPI.Infrastructure.Systems
 {
@@ -69,11 +70,13 @@ namespace LumStoreAPI.Infrastructure.Systems
                 .Select(x => new DocumentTable
                 {
                     ClassName = x.ClrType.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder",
-                    PageTypes = x.GetDeclaredProperties().Reverse().Select(x => new DocumentPageType
+                    PageTypes = x.GetProperties()
+                    .Where(p => p.PropertyInfo?.GetCustomAttribute<JsonIgnoreAttribute>(true) is null)
+                    .Reverse().Select(x => new DocumentPageType
                     {
                         Name = x.Name,
-                        DisplayName = x.ClrType.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
-                        DataType = x.ClrType.Name,
+                        DisplayName = x.PropertyInfo?.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
+                        DataType = (Nullable.GetUnderlyingType(x.ClrType) ?? x.ClrType).Name,
                         IsNullable = x.IsNullable,
                         MaxLength = x.GetMaxLength()
                     })
