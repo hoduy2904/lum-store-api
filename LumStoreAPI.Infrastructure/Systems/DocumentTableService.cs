@@ -39,28 +39,9 @@ namespace LumStoreAPI.Infrastructure.Systems
                 return null;
             }
 
-            var dataTypes = _lumStoreContext.Model
-                  .FindEntityType(DocumentPageTypeHelper.DocumentPageTypes[className])?
-                  .GetDeclaredProperties()
-                  .Reverse()
-                  .Select(x => new DocumentPageType
-                  {
-                      Name = x.Name,
-                      DisplayName = x.PropertyInfo?.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
-                      DataType = x.ClrType.Name,
-                      IsNullable = x.IsNullable,
-                      MaxLength = x.GetMaxLength()
-                  });
+            return GetSchemaTables().FirstOrDefault(x => x.ClassName.Equals(className));
 
 
-            if (dataTypes == null)
-                return null;
-
-            return new DocumentTable
-            {
-                ClassName = className,
-                PageTypes = dataTypes
-            };
         }
 
         public IEnumerable<DocumentTable> GetSchemaTables()
@@ -70,16 +51,18 @@ namespace LumStoreAPI.Infrastructure.Systems
                 .Select(x => new DocumentTable
                 {
                     ClassName = x.ClrType.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder",
-                    PageTypes = x.GetProperties()
+                    PageTypes = x.GetDeclaredProperties()
+                    .Reverse()
+                    .Union(x.GetPropertiesInHierarchy())
                     .Where(p => p.PropertyInfo?.GetCustomAttribute<JsonIgnoreAttribute>(true) is null)
-                    .Reverse().Select(x => new DocumentPageType
-                    {
-                        Name = x.Name,
-                        DisplayName = x.PropertyInfo?.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
-                        DataType = (Nullable.GetUnderlyingType(x.ClrType) ?? x.ClrType).Name,
-                        IsNullable = x.IsNullable,
-                        MaxLength = x.GetMaxLength()
-                    })
+                   .Select(x => new DocumentPageType
+                   {
+                       Name = x.Name,
+                       DisplayName = x.PropertyInfo?.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
+                       DataType = (Nullable.GetUnderlyingType(x.ClrType) ?? x.ClrType).Name,
+                       IsNullable = x.IsNullable,
+                       MaxLength = x.GetMaxLength()
+                   })
                 });
 
             return tables.Union([new DocumentTable

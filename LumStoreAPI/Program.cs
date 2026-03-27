@@ -43,7 +43,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         builder =>
         {
-            builder.WithOrigins("https://localhost:3000")
+            builder.WithOrigins("http://localhost:3000")
             .AllowCredentials()// Allow requests from all origins
                    .AllowAnyMethod() // Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
                    .AllowAnyHeader(); // Allow all request headers
@@ -59,7 +59,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();

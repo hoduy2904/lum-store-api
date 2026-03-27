@@ -16,8 +16,8 @@ namespace LumStoreAPI.Core.Entities.DocumentEngine
         public virtual string ClassName { get; set; } = "CMS.Folder";
         [JsonIgnore]
         public bool IsDeleted { get; set; }
-        public DateTime? PublishedFrom { get; set; }
         public DateTime? PublishedTo { get; set; }
+        public DateTime? PublishedFrom { get; set; }
 
         public virtual DocumentNode Node { get; set; } = default!;
 
