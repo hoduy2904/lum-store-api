@@ -10,13 +10,13 @@ namespace LumStoreAPI.Core.Entities.Pages
         public const string CLASS_NAME = "Pages.Product";
 
         [DocumentName]
-        [DisplayName("Product Name")]
+        [DisplayName("Product name")]
         public string ProductName { get; set; } = default!;
         public string? UPC { get; set; }
         public string SKU { get; set; } = default!;
         public string[] Images { get; set; } = [];
         public decimal Price { get; set; }
-        [DisplayName("Short Description")]
+        [DisplayName("Short description")]
         public string? ShortDescription { get; set; }
         public string? Description { get; set; }
         public double Length { get; set; }

@@ -9,7 +9,7 @@ namespace LumStoreAPI.Core.Entities.Pages
     {
         public const string CLASS_NAME = "Pages.ProductCategory";
         [DocumentName]
-        [DisplayName("Category Name")]
+        [DisplayName("Category name")]
         public string CategoryName { get; set; } = default!;
     }
 }

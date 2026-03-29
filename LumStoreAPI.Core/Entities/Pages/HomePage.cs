@@ -9,7 +9,7 @@ namespace LumStoreAPI.Core.Entities.Pages
     {
         public const string CLASS_NAME = "Pages.HomePage";
         [DocumentName]
-        [DisplayName("Page Title")]
+        [DisplayName("Page title")]
         public string PageTitle { get; set; } = default!;
         public string? Description { get; set; }
     }
