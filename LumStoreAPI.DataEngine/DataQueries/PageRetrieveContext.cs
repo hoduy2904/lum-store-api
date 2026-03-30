@@ -36,9 +36,9 @@ namespace LumStoreAPI.Infrastructure.Presentation
              {
                  var treeContent = GetPages(where);
 
-                 var data = await treeContent.ToListAsync();
-
                  int totalRecords = await treeContent.AsQueryable().CountAsync();
+
+                 var data = await treeContent.ToListAsync();
 
                  return data.AsPagedEnumerable(totalRecords);
              }, cacheBuilder);

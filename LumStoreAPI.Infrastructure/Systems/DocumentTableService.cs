@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Core.Attributes;
+using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Extensions;
@@ -18,24 +19,8 @@ namespace LumStoreAPI.Infrastructure.Systems
         }
         public DocumentTable? GetSchemaTable(string className)
         {
-            if (className.Equals("CMS.Folder", StringComparison.OrdinalIgnoreCase))
-            {
-                return new DocumentTable
-                {
-                    ClassName = className,
-                    PageTypes = [
-                    new DocumentPageType{
-                        Name = "DocumentName",
-                        DataType = "String",
-                        MaxLength = 100,
-                        IsNullable = false,
-                        DisplayName = "Document Name"
-                    }
-                ]
-                };
-            }
 
-            if (!DocumentPageTypeHelper.DocumentPageTypes.ContainsKey(className))
+            if (!DocumentPageTypeHelper.DocumentPageTypes.ContainsKey(className) && !className.Equals("CMS.Folder", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }
@@ -69,7 +54,24 @@ namespace LumStoreAPI.Infrastructure.Systems
             return tables.Union([new DocumentTable
             {
                 ClassName = "CMS.Folder",
-                PageTypes = []
+                PageTypes = new List<DocumentPageType>(){
+                    new DocumentPageType{
+                    Name = nameof(DocumentPage.DocumentName).ToCamelCase(),
+                    DataType = "String",
+                    DisplayName = "Folder Name",
+                    MaxLength = 100
+                    }
+                }.Union(_lumStoreContext.Model.FindEntityType(typeof(DocumentPage))?
+                .GetDeclaredProperties()
+                .Where(p => p.PropertyInfo?.GetCustomAttribute<JsonIgnoreAttribute>(true) is null)
+                .Select(x => new DocumentPageType
+                   {
+                       Name = x.Name.ToCamelCase(),
+                       DisplayName = x.PropertyInfo?.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? x.Name,
+                       DataType = (Nullable.GetUnderlyingType(x.ClrType) ?? x.ClrType).Name,
+                       IsNullable = x.IsNullable,
+                       MaxLength = x.GetMaxLength()
+                   }) ?? [])
             }]);
         }
     }

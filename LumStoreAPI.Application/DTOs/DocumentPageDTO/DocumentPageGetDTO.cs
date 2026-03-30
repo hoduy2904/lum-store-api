@@ -15,6 +15,7 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
         public bool RequireAuthentication { get; set; }
         public DateTimeOffset? PublishedFrom { get; set; }
         public DateTimeOffset? PublishedTo { get; set; }
+        public bool IsPublished => (PublishedFrom == null || PublishedFrom <= DateTime.UtcNow) && (PublishedTo == null || PublishedTo > DateTime.UtcNow);
         public Dictionary<string, object?> Fields { get; set; } = [];
 
         public DocumentPageGetDTO(DocumentPage documentPage)
