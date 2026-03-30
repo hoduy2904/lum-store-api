@@ -4,7 +4,7 @@ using LumStoreAPI.Core.Entities.DocumentEngine;
 
 namespace LumStoreAPI.Core.Entities.Pages
 {
-    [RegisterPageType(CLASS_NAME, typeof(Product))]
+    [RegisterPageType(CLASS_NAME, typeof(ProductCategory))]
     public class ProductCategory : DocumentPage
     {
         public const string CLASS_NAME = "Pages.ProductCategory";
