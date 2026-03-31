@@ -32,6 +32,7 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<MediaLibraryCategory> MediaLibraryCategories { get; set; }
         public DbSet<MediaLibrary> MediaLibraries { get; set; }
         public DbSet<Product> Products { get; set; }
+        public DbSet<ProductVariant> ProductVariants { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -118,6 +118,62 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.UseTptMappingStrategy();
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.ProductVariant", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Images")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SKU")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UPC")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("VariantName")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("ProductID");
+
+                    b.HasIndex("SKU")
+                        .IsUnique();
+
+                    b.ToTable("ProductVariants");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.EmailQueue", b =>
                 {
                     b.Property<int>("ItemID")
@@ -469,29 +525,41 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsAlcoholic")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFoldable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFragile")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsHazmat")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsNeedBox")
+                        .HasColumnType("bit");
+
                     b.Property<double>("Length")
                         .HasColumnType("float");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("ProductGroup")
+                        .HasColumnType("int");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("SKU")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("ProductType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShiprelayID")
+                        .HasColumnType("int");
 
                     b.Property<string>("ShortDescription")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("UPC")
-                        .HasMaxLength(14)
-                        .HasColumnType("nvarchar(14)");
 
                     b.Property<double>("Weight")
                         .HasColumnType("float");
@@ -500,12 +568,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasColumnType("float");
 
                     b.HasIndex("ProductName");
-
-                    b.HasIndex("SKU")
-                        .IsUnique()
-                        .HasFilter("[SKU] IS NOT NULL");
-
-                    b.HasIndex("UPC");
 
                     b.ToTable("Products");
                 });
@@ -559,6 +621,17 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Node");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.ProductVariant", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
+                        .WithMany("ProductVariants")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.EventLog", b =>
@@ -640,6 +713,11 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("EventLogs");
 
                     b.Navigation("UserTokens");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.Product", b =>
+                {
+                    b.Navigation("ProductVariants");
                 });
 #pragma warning restore 612, 618
         }

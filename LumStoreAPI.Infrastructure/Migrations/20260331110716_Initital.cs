@@ -278,17 +278,22 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 columns: table => new
                 {
                     PageID = table.Column<int>(type: "int", nullable: false),
+                    ProductType = table.Column<int>(type: "int", nullable: false),
+                    ProductGroup = table.Column<int>(type: "int", nullable: false),
                     ProductName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    UPC = table.Column<string>(type: "nvarchar(14)", maxLength: 14, nullable: true),
-                    SKU = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Images = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ShortDescription = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", maxLength: -1, nullable: true),
                     Length = table.Column<double>(type: "float", nullable: false),
                     Width = table.Column<double>(type: "float", nullable: false),
                     Height = table.Column<double>(type: "float", nullable: false),
-                    Weight = table.Column<double>(type: "float", nullable: false)
+                    Weight = table.Column<double>(type: "float", nullable: false),
+                    IsFoldable = table.Column<bool>(type: "bit", nullable: false),
+                    IsAlcoholic = table.Column<bool>(type: "bit", nullable: false),
+                    IsHazmat = table.Column<bool>(type: "bit", nullable: false),
+                    IsNeedBox = table.Column<bool>(type: "bit", nullable: false),
+                    IsFragile = table.Column<bool>(type: "bit", nullable: false),
+                    ShiprelayID = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -297,6 +302,34 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         name: "FK_Products_DocumentPages_PageID",
                         column: x => x.PageID,
                         principalTable: "DocumentPages",
+                        principalColumn: "PageID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductVariants",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductID = table.Column<int>(type: "int", nullable: false),
+                    SKU = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    UPC = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    Stock = table.Column<int>(type: "int", nullable: false),
+                    Images = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Color = table.Column<string>(type: "nvarchar(12)", maxLength: 12, nullable: true),
+                    VariantName = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductVariants", x => x.ItemID);
+                    table.ForeignKey(
+                        name: "FK_ProductVariants_Products_ProductID",
+                        column: x => x.ProductID,
+                        principalTable: "Products",
                         principalColumn: "PageID",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -387,16 +420,15 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 column: "ProductName");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Products_SKU",
-                table: "Products",
-                column: "SKU",
-                unique: true,
-                filter: "[SKU] IS NOT NULL");
+                name: "IX_ProductVariants_ProductID",
+                table: "ProductVariants",
+                column: "ProductID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Products_UPC",
-                table: "Products",
-                column: "UPC");
+                name: "IX_ProductVariants_SKU",
+                table: "ProductVariants",
+                column: "SKU",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
@@ -438,7 +470,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "ProductCategories");
 
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "ProductVariants");
 
             migrationBuilder.DropTable(
                 name: "SettingKeyValues");
@@ -450,10 +482,13 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "MediaLibraryCategories");
 
             migrationBuilder.DropTable(
-                name: "DocumentPages");
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "DocumentPages");
 
             migrationBuilder.DropTable(
                 name: "DocumentNodes");
