@@ -1,5 +1,6 @@
 ﻿using LumStoreAPI.Core.Entities.Base;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Sytems;

@@ -1,5 +1,6 @@
 ﻿using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Models.Enums;
 using System.ComponentModel;
 
@@ -19,6 +20,8 @@ namespace LumStoreAPI.Core.Entities.Pages
         [DisplayName("Short description")]
         public string? ShortDescription { get; set; }
         public string? Description { get; set; }
+        public decimal Price { get; set; }
+        public decimal PriceDiscount { get; set; }
         public double Length { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }

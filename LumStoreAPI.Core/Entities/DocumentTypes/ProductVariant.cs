@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Core.Entities.Base;
+using LumStoreAPI.Core.Entities.Pages;
 
-namespace LumStoreAPI.Core.Entities.Pages
+namespace LumStoreAPI.Core.Entities.DocumentTypes
 {
     public class ProductVariant : BaseClassItem
     {
@@ -11,7 +12,6 @@ namespace LumStoreAPI.Core.Entities.Pages
         public Guid[] Images { get; set; } = [];
         public string? Color { get; set; }
         public string VariantName { get; set; } = default!;
-        public decimal Price { get; set; }
 
         public virtual Product? Product { get; set; }
     }

@@ -32,11 +32,11 @@ namespace LumStoreAPI.Controllers
                 query
                 .Paged(request.Page, request.PageSize)
                 .IncludeRelativeUrl()
-                .IncludeQueryable(nw => nw.OrderBy(o => o.Node.NodeOrder));
+                .IncludeQueryable(nw => nw.OrderBy(o => o.Node.NodeOrder))
+                .Published(TreeNodePublished.All);
 
                 if (request.ParentID.HasValue)
                 {
-
                     if (request.IsFullNode)
                     {
                         query.GetDescendants(request.ParentID.Value);

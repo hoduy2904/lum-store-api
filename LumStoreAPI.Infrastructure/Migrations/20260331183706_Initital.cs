@@ -284,6 +284,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     Images = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ShortDescription = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", maxLength: -1, nullable: true),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PriceDiscount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Length = table.Column<double>(type: "float", nullable: false),
                     Width = table.Column<double>(type: "float", nullable: false),
                     Height = table.Column<double>(type: "float", nullable: false),
@@ -319,7 +321,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     Images = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Color = table.Column<string>(type: "nvarchar(12)", maxLength: 12, nullable: true),
                     VariantName = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },

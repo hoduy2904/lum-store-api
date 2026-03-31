@@ -1,4 +1,4 @@
-﻿using LumStoreAPI.Core.Entities.Pages;
+﻿using LumStoreAPI.Core.Entities.DocumentTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -37,7 +37,7 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.Property(x => x.Images)
                 .HasConversion(
                 x => string.Join(SPLIT_CHAR, x),
-                x => x.Split(SPLIT_CHAR).Select(Guid.Parse).ToArray())
+                x => x.Split(SPLIT_CHAR, StringSplitOptions.RemoveEmptyEntries).Select(Guid.Parse).ToArray())
                 .Metadata.SetValueComparer(guidArrayComparer);
         }
     }

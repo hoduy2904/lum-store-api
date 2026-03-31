@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260331110716_Initital")]
+    [Migration("20260331183706_Initital")]
     partial class Initital
     {
         /// <inheritdoc />
@@ -121,7 +121,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.UseTptMappingStrategy();
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.ProductVariant", b =>
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
                 {
                     b.Property<int>("ItemID")
                         .ValueGeneratedOnAdd()
@@ -139,9 +139,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<string>("Images")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProductID")
                         .HasColumnType("int");
@@ -546,6 +543,12 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<double>("Length")
                         .HasColumnType("float");
 
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PriceDiscount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("ProductGroup")
                         .HasColumnType("int");
 
@@ -626,7 +629,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("Node");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.ProductVariant", b =>
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
                 {
                     b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
                         .WithMany("ProductVariants")
