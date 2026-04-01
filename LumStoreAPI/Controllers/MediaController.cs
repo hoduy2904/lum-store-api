@@ -12,7 +12,7 @@ namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = nameof(UserRole.ADMIN))]
+    //[Authorize(Roles = nameof(UserRole.ADMIN))]
     public class MediaController : ControllerBase
     {
         private readonly IMediaService _mediaService;
@@ -100,8 +100,9 @@ namespace LumStoreAPI.Controllers
         [HttpDelete("Files/{fileID}")]
         public async Task<IActionResult> DeleteFile(Guid fileID)
         {
-            await _mediaService.DeleteFileAsync(fileID);
-            return Ok();
+            int count = await _mediaService.DeleteFileAsync(fileID);
+            if (count > 0) return Ok(APIResponseBase.Success(["Deleted"]));
+            return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND));
         }
 
         [HttpPut("Files")]
