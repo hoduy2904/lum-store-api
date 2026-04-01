@@ -20,7 +20,7 @@ namespace LumStoreAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("{variantId}")]
+        [HttpGet("byid/{variantId}")]
         public async Task<IActionResult> GetProductVariant(int variantId)
         {
             var productVariant = await _productVariantService.GetProductVariantAsync(variantId);
@@ -37,7 +37,7 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponse<ProductVariantGetDTO>.Success(productVariant, ["Success"]));
         }
 
-        [HttpGet]
+        [HttpGet("{productId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetProductVariants(int productId)
         {
@@ -61,8 +61,8 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR, ["Please try later"]));
         }
 
-        [HttpDelete("{variantIds}")]
-        public async Task<IActionResult> DeleteProductVariant(int[] variantIds)
+        [HttpDelete]
+        public async Task<IActionResult> DeleteProductVariant([FromBody] int[] variantIds)
         {
             var result = await _productVariantService.DeleteProductVariantsAsync(variantIds);
             if (result <= 0) return NotFound(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND));
