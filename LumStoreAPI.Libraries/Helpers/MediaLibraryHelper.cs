@@ -36,7 +36,7 @@ namespace LumStoreAPI.Libraries.Helpers
 
         public static string GetFileURL(MediaLibrary mediaLibrary)
         {
-            return $"/api/media/getFile?fileId={mediaLibrary.FileID}&format={mediaLibrary.Extension}";
+            return $"/api/media/getFile/{mediaLibrary.FileID}?format={mediaLibrary.Extension}";
         }
 
         public static string GetAbsoluteFileURL(MediaLibrary mediaLibrary, HttpContext httpContext)

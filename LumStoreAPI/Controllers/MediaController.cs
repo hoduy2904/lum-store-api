@@ -74,11 +74,11 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND));
         }
 
-        [HttpGet("getFile")]
+        [HttpGet("getFile/{fileId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetFile([FromQuery] MediaGetFileRequest request)
+        public async Task<IActionResult> GetFile(Guid fileId, [FromQuery] MediaGetFileRequest request)
         {
-            var file = await _mediaService.GetMediaItemAsync(request.FileID);
+            var file = await _mediaService.GetMediaItemAsync(fileId);
             if (file == null)
             {
                 return NotFound();
