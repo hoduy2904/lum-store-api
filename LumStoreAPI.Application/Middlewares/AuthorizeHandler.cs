@@ -1,11 +1,10 @@
-using System;
-using System.Security.Claims;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace LumStoreAPI.Application.Middlewares;
 

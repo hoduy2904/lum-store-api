@@ -2,6 +2,7 @@ using LumStoreAPI.Application;
 using LumStoreAPI.Application.Middlewares;
 using LumStoreAPI.DataEngine;
 using LumStoreAPI.Infrastructure;
+using LumStoreAPI.Infrastructure.SeedData;
 using LumStoreAPI.Tasks;
 using Scalar.AspNetCore;
 using Serilog;
@@ -36,6 +37,10 @@ builder.Services
 
 builder.Services.AddJwtAuthentication();
 
+// ── HttpClient for external integrations ──────────────────────────────────
+builder.Services.AddHttpClient("Shiprelay");
+builder.Services.AddHttpClient("WMS");
+
 builder.AddLumStoreStaticConfiguration();
 
 builder.Services.AddCors(options =>
@@ -43,13 +48,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         builder =>
         {
-            builder.WithOrigins("http://localhost:3000")
+            builder.WithOrigins("http://localhost:3000", "https://localhost:3000")
             .AllowCredentials()// Allow requests from all origins
                    .AllowAnyMethod() // Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
                    .AllowAnyHeader(); // Allow all request headers
         });
 });
 var app = builder.Build();
+
+await LumStoreSeedData.SeedAsync(app.Services);
 
 app.UseExceptionHandler();
 // Configure the HTTP request pipeline.

@@ -1,0 +1,16 @@
+using LumStoreAPI.Core.Entities.Integrations;
+using LumStoreAPI.Core.Models.Enums;
+
+namespace LumStoreAPI.Infrastructure.Repositories.Interfaces;
+
+public interface IIntegrationConfigRepository
+{
+    Task<IntegrationConfig?> GetConfigAsync(int configId);
+    Task<IntegrationConfig?> GetConfigByTypeAsync(IntegrationType type);
+    Task<IEnumerable<IntegrationConfig>> GetConfigsAsync();
+    Task<IntegrationConfig> UpsertConfigAsync(IntegrationConfig config);
+    Task<bool> DeleteConfigAsync(int configId);
+
+    Task<SyncLog> InsertSyncLogAsync(SyncLog syncLog);
+    Task<IEnumerable<SyncLog>> GetSyncLogsAsync(IntegrationType? type = null, int limit = 50);
+}
