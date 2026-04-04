@@ -51,3 +51,4 @@ package.json
 appsettings.Development.json
 wwwroot/
 LumStoreAPI/logs
+CLAUDE.md
