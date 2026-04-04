@@ -4,6 +4,7 @@
     {
         SIMPLE,
         PACKING,
-        CASEPACK
+        CASEPACK,
+        BUNDLE
     }
 }

@@ -1,6 +1,9 @@
 ﻿using LumStoreAPI.Core.Entities.Base;
+using LumStoreAPI.Core.Entities.Customers;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Entities.DocumentTypes;
+using LumStoreAPI.Core.Entities.Integrations;
+using LumStoreAPI.Core.Entities.Orders;
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Sytems;
@@ -35,6 +38,25 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductVariant> ProductVariants { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
+
+        // ── Orders ────────────────────────────────────────────────────────────
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<OrderHistory> OrderHistories { get; set; }
+        public DbSet<OrderNote> OrderNotes { get; set; }
+        public DbSet<OrderReturn> OrderReturns { get; set; }
+        public DbSet<OrderReturnItem> OrderReturnItems { get; set; }
+
+        // ── Customers ─────────────────────────────────────────────────────────
+        public DbSet<CustomerProfile> CustomerProfiles { get; set; }
+        public DbSet<LoyaltyPoint> LoyaltyPoints { get; set; }
+        public DbSet<CustomerTier> CustomerTiers { get; set; }
+        public DbSet<CustomerNote> CustomerNotes { get; set; }
+        public DbSet<DiscountRule> DiscountRules { get; set; }
+
+        // ── Integrations ──────────────────────────────────────────────────────
+        public DbSet<IntegrationConfig> IntegrationConfigs { get; set; }
+        public DbSet<SyncLog> SyncLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
