@@ -52,3 +52,4 @@ appsettings.Development.json
 wwwroot/
 LumStoreAPI/logs
 CLAUDE.md
+.claude

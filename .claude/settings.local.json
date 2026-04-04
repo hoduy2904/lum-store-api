@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(find D:GithubLUMlum-store-apiLumStoreAPI.Tasks -type f -name *.cs)",
-      "Bash(dotnet build:*)"
-    ]
-  }
-}
