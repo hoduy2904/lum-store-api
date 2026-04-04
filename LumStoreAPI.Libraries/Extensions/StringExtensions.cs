@@ -39,6 +39,22 @@ namespace LumStoreAPI.Libraries.Extensions
             {
                 return JsonNamingPolicy.CamelCase.ConvertName(input);
             }
+
+            public bool IsValidJson(bool checkWithArray = false)
+            {
+                if (string.IsNullOrWhiteSpace(input)) return false;
+                try
+                {
+                    using var doc = JsonDocument.Parse(input);
+                    if (checkWithArray)
+                        return doc.RootElement.ValueKind == JsonValueKind.Array;
+                    return doc.RootElement.ValueKind == JsonValueKind.Object;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
         }
     }
 }

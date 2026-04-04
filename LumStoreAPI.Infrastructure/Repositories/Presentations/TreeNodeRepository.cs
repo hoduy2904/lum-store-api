@@ -2,6 +2,7 @@
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Riches;
+using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure.Helpers;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using LumStoreAPI.Libraries.Extensions;
@@ -122,15 +123,13 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             }
 
             var maxOrder = await TreeNodeHelper.GetMaxOrderAsync(_lumStoreContext, parentNodeId);
+            var nodeAliasPath = await TreeNodeHelper.GetNodeAliasPath(_lumStoreContext, alias, parent?.NodeID);
 
-            var newNode = new DocumentNode
-            {
-                NodeAlias = alias,
-                NodeOrder = maxOrder + 1,
-                ParentNodeID = parentNodeId
-            };
-
-            page.Node = newNode;
+            page.Node.NodeAlias = alias;
+            page.Node.NodeOrder = maxOrder + 1;
+            page.Node.ParentNodeID = parentNodeId;
+            page.Node.NodeName = page.DocumentName;
+            page.Node.RelativeUrl = nodeAliasPath;
 
             try
             {
@@ -138,10 +137,10 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 await _lumStoreContext.SaveChangesAsync();
 
                 await TreeNodeHelper.InsertClosureTable(_lumStoreContext, [page.NodeID], parentNodeId);
-                var cacheDependencies = new CacheDependency().Nodes().ClassName(page.ClassName).NodeID(page.NodeID);
-                if (newNode.ParentNodeID.HasValue)
+                var cacheDependencies = new CacheDependency().Nodes().ClassName(page.Node.ClassName).NodeID(page.NodeID);
+                if (parentNodeId.HasValue)
                 {
-                    cacheDependencies.NodeID(newNode.ParentNodeID.Value);
+                    cacheDependencies.NodeID(parentNodeId.Value);
                 }
                 _cacheService.TouchKey(cacheDependencies.GetDependencies().ToArray());
             }
@@ -186,19 +185,17 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var maxOrder = await TreeNodeHelper.GetMaxOrderAsync(_lumStoreContext, parentNodeId);
 
             var cacheDependencies = new CacheDependency().Nodes();
+            var parentNodeAliasPath = await TreeNodeHelper.GetNodeAliasPath(_lumStoreContext, "", parent?.NodeID);
             for (int i = 0; i < pages.Length; i++)
             {
-                var newNode = new DocumentNode
-                {
-                    NodeAlias = databaseAliases[pages[i].DocumentName.Slug],
-                    NodeOrder = maxOrder + 1,
-                    ParentNodeID = parentNodeId
-                };
                 maxOrder++;
-                pages[i].Node = newNode;
-                if (newNode.ParentNodeID.HasValue)
+                pages[i].Node.NodeAlias = databaseAliases[pages[i].DocumentName.Slug];
+                pages[i].Node.NodeOrder = maxOrder + 1;
+                pages[i].Node.ParentNodeID = parentNodeId;
+                pages[i].Node.RelativeUrl = $"{parentNodeAliasPath}{pages[i].Node.NodeAlias}";
+                if (parentNodeId.HasValue)
                 {
-                    cacheDependencies.NodeID(newNode.ParentNodeID.Value);
+                    cacheDependencies.NodeID(parentNodeId.Value);
                 }
             }
 
@@ -246,7 +243,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 await _lumStoreContext.SaveChangesAsync();
                 await tx.CommitAsync();
 
-                var cacheDependencies = new CacheDependency().Nodes().NodeID(nodeID).NodeOrder();
+                var cacheDependencies = new CacheDependency().Nodes().ClassName(currentNode.ClassName).NodeID(nodeID).NodeOrder();
                 if (currentNode.ParentNodeID.HasValue)
                 {
                     cacheDependencies.NodeID(currentNode.ParentNodeID.Value);
@@ -264,8 +261,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public Task<int> RenameNodeAsync(int nodeID, string name)
         {
             _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(nodeID).GetDependencies().ToArray());
-            return _lumStoreContext.DocumentPages.Where(x => x.NodeID == nodeID)
-                  .ExecuteUpdateAsync(x => x.SetProperty(p => p.DocumentName, name));
+            return _lumStoreContext.DocumentNodes.Where(x => x.NodeID == nodeID)
+                  .ExecuteUpdateAsync(x => x.SetProperty(p => p.NodeName, name));
 
         }
 
@@ -275,7 +272,9 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var isSuccess = await _lumStoreContext.SaveChangesAsync() > 0;
             if (isSuccess)
             {
-                _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(page.NodeID).ClassName(page.ClassName).GetDependencies().ToArray());
+                string className = DocumentPageTypeHelper.GetClassName<T>();
+
+                _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(page.NodeID).ClassName(className).GetDependencies().ToArray());
             }
 
             return isSuccess;
@@ -303,7 +302,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var type = DocumentPageTypeHelper.DocumentPageTypes.GetValueOrDefault(className, typeof(DocumentPage));
             var page = await _lumStoreContext
                  .DocumentPages
-                 .FirstOrDefaultAsync(x => x.ClassName.Equals(className) && x.NodeID == nodeID);
+                 .FirstOrDefaultAsync(x => x.NodeID == nodeID);
 
             if (page == null || page.GetType() != type)
                 throw new NullReferenceException($"Cannot found NodeID {nodeID} with class name: {className}");
@@ -359,10 +358,24 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var count = await _lumStoreContext.Set<T>().ExecuteUpdateAsync(properties);
             if (count > 0)
             {
-                string className = typeof(T).GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder";
+                string className = DocumentPageTypeHelper.GetClassName<T>();
                 _cacheService.TouchKey(new CacheDependency().Nodes().ClassName(className).GetDependencies().ToArray());
             }
             return count;
+        }
+
+        public async Task<WidgetData<object>[]?> UpdateWidgets(int nodeID, WidgetData<object>[] widgetData)
+        {
+            int count = await _lumStoreContext.DocumentPages
+                  .Where(x => x.NodeID == x.NodeID)
+                  .ExecuteUpdateAsync(x => x.SetProperty(p => p.DocumentPageWidgets, widgetData));
+            if (count > 0)
+            {
+                _cacheService.TouchKey(new CacheDependency().NodeID(nodeID).GetDependencies().ToArray());
+                return widgetData;
+
+            }
+            return null;
         }
     }
 }

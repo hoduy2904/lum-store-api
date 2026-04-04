@@ -1,10 +1,32 @@
 ﻿using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace LumStoreAPI.Infrastructure.Helpers
 {
     internal class TreeNodeHelper
     {
+        public async static Task<string> GetNodeAliasPath(LumStoreContext lumStoreContext, string alias, int? parentId = null)
+        {
+            if (parentId == null) return "/" + alias;
+            var nodeids = lumStoreContext.DocumentLinkedNodes
+                 .Where(x => x.Descendant == parentId);
+
+            var nodeAlias = await lumStoreContext.DocumentNodes
+             .Join(
+                 nodeids,
+                 node => node.NodeID,
+                 ld => ld.Ancestor,
+                 ((node, ld) => new { node.NodeAlias, ld.Depth })
+             )
+             .OrderBy(x => x.Depth)
+             .Select(x => x.NodeAlias)
+             .ToArrayAsync();
+
+            if (nodeAlias.Length == 0) return "/" + alias;
+            return '/' + string.Join('/', nodeAlias ?? []) + "/" + alias;
+        }
+
         public static async Task<int> InsertClosureTable(LumStoreContext lumStoreContext, int[] nodeIds, int? parentNodeID = null)
         {
             if (parentNodeID == null)
@@ -49,7 +71,7 @@ namespace LumStoreAPI.Infrastructure.Helpers
                     CROSS JOIN DocumentLinkedNodes D 
                     WHERE A.{nameof(DocumentLinkedNode.Descendant)} = {{0}}
                       AND D.{nameof(DocumentLinkedNode.Ancestor)} = {{1}};
-                ", newParentNodeId, nodeID);
+                ", newParentNodeId.HasValue ? newParentNodeId : DBNull.Value, nodeID);
         }
 
         public static async Task<int> GetMaxOrderAsync(LumStoreContext lumStoreContext, int? parentNodeID)
@@ -132,7 +154,9 @@ namespace LumStoreAPI.Infrastructure.Helpers
                 }
                 currentNode.NodeOrder = newOrderNode.NodeOrder;
             }
+            var nodeAliasPath = await GetNodeAliasPath(lumStoreContext, currentNode.NodeAlias, parentId);
             currentNode.ParentNodeID = parentId;
+            currentNode.RelativeUrl = nodeAliasPath;
 
             await lumStoreContext.DocumentNodes.Where(x => x.NodeOrder >= currentNode.NodeOrder && x.NodeID != currentNode.NodeID && x.ParentNodeID == currentNode.ParentNodeID)
                 .ExecuteUpdateAsync(x => x.SetProperty(p => p.NodeOrder, p => p.NodeOrder + 1));
@@ -151,6 +175,14 @@ namespace LumStoreAPI.Infrastructure.Helpers
 
             if (currentNode.ParentNodeID != null)
             {
+                await lumStoreContext.DocumentNodes
+                .Where(x =>
+                    lumStoreContext.DocumentLinkedNodes.Where(ld => ld.Ancestor == parentId)
+                    .Select(l => l.Descendant)
+                    .Distinct()
+                    .Contains(x.NodeID))
+                    .ExecuteUpdateAsync(x => x.SetProperty(p => p.RelativeUrl, p => p.RelativeUrl.Replace(p.RelativeUrl, currentNode.RelativeUrl)));
+
                 await UpdateClosureTableMoveNode(lumStoreContext, currentNode.NodeID, currentNode.ParentNodeID);
             }
         }

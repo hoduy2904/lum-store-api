@@ -5,6 +5,7 @@ using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
+using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,8 +32,7 @@ namespace LumStoreAPI.Controllers
             {
                 query
                 .Paged(request.Page, request.PageSize)
-                .IncludeRelativeUrl()
-                .IncludeQueryable(nw => nw.OrderBy(o => o.Node.NodeOrder))
+                .IncludeQueryable(nw => nw.OfType<DocumentPage>().OrderBy(o => o.Node.NodeOrder))
                 .Published(TreeNodePublished.All);
 
                 if (request.ParentID.HasValue)
@@ -53,7 +53,18 @@ namespace LumStoreAPI.Controllers
 
                 query.Where(x =>
                     (string.IsNullOrEmpty(request.Search) || x.DocumentName.Contains(request.Search))
-                    && (string.IsNullOrEmpty(request.ClassName) || x.ClassName.Equals(request.ClassName)));
+                    && (string.IsNullOrEmpty(request.ClassName) || x.Node.ClassName.Equals(request.ClassName)))
+                    .Select(x => new DocumentPage
+                    {
+                        DocumentName = x.DocumentName,
+                        CreatedAt = x.CreatedAt,
+                        Node = x.Node,
+                        NodeID = x.NodeID,
+                        PageID = x.PageID,
+                        PublishedFrom = x.PublishedFrom,
+                        PublishedTo = x.PublishedTo,
+                        RequireAuthentication = x.RequireAuthentication,
+                    });
 
             }, cache => cache.Dependencies(d => d.Nodes()).Key($"getallNodes|{request.ParentID}|{request.Search}|{request.Page}|{request.PageSize}|{request.IsFullNode}|{request.ClassName}")))
                 .Select(x => new DocumentPageGetDTO(x));
@@ -65,7 +76,7 @@ namespace LumStoreAPI.Controllers
         {
             var node = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
-                query.IncludeRelativeUrl()
+                query
                 .Where(x => x.NodeID == nodeId);
             })).Select(x => new DocumentPageGetDTO(x)).FirstOrDefault();
 
@@ -97,14 +108,17 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Not found this nodeID or Something error"]));
         }
 
+        [HttpPatch("widget/{nodeId}")]
+        public async Task<IActionResult> UpdateWidgets(int nodeId, DocumentPageWidgetRequestDTO request)
+        {
+            var result = await _treeNodeRepository.UpdateWidgets(nodeId, request.Data);
+            if (result != null) return Ok(APIResponse<WidgetData<object>[]>.Success(result));
+            return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Not found"]));
+        }
+
         [HttpPost]
         public async Task<IActionResult> Insert(DocumentPageInsertDTO documentPageDTO)
         {
-            var documentPage = new DocumentPage()
-            {
-                ClassName = documentPageDTO.ClassName,
-            };
-
             var document = await _treeNodeRepository.InsertAsync(documentPageDTO.GetEntity()
                 , documentPageDTO.ParentNodeID == null ? null : new DocumentNode { NodeID = documentPageDTO.ParentNodeID.Value });
             if (document == null)
