@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Models.Systems;
 using Microsoft.EntityFrameworkCore.Query;
 
 namespace LumStoreAPI.Infrastructure.Repositories.Interfaces
@@ -16,5 +17,6 @@ namespace LumStoreAPI.Infrastructure.Repositories.Interfaces
         Task<bool> MoveAsync(int nodeID, int? parentId = null, int? nestedNodeID = null);
         Task<string> GetRelativeUrl(int nodeID);
         Task<int> RenameNodeAsync(int nodeID, string name);
+        Task<WidgetData<object>[]?> UpdateWidgets(int nodeID, WidgetData<object>[] widgetData);
     }
 }

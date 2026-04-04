@@ -48,10 +48,19 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NodeID"));
 
+                    b.Property<string>("ClassName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("NodeAlias")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NodeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("NodeOrder")
                         .HasColumnType("int");
@@ -59,7 +68,14 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<int?>("ParentNodeID")
                         .HasColumnType("int");
 
+                    b.Property<string>("RelativeUrl")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.HasKey("NodeID");
+
+                    b.HasIndex("RelativeUrl");
 
                     b.HasIndex("NodeOrder", "ParentNodeID");
 
@@ -78,11 +94,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PageID"));
 
-                    b.Property<string>("ClassName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -90,6 +101,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DocumentPageWidgets")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");

@@ -19,7 +19,7 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
         private bool _checkAuthentication = true;
         private bool _hasPagination => _currentPage > 0 && _pageSize > 0;
 
-        private Expression<Func<T, T>> _selector = null;
+        private Expression<Func<T, T>>? _selector = null;
 
         private IQueryable<DocumentLinkAliasModel> _relativeQuery
         {

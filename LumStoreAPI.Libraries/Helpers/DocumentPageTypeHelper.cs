@@ -30,5 +30,14 @@ namespace LumStoreAPI.Libraries.Helpers
                 .Any(x => x.Name.Equals(fieldName));
         }
 
+        public static string GetClassName<T>() where T : DocumentPage
+        {
+            return typeof(T).GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder";
+        }
+        public static string GetClassName(Type type)
+        {
+            return type.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder";
+        }
+
     }
 }

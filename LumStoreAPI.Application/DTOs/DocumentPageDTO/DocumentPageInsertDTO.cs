@@ -18,7 +18,11 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
             var type = DocumentPageTypeHelper.DocumentPageTypes.GetValueOrDefault(this.ClassName, typeof(DocumentPage));
             var entity = (DocumentPage)Activator.CreateInstance(type)!;
 
-            entity.ClassName = type.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder";
+            string className = DocumentPageTypeHelper.GetClassName(type);
+            entity.Node = new DocumentNode
+            {
+                ClassName = className
+            };
 
             foreach (var field in this.Fields)
             {

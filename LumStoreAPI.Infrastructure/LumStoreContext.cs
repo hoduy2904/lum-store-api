@@ -5,6 +5,7 @@ using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Riches;
+using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
@@ -80,7 +81,9 @@ namespace LumStoreAPI.Infrastructure
                     }
                     if (entry.Entity is DocumentPage documentPage)
                     {
-                        foreach (var cache in new CacheDependency().ClassName(documentPage.ClassName).NodeOrder().Nodes().GetDependencies())
+                        string className = DocumentPageTypeHelper.GetClassName(entry.Entity.GetType());
+
+                        foreach (var cache in new CacheDependency().ClassName(className).NodeOrder().Nodes().GetDependencies())
                         {
                             _cacheService.TouchKey(cache);
                         }
@@ -95,7 +98,8 @@ namespace LumStoreAPI.Infrastructure
                     }
                     if (entry.Entity is DocumentPage documentPage)
                     {
-                        foreach (var cache in new CacheDependency().NodeID(documentPage.NodeID).ClassName(documentPage.ClassName).NodeOrder().GetDependencies())
+                        string className = DocumentPageTypeHelper.GetClassName(entry.Entity.GetType());
+                        foreach (var cache in new CacheDependency().NodeID(documentPage.NodeID).ClassName(className).NodeOrder().GetDependencies())
                         {
                             _cacheService.TouchKey(cache);
                         }
@@ -112,7 +116,8 @@ namespace LumStoreAPI.Infrastructure
                 {
                     if (entry.Entity is DocumentPage documentPage)
                     {
-                        foreach (var cache in new CacheDependency().NodeID(documentPage.NodeID).ClassName(documentPage.ClassName).NodeOrder().GetDependencies())
+                        string className = DocumentPageTypeHelper.GetClassName(entry.Entity.GetType());
+                        foreach (var cache in new CacheDependency().NodeID(documentPage.NodeID).ClassName(className).NodeOrder().GetDependencies())
                         {
                             _cacheService.TouchKey(cache);
                         }

@@ -9,7 +9,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
     {
         private const char SPLIT_CHAR = ',';
 
-
         public void Configure(EntityTypeBuilder<EmailQueue> builder)
         {
             var stringArrayComparer = new ValueComparer<string[]>(

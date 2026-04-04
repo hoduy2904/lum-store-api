@@ -47,7 +47,6 @@ namespace LumStoreAPI.Application.Middlewares
             if (method != null)
             {
                 code = method.Name;
-                string? className = method.DeclaringType?.FullName;
                 source = method.DeclaringType?.Namespace ?? "Global Error";
             }
             using (var scope = _serviceProvider.CreateScope())

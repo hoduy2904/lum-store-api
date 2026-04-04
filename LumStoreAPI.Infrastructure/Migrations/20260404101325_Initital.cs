@@ -17,9 +17,12 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     NodeID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    NodeName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ParentNodeID = table.Column<int>(type: "int", nullable: true),
                     NodeAlias = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    NodeOrder = table.Column<int>(type: "int", nullable: false)
+                    NodeOrder = table.Column<int>(type: "int", nullable: false),
+                    ClassName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    RelativeUrl = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -144,10 +147,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     DocumentName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     NodeID = table.Column<int>(type: "int", nullable: false),
                     RequireAuthentication = table.Column<bool>(type: "bit", nullable: false),
-                    ClassName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     PublishedTo = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     PublishedFrom = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    DocumentPageWidgets = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
@@ -351,6 +354,11 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 columns: new[] { "ParentNodeID", "NodeAlias" },
                 unique: true,
                 filter: "[ParentNodeID] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentNodes_RelativeUrl",
+                table: "DocumentNodes",
+                column: "RelativeUrl");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DocumentPages_NodeID",
