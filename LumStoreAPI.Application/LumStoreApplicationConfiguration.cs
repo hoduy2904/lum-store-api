@@ -128,6 +128,7 @@ namespace LumStoreAPI.Application
                 MediaLibraryHelper.RootMediaPath = Path.Combine(builder.Environment.WebRootPath, "Medias");
                 DocumentPageTypeHelper.RegisterPageTypes();
                 DocumentPageTypeHelper.RegisterWidgets();
+                DocumentPageTypeHelper.RegisterFeatureQueries();
             }
         }
     }
