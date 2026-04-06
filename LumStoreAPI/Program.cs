@@ -40,6 +40,10 @@ builder.Services.AddJwtAuthentication();
 // ── HttpClient for external integrations ──────────────────────────────────
 builder.Services.AddHttpClient("Shiprelay");
 builder.Services.AddHttpClient("WMS");
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssemblies(typeof(LumStoreApplicationConfiguration).Assembly, typeof(Program).Assembly);
+});
 
 builder.AddLumStoreStaticConfiguration();
 
