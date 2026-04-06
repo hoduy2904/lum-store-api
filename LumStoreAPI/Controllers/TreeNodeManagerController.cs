@@ -97,7 +97,7 @@ namespace LumStoreAPI.Controllers
             //    }
             //}
 
-            //return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
+            return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
         }
 
         [HttpPatch("ReOrder")]
