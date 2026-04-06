@@ -7,9 +7,7 @@ using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
-using LumStoreAPI.Libraries.Helpers;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LumStoreAPI.Controllers
@@ -97,7 +95,7 @@ namespace LumStoreAPI.Controllers
             //    }
             //}
 
-            //return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
+            return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
         }
 
         [HttpPatch("ReOrder")]

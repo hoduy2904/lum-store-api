@@ -21,6 +21,7 @@ namespace LumStoreAPI.Infrastructure.Presentation
             _httpContextAccessor = httpContextAccessor;
             _cacheService = cacheService;
         }
+
         public async Task<IEnumerable<T>> GetPagesAsync<T>(Action<ITreeNodeContent<T>>? where = null, Action<ICacheBuilder>? cacheBuilder = null) where T : DocumentPage
         {
             return (await _cacheService.GetCacheAsync<IEnumerable<T>>(async () =>

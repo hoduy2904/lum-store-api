@@ -1,4 +1,4 @@
-﻿using LumStoreAPI.Core.Entities.Base;
+using LumStoreAPI.Core.Entities.Base;
 using LumStoreAPI.Core.Entities.Pages;
 
 namespace LumStoreAPI.Core.Entities.DocumentTypes
@@ -11,6 +11,10 @@ namespace LumStoreAPI.Core.Entities.DocumentTypes
         public int Stock { get; set; }
         public Guid[] Images { get; set; } = [];
         public string? Color { get; set; }
+
+        /// <summary>Hex color code for the color swatch UI, e.g. "#E8B4B8".</summary>
+        public string? ColorHex { get; set; }
+
         public string VariantName { get; set; } = default!;
 
         public virtual Product? Product { get; set; }

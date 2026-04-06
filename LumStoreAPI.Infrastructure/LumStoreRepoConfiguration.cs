@@ -27,6 +27,10 @@ namespace LumStoreAPI.Infrastructure
                 services.AddScoped<IUserTokenRepository, UserTokenRepository>();
                 services.AddScoped<IJwtTokenService, JwtTokenService>();
                 services.AddScoped<IProductVariantRepository, ProductVariantRepository>();
+                services.AddScoped<IOrderRepository, OrderRepository>();
+                services.AddScoped<ICustomerRepository, CustomerRepository>();
+                services.AddScoped<IIntegrationConfigRepository, IntegrationConfigRepository>();
+                services.AddScoped<IDiscountRuleRepository, DiscountRuleRepository>();
                 return services;
             }
 

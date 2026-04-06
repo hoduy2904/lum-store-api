@@ -1,4 +1,4 @@
-﻿using LumStoreAPI.Core.Attributes;
+using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Models.Enums;
@@ -13,15 +13,41 @@ namespace LumStoreAPI.Core.Entities.Pages
 
         public ProductType ProductType { get; set; } = ProductType.SIMPLE;
         public ProductGroup ProductGroup { get; set; } = ProductGroup.COMODITY;
+
         [DocumentName]
         [DisplayName("Product name")]
         public string ProductName { get; set; } = default!;
+
         public Guid[] Images { get; set; } = [];
+
         [DisplayName("Short description")]
         public string? ShortDescription { get; set; }
+
         public string? Description { get; set; }
+
         public decimal Price { get; set; }
+
         public decimal PriceDiscount { get; set; }
+
+        // ── Storefront flags ──────────────────────────────────────────────────
+
+        [DisplayName("New arrival")]
+        public bool IsNew { get; set; }
+
+        [DisplayName("Best seller")]
+        public bool IsBestSeller { get; set; }
+
+        /// <summary>Tags for filtering/search (comma-separated → string[]).</summary>
+        public string[] Tags { get; set; } = [];
+
+        [DisplayName("Rating")]
+        public double Rating { get; set; }
+
+        [DisplayName("Review count")]
+        public int ReviewCount { get; set; }
+
+        // ── Shipping / logistics ──────────────────────────────────────────────
+
         public double Length { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }

@@ -1,0 +1,135 @@
+using LumStoreAPI.Application.DTOs.IntegrationDTO;
+using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Models.Enums;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace LumStoreAPI.Controllers;
+
+/// <summary>Integration configuration management (Shiprelay, WMS, etc.).</summary>
+[Route("api/integrations")]
+[ApiController]
+[Authorize(Roles = "ADMIN")]
+public class IntegrationController : ControllerBase
+{
+    private readonly IIntegrationConfigService _integrationService;
+
+    public IntegrationController(IIntegrationConfigService integrationService)
+        => _integrationService = integrationService;
+
+    /// <summary>GET /api/integrations — List all integration configs.</summary>
+    [HttpGet]
+    public async Task<IActionResult> GetConfigs()
+    {
+        var configs = await _integrationService.GetConfigsAsync();
+        return Ok(APIResponse<IEnumerable<IntegrationConfigGetDTO>>.Success(configs));
+    }
+
+    /// <summary>GET /api/integrations/{type} — Get config by integration type.</summary>
+    [HttpGet("{type}")]
+    public async Task<IActionResult> GetConfig(IntegrationType type)
+    {
+        var config = await _integrationService.GetConfigAsync(type);
+        if (config == null) return NotFound(APIResponseBase.Failure("NOT_FOUND", [$"Config for {type} not found"]));
+        return Ok(APIResponse<IntegrationConfigGetDTO>.Success(config));
+    }
+
+    /// <summary>PUT /api/integrations — Upsert integration config.</summary>
+    [HttpPut]
+    public async Task<IActionResult> UpsertConfig([FromBody] IntegrationConfigUpsertDTO dto)
+    {
+        var config = await _integrationService.UpsertConfigAsync(dto);
+        return Ok(APIResponse<IntegrationConfigGetDTO>.Success(config, ["Config saved"]));
+    }
+
+    /// <summary>DELETE /api/integrations/{configId}</summary>
+    [HttpDelete("{configId:int}")]
+    public async Task<IActionResult> DeleteConfig(int configId)
+    {
+        var deleted = await _integrationService.DeleteConfigAsync(configId);
+        if (!deleted) return NotFound(APIResponseBase.Failure("NOT_FOUND", ["Config not found"]));
+        return Ok(APIResponseBase.Success(["Config deleted"]));
+    }
+
+    /// <summary>GET /api/integrations/sync-logs — Recent sync logs.</summary>
+    [HttpGet("sync-logs")]
+    public async Task<IActionResult> GetSyncLogs([FromQuery] IntegrationType? type = null)
+    {
+        var logs = await _integrationService.GetSyncLogsAsync(type);
+        return Ok(APIResponse<IEnumerable<SyncLogGetDTO>>.Success(logs));
+    }
+
+    /// <summary>POST /api/integrations/{type}/sync — Manually trigger sync.</summary>
+    [HttpPost("{type}/sync")]
+    public async Task<IActionResult> TriggerSync(IntegrationType type)
+    {
+        int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "id")?.Value, out int userId);
+        var log = await _integrationService.TriggerSyncAsync(type, userId > 0 ? userId : null);
+        return Ok(APIResponse<SyncLogGetDTO>.Success(log, ["Sync triggered"]));
+    }
+
+    /// <summary>POST /api/integrations/orders/{orderId}/ship — Create Shiprelay shipment manually.</summary>
+    [HttpPost("orders/{orderId:int}/ship")]
+    public async Task<IActionResult> CreateShipment(int orderId, [FromServices] IShiprelayService shiprelayService,
+        [FromBody] CreateShipmentRequest request)
+    {
+        var result = await shiprelayService.CreateShipmentAsync(new()
+        {
+            OrderId = orderId,
+            RecipientName = request.RecipientName,
+            Address1 = request.Address1,
+            Address2 = request.Address2,
+            City = request.City,
+            State = request.State,
+            Zip = request.Zip,
+            Country = request.Country,
+            Phone = request.Phone,
+            Email = request.Email,
+            Items = request.Items,
+            ServiceCode = request.ServiceCode,
+            WarehouseId = request.WarehouseId
+        });
+        if (!result.Success)
+            return BadRequest(APIResponseBase.Failure("SHIPRELAY_ERROR", [result.ErrorMessage ?? "Failed to create shipment"]));
+        return Ok(APIResponse<object>.Success(result, ["Shipment created"]));
+    }
+
+    /// <summary>POST /api/integrations/orders/{orderId}/rates — Get shipping rate estimates.</summary>
+    [HttpPost("orders/{orderId:int}/rates")]
+    public async Task<IActionResult> GetRates(int orderId, [FromServices] IShiprelayService shiprelayService,
+        [FromBody] GetRatesRequest request)
+    {
+        var rates = await shiprelayService.GetRatesAsync(new()
+        {
+            OrderId = orderId,
+            ToZip = request.ToZip,
+            ToCountry = request.ToCountry ?? "US",
+            Items = request.Items
+        });
+        return Ok(APIResponse<object>.Success(rates));
+    }
+}
+
+public class CreateShipmentRequest
+{
+    public string RecipientName { get; set; } = default!;
+    public string Address1 { get; set; } = default!;
+    public string? Address2 { get; set; }
+    public string City { get; set; } = default!;
+    public string? State { get; set; }
+    public string Zip { get; set; } = default!;
+    public string Country { get; set; } = "US";
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public List<LumStoreAPI.Application.DTOs.ShiprelayDTO.ShiprelayItemDTO> Items { get; set; } = [];
+    public string? ServiceCode { get; set; }
+    public string? WarehouseId { get; set; }
+}
+
+public class GetRatesRequest
+{
+    public string ToZip { get; set; } = default!;
+    public string? ToCountry { get; set; }
+    public List<LumStoreAPI.Application.DTOs.ShiprelayDTO.ShiprelayItemDTO> Items { get; set; } = [];
+}

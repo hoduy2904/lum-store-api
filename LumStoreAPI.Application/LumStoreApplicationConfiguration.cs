@@ -31,6 +31,13 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IUserService, UserService>();
                 services.AddScoped<IMediaService, MediaService>();
                 services.AddScoped<IProductVariantService, ProductVariantService>();
+                services.AddScoped<IStoreService, StoreService>();
+                services.AddScoped<IOrderService, OrderService>();
+                services.AddScoped<ICustomerService, CustomerService>();
+                services.AddScoped<IShiprelayService, ShiprelayService>();
+                services.AddScoped<IDashboardService, DashboardService>();
+                services.AddScoped<IIntegrationConfigService, IntegrationConfigService>();
+                services.AddScoped<IDiscountRuleService, DiscountRuleService>();
                 services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizeHandler>();
                 return services;
             }
