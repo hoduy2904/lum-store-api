@@ -1,24 +1,38 @@
-﻿using System.Text.Json;
-using LumStoreAPI.Core.Entities.DocumentEngine;
+﻿using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Extensions;
+using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System.Text.Json;
 
 namespace LumStoreAPI.Infrastructure.Configurations
 {
     internal class DocumentPageConfiguration : IEntityTypeConfiguration<DocumentPage>
     {
+        private static WidgetData<object>[] ConvertToObject(string data)
+        {
+            if (!data.IsValidJson(true)) return [];
+            return (JsonSerializer.Deserialize<WidgetData<object>[]>(data) ?? []).Select(x =>
+            {
+                if (DocumentPageTypeHelper.DocumentWidgets.TryGetValue(x.WidgetCode, out Type? widgetQuery) && x.Properties is JsonElement jsonElement)
+                {
+                    x.Properties = jsonElement.Deserialize(widgetQuery, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+                return x;
+            }).ToArray();
+        }
         public void Configure(EntityTypeBuilder<DocumentPage> builder)
         {
             var converter = new ValueConverter<WidgetData<object>[], string>(
                 v => JsonSerializer.Serialize(v),
-                v =>
-                    v.IsValidJson(true)
-                    ? (JsonSerializer.Deserialize<WidgetData<object>[]>(v) ?? Array.Empty<WidgetData<object>>())
-                    : Array.Empty<WidgetData<object>>()
+                v => ConvertToObject(v)
             );
+
             builder.HasKey(x => x.PageID);
 
             builder.Property(x => x.DocumentName)
