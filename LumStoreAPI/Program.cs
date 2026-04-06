@@ -36,6 +36,11 @@ builder.Services
 
 builder.Services.AddJwtAuthentication();
 
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssemblies(typeof(LumStoreApplicationConfiguration).Assembly, typeof(Program).Assembly);
+});
+
 builder.AddLumStoreStaticConfiguration();
 
 builder.Services.AddCors(options =>

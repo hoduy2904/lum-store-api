@@ -7,6 +7,8 @@ using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
+using LumStoreAPI.Libraries.Helpers;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,10 +21,12 @@ namespace LumStoreAPI.Controllers
     {
         private readonly IPageRetrieveContext _pageRetrieveContext;
         private readonly ITreeNodeRepository _treeNodeRepository;
-        public TreeNodeManagerController(IPageRetrieveContext pageRetrieveContext, ITreeNodeRepository treeNodeRepository)
+        private readonly IMediator _mediator;
+        public TreeNodeManagerController(IPageRetrieveContext pageRetrieveContext, ITreeNodeRepository treeNodeRepository, IMediator mediator)
         {
             _pageRetrieveContext = pageRetrieveContext;
             _treeNodeRepository = treeNodeRepository;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -84,8 +88,16 @@ namespace LumStoreAPI.Controllers
             {
                 return NotFound(APIResponse<DocumentPageGetDTO>.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Cannot found node with id: " + nodeId]));
             }
+            //Only use for user side
+            //foreach (var x in node.DocumentPageWidgets)
+            //{
+            //    if (x.Properties != null && DocumentPageTypeHelper.DocumentWidgets.TryGetValue(x.WidgetCode, out var widgetType) && x.Properties.GetType() == widgetType)
+            //    {
+            //        x.Properties = await _mediator.Send(x.Properties);
+            //    }
+            //}
 
-            return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
+            //return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
         }
 
         [HttpPatch("ReOrder")]

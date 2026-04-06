@@ -8,6 +8,7 @@ namespace LumStoreAPI.Libraries.Helpers
     public class DocumentPageTypeHelper
     {
         public static Dictionary<string, Type> DocumentPageTypes = [];
+        public static Dictionary<string, Type> DocumentWidgets = [];
         public static void RegisterPageTypes()
         {
             DocumentPageTypes = [];
@@ -19,6 +20,21 @@ namespace LumStoreAPI.Libraries.Helpers
             {
                 var attr = type.GetCustomAttribute<RegisterPageTypeAttribute>();
                 DocumentPageTypes.Add(attr!.ClassName, attr.Type);
+            }
+        }
+
+        public static void RegisterWidgets()
+        {
+            DocumentWidgets = [];
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                 .SelectMany(a => a.GetTypes())
+                 .Where(t => t.GetCustomAttribute<RegisterWidgetAttribute>() != null);
+
+            foreach (var type in types)
+            {
+                var attr = type.GetCustomAttribute<RegisterWidgetAttribute>();
+                if (attr is not null && !DocumentWidgets.ContainsKey(attr!.WidgetName))
+                    DocumentWidgets.Add(attr!.WidgetName, attr.WidgetQuery);
             }
         }
 
