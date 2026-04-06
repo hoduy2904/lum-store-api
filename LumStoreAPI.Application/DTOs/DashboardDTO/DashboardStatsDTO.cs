@@ -2,6 +2,22 @@ using LumStoreAPI.Core.Models.Enums;
 
 namespace LumStoreAPI.Application.DTOs.DashboardDTO;
 
+public class DashboardSummaryDTO
+{
+    public int TotalOrders { get; set; }
+    public decimal TotalRevenue { get; set; }
+    public int TotalProducts { get; set; }
+    public int TotalCustomers { get; set; }
+    public int VipCount { get; set; }
+    public int NormalCount { get; set; }
+}
+
+public class RevenueStatDTO
+{
+    public string Label { get; set; } = default!;
+    public decimal Revenue { get; set; }
+}
+
 public class DashboardStatsDTO
 {
     public int TotalOrders { get; set; }

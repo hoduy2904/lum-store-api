@@ -1,9 +1,7 @@
-using System.Text.Json;
 using LumStoreAPI.Application.DTOs.MediaDTO;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
@@ -11,6 +9,7 @@ using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace LumStoreAPI.Application.Services
 {
@@ -52,18 +51,17 @@ namespace LumStoreAPI.Application.Services
                 .Join(_context.DocumentPages,
                     ln => ln.Descendant,
                     p => p.NodeID,
-                    (ln, p) => new { ln.Ancestor, p.ClassName })
-                .Where(x => x.ClassName == Product.CLASS_NAME)
+                    (ln, p) => new { ln.Ancestor })
                 .GroupBy(x => x.Ancestor)
                 .Select(g => new { CategoryNodeId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.CategoryNodeId, x => x.Count);
 
             return categories.Select(c => new StoreCategoryDTO
             {
-                Id          = c.NodeID.ToString(),
-                Slug        = c.Node?.NodeAlias ?? "",
-                Name        = c.CategoryName,
-                Image       = c.CategoryImage,
+                Id = c.NodeID.ToString(),
+                Slug = c.Node?.NodeAlias ?? "",
+                Name = c.CategoryName,
+                Image = c.CategoryImage,
                 Description = c.CategoryDescription,
                 ProductCount = productCounts.TryGetValue(c.NodeID, out var cnt) ? cnt : 0
             });
@@ -80,20 +78,14 @@ namespace LumStoreAPI.Application.Services
 
             var cat = categories.FirstOrDefault();
             if (cat == null) return null;
-
-            var productCount = await _context.DocumentLinkedNodes
-                .Where(ln => ln.Ancestor == cat.NodeID && ln.Depth == 1)
-                .Join(_context.DocumentPages, ln => ln.Descendant, p => p.NodeID, (ln, p) => p.ClassName)
-                .CountAsync(cn => cn == Product.CLASS_NAME);
-
             return new StoreCategoryDTO
             {
-                Id           = cat.NodeID.ToString(),
-                Slug         = cat.Node?.NodeAlias ?? "",
-                Name         = cat.CategoryName,
-                Image        = cat.CategoryImage,
-                Description  = cat.CategoryDescription,
-                ProductCount = productCount
+                Id = cat.NodeID.ToString(),
+                Slug = cat.Node?.NodeAlias ?? "",
+                Name = cat.CategoryName,
+                Image = cat.CategoryImage,
+                Description = cat.CategoryDescription,
+                ProductCount = 0
             };
         }
 
@@ -125,22 +117,22 @@ namespace LumStoreAPI.Application.Services
                     (string.IsNullOrEmpty(request.Search) ||
                         x.ProductName.Contains(request.Search) ||
                         x.ShortDescription!.Contains(request.Search))
-                    && (!request.IsNew.HasValue       || x.IsNew == request.IsNew)
+                    && (!request.IsNew.HasValue || x.IsNew == request.IsNew)
                     && (!request.IsBestSeller.HasValue || x.IsBestSeller == request.IsBestSeller)
-                    && (!request.IsSale.HasValue       || (request.IsSale.Value ? x.PriceDiscount > 0 : x.PriceDiscount == 0))
-                    && (!request.MinPrice.HasValue     || (x.Price - x.PriceDiscount) >= request.MinPrice)
-                    && (!request.MaxPrice.HasValue     || (x.Price - x.PriceDiscount) <= request.MaxPrice)
+                    && (!request.IsSale.HasValue || (request.IsSale.Value ? x.PriceDiscount > 0 : x.PriceDiscount == 0))
+                    && (!request.MinPrice.HasValue || (x.Price - x.PriceDiscount) >= request.MinPrice)
+                    && (!request.MaxPrice.HasValue || (x.Price - x.PriceDiscount) <= request.MaxPrice)
                 );
 
                 // Sorting
                 query.IncludeQueryable(q => request.SortBy switch
                 {
-                    "price_asc"   => q.OrderBy(x => x.Price - x.PriceDiscount),
-                    "price_desc"  => q.OrderByDescending(x => x.Price - x.PriceDiscount),
-                    "newest"      => q.OrderByDescending(x => x.IsNew).ThenByDescending(x => x.PageID),
-                    "bestseller"  => q.OrderByDescending(x => x.IsBestSeller).ThenByDescending(x => x.ReviewCount),
-                    "rating"      => q.OrderByDescending(x => x.Rating),
-                    _             => q.OrderBy(x => x.Node.NodeOrder)
+                    "price_asc" => q.OrderBy(x => x.Price - x.PriceDiscount),
+                    "price_desc" => q.OrderByDescending(x => x.Price - x.PriceDiscount),
+                    "newest" => q.OrderByDescending(x => x.IsNew).ThenByDescending(x => x.PageID),
+                    "bestseller" => q.OrderByDescending(x => x.IsBestSeller).ThenByDescending(x => x.ReviewCount),
+                    "rating" => q.OrderByDescending(x => x.Rating),
+                    _ => q.OrderBy(x => x.Node.NodeOrder)
                 });
 
                 query.Paged(request.Page, request.PageSize);
@@ -213,7 +205,7 @@ namespace LumStoreAPI.Application.Services
 
             // Resolve media for variants that have images
             var allImageIds = variants.SelectMany(v => v.Images).Distinct().ToArray();
-            var mediaItems  = allImageIds.Length > 0
+            var mediaItems = allImageIds.Length > 0
                 ? (await _mediaService.GetMediaItemsAsync(allImageIds)).ToList()
                 : [];
 
@@ -311,8 +303,8 @@ namespace LumStoreAPI.Application.Services
                     ? cv
                     : ("", "");
 
-                var variants  = variantsByProductId.TryGetValue(p.PageID, out var vl) ? vl : [];
-                var firstSku  = variants.FirstOrDefault()?.SKU ?? "";
+                var variants = variantsByProductId.TryGetValue(p.PageID, out var vl) ? vl : [];
+                var firstSku = variants.FirstOrDefault()?.SKU ?? "";
                 var totalStock = variants.Sum(v => v.Stock);
 
                 // Resolve product-level images
@@ -324,24 +316,24 @@ namespace LumStoreAPI.Application.Services
 
                 return new StoreProductDTO
                 {
-                    Id               = p.PageID.ToString(),
-                    Slug             = p.Node?.NodeAlias ?? "",
-                    Title            = p.ProductName,
-                    Sku              = firstSku,
-                    Price            = salePrice,
-                    OldPrice         = p.PriceDiscount > 0 ? p.Price : null,
-                    Images           = productImages,
-                    Category         = catName,
-                    CategorySlug     = catSlug,
-                    Tags             = p.Tags,
-                    Description      = p.Description,
+                    Id = p.PageID.ToString(),
+                    Slug = p.Node?.NodeAlias ?? "",
+                    Title = p.ProductName,
+                    Sku = firstSku,
+                    Price = salePrice,
+                    OldPrice = p.PriceDiscount > 0 ? p.Price : null,
+                    Images = productImages,
+                    Category = catName,
+                    CategorySlug = catSlug,
+                    Tags = p.Tags,
+                    Description = p.Description,
                     ShortDescription = p.ShortDescription,
-                    IsNew            = p.IsNew,
-                    IsBestSeller     = p.IsBestSeller,
-                    IsSale           = p.PriceDiscount > 0,
-                    Rating           = p.Rating,
-                    ReviewCount      = p.ReviewCount,
-                    Stock            = totalStock
+                    IsNew = p.IsNew,
+                    IsBestSeller = p.IsBestSeller,
+                    IsSale = p.PriceDiscount > 0,
+                    Rating = p.Rating,
+                    ReviewCount = p.ReviewCount,
+                    Stock = totalStock
                 };
             }).ToList();
         }
