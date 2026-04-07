@@ -29,11 +29,11 @@ namespace LumStoreAPI.Libraries.Helpers
             DocumentFeatureQueries = [];
             var types = AppDomain.CurrentDomain.GetAssemblies()
                  .SelectMany(a => a.GetTypes())
-                 .Where(t => t.GetCustomAttribute<MappingFeatureQueryBaseAttribute>() != null);
+                 .Where(t => t.GetCustomAttribute<MappingFeatureQueryBaseAttribute>(true) != null);
 
             foreach (var type in types)
             {
-                var attr = type.GetCustomAttribute<MappingFeatureQueryBaseAttribute>();
+                var attr = type.GetCustomAttribute<MappingFeatureQueryBaseAttribute>(true);
                 DocumentFeatureQueries.Add(attr!.Entity, attr.Query);
             }
         }

@@ -43,7 +43,7 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
             this.PublishedTo = documentPage.PublishedTo;
             this.NodeName = documentPage.Node?.NodeName ?? string.Empty;
             this.DocumentPageWidgets = documentPage.DocumentPageWidgets;
-            if (DocumentPageTypeHelper.DocumentFeatureQueries.TryGetValue(typeof(DocumentPage), out var query))
+            if (DocumentPageTypeHelper.DocumentFeatureQueries.TryGetValue(documentPage.GetType(), out var query))
             {
                 this.FeatureQuery = (IGenericFeatureQuery?)Activator.CreateInstance(query, documentPage);
             }
