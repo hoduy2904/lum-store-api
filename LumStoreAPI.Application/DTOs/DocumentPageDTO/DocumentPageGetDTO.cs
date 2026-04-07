@@ -1,11 +1,18 @@
-﻿using LumStoreAPI.Core.Entities.DocumentEngine;
+﻿using LumStoreAPI.Application.FeatureQueries;
+using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Extensions;
+using LumStoreAPI.Libraries.Helpers;
+using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json.Serialization;
 
 namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
 {
     public class DocumentPageGetDTO
     {
+        [JsonIgnore]
+        public IGenericFeatureQuery? FeatureQuery { get; set; }
         public int NodeID { get; set; }
         public string NodeName { get; set; }
         public string ClassName { get; set; } = string.Empty;
@@ -17,6 +24,7 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
         public bool RequireAuthentication { get; set; }
         public DateTimeOffset? PublishedFrom { get; set; }
         public DateTimeOffset? PublishedTo { get; set; }
+        public object? SpecialContent { get; set; }
         public WidgetData<object>[] DocumentPageWidgets { get; set; } = [];
         public bool IsPublished => (PublishedFrom == null || PublishedFrom <= DateTime.UtcNow) && (PublishedTo == null || PublishedTo > DateTime.UtcNow);
         public Dictionary<string, object?> Fields { get; set; } = [];
@@ -35,6 +43,10 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
             this.PublishedTo = documentPage.PublishedTo;
             this.NodeName = documentPage.Node?.NodeName ?? string.Empty;
             this.DocumentPageWidgets = documentPage.DocumentPageWidgets;
+            if (DocumentPageTypeHelper.DocumentFeatureQueries.TryGetValue(documentPage.GetType(), out var query))
+            {
+                this.FeatureQuery = (IGenericFeatureQuery?)Activator.CreateInstance(query, documentPage);
+            }
             var type = documentPage.GetType();
             foreach (var property in type.GetProperties(
                 System.Reflection.BindingFlags.Public |
