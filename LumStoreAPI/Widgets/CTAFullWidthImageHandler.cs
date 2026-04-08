@@ -19,7 +19,7 @@ namespace LumStoreAPI.Widgets
                 CTADescription = request.CTADescription,
                 CTAHeader = request.CTAHeader,
                 Pretitle = request.Pretitle,
-                CTALink = JsonHelper.Deserialize<LinkControl?>(request.CTALink, null)
+                CTALink = request.CTALink
             };
             if (request.CTAImage is not null && request.CTAImage.Length > 0)
             {

@@ -54,5 +54,11 @@ namespace LumStoreAPI.Core.Interfaces.DocumentPages
         ITreeNodeContent<T> Roots();
 
         ITreeNodeContent<T> Select(Expression<Func<T, T>> selector);
+
+        /// <summary>
+        /// Only get page can show on the client
+        /// </summary>
+        /// <returns></returns>
+        ITreeNodeContent<T> OnlyPages();
     }
 }

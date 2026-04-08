@@ -376,7 +376,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public async Task<WidgetData<object>[]?> UpdateWidgets(int nodeID, WidgetData<object>[] widgetData)
         {
             int count = await _lumStoreContext.DocumentPages
-                  .Where(x => x.NodeID == x.NodeID)
+                  .Where(x => x.NodeID == nodeID)
                   .ExecuteUpdateAsync(x => x.SetProperty(p => p.DocumentPageWidgets, widgetData));
             if (count > 0)
             {

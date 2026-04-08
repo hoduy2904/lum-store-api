@@ -56,12 +56,16 @@ namespace LumStoreAPI.Application.Services
                 .Select(g => new { CategoryNodeId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.CategoryNodeId, x => x.Count);
 
+            var imageIds = categories.SelectMany(x => x.CategoryImage).ToArray();
+
+            var categoryImage = (await _mediaService.GetMediaItemsAsync(imageIds));
+
             return categories.Select(c => new StoreCategoryDTO
             {
                 Id = c.NodeID.ToString(),
                 Slug = c.Node?.NodeAlias ?? "",
                 Name = c.CategoryName,
-                Image = c.CategoryImage,
+                Image = categoryImage.FirstOrDefault(ci => c.CategoryImage.Contains(ci.FileID))?.FileURL,
                 Description = c.CategoryDescription,
                 ProductCount = productCounts.TryGetValue(c.NodeID, out var cnt) ? cnt : 0
             });
@@ -78,12 +82,14 @@ namespace LumStoreAPI.Application.Services
 
             var cat = categories.FirstOrDefault();
             if (cat == null) return null;
+
+            var images = await _mediaService.GetMediaItemsAsync(cat.CategoryImage);
             return new StoreCategoryDTO
             {
                 Id = cat.NodeID.ToString(),
                 Slug = cat.Node?.NodeAlias ?? "",
                 Name = cat.CategoryName,
-                Image = cat.CategoryImage,
+                Image = images.FirstOrDefault()?.FileURL,
                 Description = cat.CategoryDescription,
                 ProductCount = 0
             };

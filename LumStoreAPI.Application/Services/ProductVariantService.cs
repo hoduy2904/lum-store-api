@@ -65,7 +65,7 @@ internal class ProductVariantService : IProductVariantService
         .Set(p => p.Images, request.Images)
         .Set(p => p.SKU, request.SKU)
         .Set(p => p.UPC, request.UPC)
-        .Set(p => p.VariantName, request.UPC)
+        .Set(p => p.VariantName, request.VariantName)
         );
     }
 }
