@@ -143,51 +143,6 @@ namespace LumStoreAPI.Infrastructure.SeedData
 
         private static async Task SeedDocumentTreeAsync(LumStoreContext context)
         {
-            // ── Hero slides JSON (matches lum-nails heroSlides mock data exactly) ─
-
-            var heroSlidesJson = JsonSerializer.Serialize(new[]
-            {
-                new {
-                    pretitle         = "NEW ARRIVAL",
-                    title            = "NAIL ART BRUSHES",
-                    description      = "Precision tools for every technique. Elevate your artistry with our premium collection designed for professionals.",
-                    image            = "/images/NAB-HP-HERO 1.png",
-                    primaryCtaText   = "Shop Collection",
-                    primaryCtaLink   = "/collection/tools",
-                    secondaryCtaText = "View Tutorial",
-                    secondaryCtaLink = "/news"
-                },
-                new {
-                    pretitle         = "BEST SELLER",
-                    title            = "GEL POLISH KITS",
-                    description      = "Everything you need for a salon-quality manicure at home. Long-lasting, vibrant colors that shine.",
-                    image            = "/images/NAB-HP-HERO 1.png",
-                    primaryCtaText   = "Shop Kits",
-                    primaryCtaLink   = "/collection/gel-polish",
-                    secondaryCtaText = "Compare",
-                    secondaryCtaLink = "/shop"
-                },
-                new {
-                    pretitle         = "LIMITED EDITION",
-                    title            = "SUMMER VIBES",
-                    description      = "Capture the essence of summer with our exclusive palette. Bright, bold, and beautiful shades.",
-                    image            = "/images/NAB-HP-HERO 1.png",
-                    primaryCtaText   = "Shop Summer",
-                    primaryCtaLink   = "/collection/gel-polish",
-                    secondaryCtaText = "Lookbook",
-                    secondaryCtaLink = "/news"
-                },
-                new {
-                    pretitle         = "SKINCARE",
-                    title            = "HAND & NAIL CARE",
-                    description      = "Nourish your hands and cuticles with our organic oils and creams. The perfect finish to any manicure.",
-                    image            = "/images/NAB-HP-HERO 1.png",
-                    primaryCtaText   = "Shop Care",
-                    primaryCtaLink   = "/collection/care",
-                    secondaryCtaText = "Ingredients",
-                    secondaryCtaLink = "/about"
-                }
-            });
 
             // ── Level 0: Root ──────────────────────────────────────────────────
 
@@ -280,15 +235,6 @@ namespace LumStoreAPI.Infrastructure.SeedData
                 new DocumentPage { NodeID = root.NodeID, DocumentName = "Root" }
             );
 
-            // Home page with hero slides JSON
-            await context.HomePages.AddAsync(new HomePage
-            {
-                NodeID = home.NodeID,
-                DocumentName = "Home",
-                PageTitle = "LUM Nails — Premium Nail Beauty",
-                Description = "Discover professional-grade nail products for salon-quality results at home.",
-                HeroSlidesJson = heroSlidesJson
-            });
 
             // ── ProductCategory pages (match lum-nails categories exactly) ─────
 

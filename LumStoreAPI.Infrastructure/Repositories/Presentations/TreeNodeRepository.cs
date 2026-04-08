@@ -302,6 +302,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var type = DocumentPageTypeHelper.DocumentPageTypes.GetValueOrDefault(className, typeof(DocumentPage));
             var page = await _lumStoreContext
                  .DocumentPages
+                 .Include(x => x.Node)
                  .FirstOrDefaultAsync(x => x.NodeID == nodeID);
 
             if (page == null || page.GetType() != type)
@@ -332,6 +333,14 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                         {
                             value = JsonSerializer.Deserialize(
                                json.GetDateTimeOffset(),
+                               prop.PropertyType
+                           );
+                        }
+                        else if (json.ValueKind == JsonValueKind.Object)
+                        {
+                            value = JsonHelper.Deserialize(
+                               json.GetRawText(),
+                               null,
                                prop.PropertyType
                            );
                         }

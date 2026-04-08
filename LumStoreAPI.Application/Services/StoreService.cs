@@ -216,33 +216,6 @@ namespace LumStoreAPI.Application.Services
             });
         }
 
-        // ─── Hero Slides ──────────────────────────────────────────────────────
-
-        public async Task<IEnumerable<StoreHeroSlideDTO>> GetHeroSlidesAsync()
-        {
-            var homePages = await _pageRetrieveContext.GetPagesAsync<HomePage>(query =>
-            {
-                query
-                    .Published(TreeNodePublished.All)
-                    .Where(x => !string.IsNullOrEmpty(x.HeroSlidesJson));
-            });
-
-            var homePage = homePages.FirstOrDefault();
-            if (homePage?.HeroSlidesJson == null) return [];
-
-            try
-            {
-                var slides = JsonSerializer.Deserialize<StoreHeroSlideDTO[]>(
-                    homePage.HeroSlidesJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return slides ?? [];
-            }
-            catch
-            {
-                return [];
-            }
-        }
-
         // ─── Private helpers ──────────────────────────────────────────────────
 
         /// <summary>

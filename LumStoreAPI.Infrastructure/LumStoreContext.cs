@@ -15,7 +15,7 @@ using System.Reflection;
 
 namespace LumStoreAPI.Infrastructure
 {
-    public class LumStoreContext : DbContext
+    public partial class LumStoreContext : DbContext
     {
         protected readonly IConfiguration Configuration;
         protected readonly ICacheService _cacheService;

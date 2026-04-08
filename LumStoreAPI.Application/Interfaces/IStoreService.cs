@@ -32,8 +32,5 @@ namespace LumStoreAPI.Application.Interfaces
         Task<IEnumerable<ProductVariantGetDTO>> GetProductVariantsAsync(string slug);
 
         // ── Home ──────────────────────────────────────────────────────────────
-
-        /// <summary>Get hero slides from the home page HeroSlidesJson field.</summary>
-        Task<IEnumerable<StoreHeroSlideDTO>> GetHeroSlidesAsync();
     }
 }

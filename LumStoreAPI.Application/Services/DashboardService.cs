@@ -1,9 +1,9 @@
 using LumStoreAPI.Application.DTOs.DashboardDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Models.Enums;
+using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using LumStoreAPI.Infrastructure;
 
 namespace LumStoreAPI.Application.Services;
 

@@ -2,7 +2,6 @@ using LumStoreAPI.Application.DTOs.CustomerDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Customers;
-using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure.Extensions;

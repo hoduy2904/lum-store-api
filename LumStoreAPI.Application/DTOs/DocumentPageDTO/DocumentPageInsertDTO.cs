@@ -52,6 +52,14 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
                                prop.PropertyType
                            );
                         }
+                        else if (json.ValueKind == JsonValueKind.Object)
+                        {
+                            value = JsonHelper.Deserialize(
+                               json.GetRawText(),
+                               null,
+                               prop.PropertyType
+                           );
+                        }
                         else
                         {
                             value = JsonSerializer.Deserialize(

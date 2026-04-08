@@ -121,19 +121,5 @@ namespace LumStoreAPI.Controllers
             var variants = await _storeService.GetProductVariantsAsync(slug);
             return Ok(APIResponse<IEnumerable<ProductVariantGetDTO>>.Success(variants, ["Success"]));
         }
-
-        // ── Home ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// GET /api/store/hero-slides
-        /// Hero slides from the HomePage.HeroSlidesJson field.
-        /// Used by: home page HeroSlider component.
-        /// </summary>
-        [HttpGet("hero-slides")]
-        public async Task<IActionResult> GetHeroSlides()
-        {
-            var slides = await _storeService.GetHeroSlidesAsync();
-            return Ok(APIResponse<IEnumerable<StoreHeroSlideDTO>>.Success(slides, ["Success"]));
-        }
     }
 }

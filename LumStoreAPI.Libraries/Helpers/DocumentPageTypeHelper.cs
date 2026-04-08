@@ -1,5 +1,6 @@
 ﻿using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -15,12 +16,12 @@ namespace LumStoreAPI.Libraries.Helpers
             DocumentPageTypes = [];
             var types = AppDomain.CurrentDomain.GetAssemblies()
                  .SelectMany(a => a.GetTypes())
-                 .Where(t => t.GetCustomAttribute<RegisterPageTypeAttribute>() != null);
+                 .Where(t => typeof(DocumentPage).IsAssignableFrom(t));
 
             foreach (var type in types)
             {
-                var attr = type.GetCustomAttribute<RegisterPageTypeAttribute>();
-                DocumentPageTypes.Add(attr!.ClassName, attr.Type);
+                string className = GetClassName(type);
+                DocumentPageTypes.Add(className, type);
             }
         }
 

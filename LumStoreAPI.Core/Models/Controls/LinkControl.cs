@@ -2,8 +2,8 @@
 {
     public class LinkControl
     {
-        public string LinkName { get; set; } = default!;
-        public string LinkUrl { get; set; } = default!;
+        public string Name { get; set; } = default!;
+        public string Url { get; set; } = default!;
         public string? Target { get; set; }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using LumStoreAPI.Application.DTOs.Widgets;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Application.Widgets;
+using LumStoreAPI.Core.Models.Controls;
+using LumStoreAPI.Libraries.Helpers;
 using MediatR;
 
 namespace LumStoreAPI.Widgets
@@ -17,6 +19,7 @@ namespace LumStoreAPI.Widgets
                 CTADescription = request.CTADescription,
                 CTAHeader = request.CTAHeader,
                 Pretitle = request.Pretitle,
+                CTALink = JsonHelper.Deserialize<LinkControl?>(request.CTALink, null)
             };
             if (request.CTAImage is not null && request.CTAImage.Length > 0)
             {

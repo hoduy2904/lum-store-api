@@ -11,5 +11,6 @@ namespace LumStoreAPI.Application.Widgets
         public string? Pretitle { get; set; }
         public string? CTAHeader { get; set; }
         public string? CTADescription { get; set; }
+        public string? CTALink { get; set; }
     }
 }
