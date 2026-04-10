@@ -1,13 +1,10 @@
-using LumStoreAPI.Core.Entities.DocumentEngine;
-using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
-using LumStoreAPI.Core.Models.Enums;
+using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 
 namespace LumStoreAPI.Infrastructure.SeedData
 {
@@ -33,6 +30,7 @@ namespace LumStoreAPI.Infrastructure.SeedData
                 await SeedUsersAsync(context);
                 await SeedSettingsAsync(context);
                 await SeedMediaLibraryAsync(context);
+                await SeedContent(context);
 
                 logger.LogInformation("LUM Nails database seeded successfully.");
             }
@@ -41,6 +39,32 @@ namespace LumStoreAPI.Infrastructure.SeedData
                 logger.LogError(ex, "An error occurred while seeding the database.");
                 throw;
             }
+        }
+
+        private static async Task SeedContent(LumStoreContext context)
+        {
+            var node = await context.HomePages.AddAsync(new HomePage
+            {
+                DocumentName = "Home",
+                PageTitle = "Home",
+                Node = new Core.Entities.DocumentEngine.DocumentNode
+                {
+                    ClassName = HomePage.CLASS_NAME,
+                    NodeAlias = "home",
+                    RelativeUrl = "",
+                    NodeName = "Home",
+                    NodeOrder = 1,
+                }
+            });
+
+            await context.SaveChangesAsync();
+            await context.DocumentLinkedNodes.AddAsync(new Core.Entities.DocumentEngine.DocumentLinkedNode
+            {
+                Ancestor = node.Entity.NodeID,
+                Depth = 0,
+                Descendant = node.Entity.NodeID,
+            });
+            await context.SaveChangesAsync();
         }
 
         // ─── Users ────────────────────────────────────────────────────────────────

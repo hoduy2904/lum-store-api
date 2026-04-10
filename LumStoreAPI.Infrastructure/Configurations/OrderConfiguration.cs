@@ -8,7 +8,6 @@ internal class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
     public void Configure(EntityTypeBuilder<Order> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.HasIndex(x => x.OrderCode).IsUnique();
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CustomerId);

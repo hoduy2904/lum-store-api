@@ -134,8 +134,7 @@ namespace LumStoreAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Insert(DocumentPageInsertDTO documentPageDTO)
         {
-            var document = await _treeNodeRepository.InsertAsync(documentPageDTO.GetEntity()
-                , documentPageDTO.ParentNodeID == null ? null : new DocumentNode { NodeID = documentPageDTO.ParentNodeID.Value });
+            var document = await _treeNodeRepository.InsertAsync(documentPageDTO.GetEntity(), new DocumentNode { NodeID = documentPageDTO.ParentNodeID });
             if (document == null)
             {
                 return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR, ["Cannot create page, Please try later"]));

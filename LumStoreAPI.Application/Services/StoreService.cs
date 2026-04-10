@@ -123,7 +123,6 @@ namespace LumStoreAPI.Application.Services
                     (string.IsNullOrEmpty(request.Search) ||
                         x.ProductName.Contains(request.Search) ||
                         x.ShortDescription!.Contains(request.Search))
-                    && (!request.IsNew.HasValue || x.IsNew == request.IsNew)
                     && (!request.IsBestSeller.HasValue || x.IsBestSeller == request.IsBestSeller)
                     && (!request.IsSale.HasValue || (request.IsSale.Value ? x.PriceDiscount > 0 : x.PriceDiscount == 0))
                     && (!request.MinPrice.HasValue || (x.Price - x.PriceDiscount) >= request.MinPrice)
@@ -135,7 +134,6 @@ namespace LumStoreAPI.Application.Services
                 {
                     "price_asc" => q.OrderBy(x => x.Price - x.PriceDiscount),
                     "price_desc" => q.OrderByDescending(x => x.Price - x.PriceDiscount),
-                    "newest" => q.OrderByDescending(x => x.IsNew).ThenByDescending(x => x.PageID),
                     "bestseller" => q.OrderByDescending(x => x.IsBestSeller).ThenByDescending(x => x.ReviewCount),
                     "rating" => q.OrderByDescending(x => x.Rating),
                     _ => q.OrderBy(x => x.Node.NodeOrder)
@@ -157,7 +155,7 @@ namespace LumStoreAPI.Application.Services
             {
                 query
                     .Published(TreeNodePublished.All)
-                    .Where(x => x.IsBestSeller || x.IsNew)
+                    .Where(x => x.IsBestSeller)
                     .IncludeQueryable(q => q
                         .OrderByDescending(x => x.IsBestSeller)
                         .ThenByDescending(x => x.ReviewCount)
@@ -173,7 +171,6 @@ namespace LumStoreAPI.Application.Services
             {
                 query
                     .Published(TreeNodePublished.All)
-                    .Where(x => x.IsNew)
                     .IncludeQueryable(q => q.OrderByDescending(x => x.PageID).Take(limit));
             });
 
@@ -307,7 +304,6 @@ namespace LumStoreAPI.Application.Services
                     Tags = p.Tags,
                     Description = p.Description,
                     ShortDescription = p.ShortDescription,
-                    IsNew = p.IsNew,
                     IsBestSeller = p.IsBestSeller,
                     IsSale = p.PriceDiscount > 0,
                     Rating = p.Rating,

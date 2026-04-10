@@ -8,7 +8,6 @@ internal class IntegrationConfigConfiguration : IEntityTypeConfiguration<Integra
 {
     public void Configure(EntityTypeBuilder<IntegrationConfig> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.HasIndex(x => x.IntegrationType);
 
         builder.Property(x => x.Name).HasMaxLength(100).IsRequired();

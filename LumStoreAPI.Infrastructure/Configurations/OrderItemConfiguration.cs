@@ -8,7 +8,6 @@ internal class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 {
     public void Configure(EntityTypeBuilder<OrderItem> builder)
     {
-        builder.HasKey(x => x.ItemID);
 
         builder.Property(x => x.ProductName).HasMaxLength(200);
         builder.Property(x => x.VariantName).HasMaxLength(200);

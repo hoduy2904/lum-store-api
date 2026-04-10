@@ -8,7 +8,6 @@ internal class CustomerTierConfiguration : IEntityTypeConfiguration<CustomerTier
 {
     public void Configure(EntityTypeBuilder<CustomerTier> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.HasIndex(x => x.TierLevel).IsUnique();
 
         builder.Property(x => x.TierName).HasMaxLength(50).IsRequired();

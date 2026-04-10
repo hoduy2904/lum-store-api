@@ -58,7 +58,7 @@ namespace LumStoreAPI.Libraries.Helpers
         {
             return typeof(DocumentPage)
                 .GetProperties()
-                .Where(x => x.PropertyType.GetCustomAttribute<JsonIgnoreAttribute>(true) is not null)
+                .Where(x => x.PropertyType.GetCustomAttribute<JsonIgnoreAttribute>(true) is null)
                 .Any(x => x.Name.Equals(fieldName));
         }
 

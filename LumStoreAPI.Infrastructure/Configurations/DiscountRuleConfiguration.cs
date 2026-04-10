@@ -8,7 +8,6 @@ internal class DiscountRuleConfiguration : IEntityTypeConfiguration<DiscountRule
 {
     public void Configure(EntityTypeBuilder<DiscountRule> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.HasIndex(x => x.IsActive);
 
         builder.Property(x => x.RuleName).HasMaxLength(200).IsRequired();

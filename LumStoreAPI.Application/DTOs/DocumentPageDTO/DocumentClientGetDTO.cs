@@ -7,8 +7,10 @@ using System.Text.Json.Serialization;
 
 namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
 {
-    public class DocumentPageGetDTO
+    public class DocumentClientGetDTO
     {
+        [JsonIgnore]
+        public IGenericFeatureQuery? FeatureQuery { get; set; }
         public int NodeID { get; set; }
         public string NodeName { get; set; }
         public string ClassName { get; set; } = string.Empty;
@@ -17,13 +19,12 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
         public string? RelativeUrl { get; set; }
         public int NodeOrder { get; set; }
         public string NodeAlias { get; set; } = default!;
-        public bool RequireAuthentication { get; set; }
-        public DateTimeOffset? PublishedFrom { get; set; }
-        public DateTimeOffset? PublishedTo { get; set; }
-        public bool IsPublished => (PublishedFrom == null || PublishedFrom <= DateTime.UtcNow) && (PublishedTo == null || PublishedTo > DateTime.UtcNow);
+        public object? SpecialContent { get; set; }
+        public WidgetData<object>[] DocumentPageWidgets { get; set; } = [];
+        public bool IsPublished { get; internal set; }
         public Dictionary<string, object?> Fields { get; set; } = [];
 
-        public DocumentPageGetDTO(DocumentPage documentPage)
+        public DocumentClientGetDTO(DocumentPage documentPage)
         {
             this.NodeID = documentPage.NodeID;
             this.ClassName = documentPage.Node.ClassName;
@@ -32,10 +33,14 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
             this.RelativeUrl = documentPage.Node?.RelativeUrl;
             this.NodeOrder = documentPage.Node?.NodeOrder ?? 0;
             this.NodeAlias = documentPage.Node?.NodeAlias ?? string.Empty;
-            this.RequireAuthentication = documentPage.RequireAuthentication;
-            this.PublishedFrom = documentPage.PublishedFrom;
-            this.PublishedTo = documentPage.PublishedTo;
             this.NodeName = documentPage.Node?.NodeName ?? string.Empty;
+            this.DocumentPageWidgets = documentPage.DocumentPageWidgets;
+            this.IsPublished = (documentPage.PublishedFrom == null || documentPage.PublishedFrom <= DateTime.UtcNow) && (documentPage.PublishedTo == null || documentPage.PublishedTo > DateTime.UtcNow);
+
+            if (DocumentPageTypeHelper.DocumentFeatureQueries.TryGetValue(documentPage.GetType(), out var query))
+            {
+                this.FeatureQuery = (IGenericFeatureQuery?)Activator.CreateInstance(query, documentPage);
+            }
             var type = documentPage.GetType();
             foreach (var property in type.GetProperties(
                 System.Reflection.BindingFlags.Public |

@@ -17,8 +17,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
                 c => c.ToArray()
             );
 
-            builder.HasKey(x => x.ItemID);
-
             builder.Property(x => x.EmailBody)
                 .HasMaxLength(-1);
 

@@ -31,6 +31,7 @@ namespace LumStoreAPI.Infrastructure
                 services.AddScoped<ICustomerRepository, CustomerRepository>();
                 services.AddScoped<IIntegrationConfigRepository, IntegrationConfigRepository>();
                 services.AddScoped<IDiscountRuleRepository, DiscountRuleRepository>();
+                services.AddScoped<IShiprelaySystemRespository, ShiprelaySystemRepository>();
                 return services;
             }
 

@@ -2,8 +2,8 @@
 {
     public class MappingFeatureQueryBaseAttribute : Attribute
     {
-        public Type Entity { get; protected set; }
-        public Type Query { get; protected set; }
+        public Type Entity { get; protected set; } = default!;
+        public Type Query { get; protected set; } = default!;
 
     }
 }

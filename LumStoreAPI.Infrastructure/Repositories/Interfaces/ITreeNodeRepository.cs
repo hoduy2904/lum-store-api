@@ -6,7 +6,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Interfaces
 {
     public interface ITreeNodeRepository
     {
-        Task<T?> InsertAsync<T>(T page, DocumentNode? parent = null) where T : DocumentPage;
+        Task<T?> InsertAsync<T>(T page, DocumentNode parent) where T : DocumentPage;
         Task<IEnumerable<T>> InsertsAsync<T>(T[] pages, DocumentNode? parent = null) where T : DocumentPage;
         Task<bool> UpdateAsync<T>(T page) where T : DocumentPage;
         Task<bool> UpdateAsync<T>(int nodeID, Action<UpdateSettersBuilder<T>> properties) where T : DocumentPage;

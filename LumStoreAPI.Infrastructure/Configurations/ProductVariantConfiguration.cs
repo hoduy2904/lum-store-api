@@ -1,7 +1,6 @@
 using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LumStoreAPI.Infrastructure.Configurations
@@ -12,8 +11,7 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
         public void Configure(EntityTypeBuilder<ProductVariant> builder)
         {
-
-            builder.HasKey(x => x.ItemID);
+            builder.HasIndex(x => x.ShiprelayId);
 
             builder.HasIndex(x => x.SKU).IsUnique();
 
@@ -26,9 +24,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
             builder.Property(x => x.Color)
                 .HasMaxLength(50);
-
-            builder.Property(x => x.ColorHex)
-                .HasMaxLength(10);
 
             builder.Property(x => x.UPC)
                 .HasMaxLength(32);
