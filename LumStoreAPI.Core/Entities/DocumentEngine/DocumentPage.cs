@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Core.Entities.Base;
 using LumStoreAPI.Core.Models.Systems;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace LumStoreAPI.Core.Entities.DocumentEngine
@@ -21,6 +22,8 @@ namespace LumStoreAPI.Core.Entities.DocumentEngine
         public DateTimeOffset? PublishedTo { get; set; }
         [DisplayName("Published from")]
         public DateTimeOffset? PublishedFrom { get; set; }
+        [NotMapped]
+        public bool IsPublished => (this.PublishedFrom == null || this.PublishedFrom <= DateTime.UtcNow) && (this.PublishedTo == null || this.PublishedTo > DateTime.UtcNow);
         public WidgetData<object>[] DocumentPageWidgets { get; set; } = [];
 
         public virtual DocumentNode Node { get; set; } = default!;

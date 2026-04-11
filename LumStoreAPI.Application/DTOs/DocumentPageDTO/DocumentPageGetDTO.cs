@@ -22,6 +22,7 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
         public DateTimeOffset? PublishedTo { get; set; }
         public bool IsPublished => (PublishedFrom == null || PublishedFrom <= DateTime.UtcNow) && (PublishedTo == null || PublishedTo > DateTime.UtcNow);
         public Dictionary<string, object?> Fields { get; set; } = [];
+        public WidgetData<object>[] DocumentPageWidgets { get; set; }
 
         public DocumentPageGetDTO(DocumentPage documentPage)
         {
@@ -36,6 +37,7 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
             this.PublishedFrom = documentPage.PublishedFrom;
             this.PublishedTo = documentPage.PublishedTo;
             this.NodeName = documentPage.Node?.NodeName ?? string.Empty;
+            this.DocumentPageWidgets = documentPage.DocumentPageWidgets;
             var type = documentPage.GetType();
             foreach (var property in type.GetProperties(
                 System.Reflection.BindingFlags.Public |

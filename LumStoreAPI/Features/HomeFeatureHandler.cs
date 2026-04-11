@@ -16,19 +16,25 @@ namespace LumStoreAPI.Features
         private readonly IMediaService _mediaService = mediaService;
         public async Task<HomePageFeatureDTO> Handle(HomePageFeatureQuery request, CancellationToken cancellationToken)
         {
-            var model = new HomePageFeatureDTO();
+            var model = new HomePageFeatureDTO
+            {
+                Description = request.HomePage.Description,
+                PageTitle = request.HomePage.PageTitle
+            };
 
-            var carouselItems = (await _pageRetrieveContext.GetPagesAsync<CTAImageItem>(query =>
+            var carouselItems = await _pageRetrieveContext.GetPagesAsync<CTAImageItem>(query =>
             {
                 query.GetDescendants(request.HomePage.CarouselPathId);
-            }));
+            });
 
             var imageIds = carouselItems.Where(x => x.Image.Any()).SelectMany(x => x.Image!);
             var images = await _mediaService.GetMediaItemsAsync(imageIds.ToArray());
             model.Carousels = carouselItems.Select(x =>
             {
-                var ctaImage = new CTAImageItemDTO(x);
-                ctaImage.Image = images.FirstOrDefault(img => x.Image.Contains(img.FileID))?.FileURL;
+                var ctaImage = new CTAImageItemDTO(x)
+                {
+                    Image = images.FirstOrDefault(img => x.Image.Contains(img.FileID))?.FileURL
+                };
                 return ctaImage;
             });
 

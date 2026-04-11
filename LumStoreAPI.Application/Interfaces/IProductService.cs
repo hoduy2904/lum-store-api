@@ -6,6 +6,6 @@ namespace LumStoreAPI.Application.Interfaces;
 
 public interface IProductService
 {
-    Task<IEnumerable<DocumentClientGetDTO<ProductClientDTO>>> GetFeatureProducts(int topN);
-    Task<IEnumerable<DocumentClientGetDTO<ProductClientDTO>>> GetNewProducts(int topN);
+    Task<IEnumerable<DocumentClientGetDTO>> GetFeatureProducts(int topN);
+    Task<IEnumerable<DocumentClientGetDTO>> GetNewProducts(int topN);
 }

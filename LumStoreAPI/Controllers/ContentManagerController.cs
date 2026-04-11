@@ -1,4 +1,5 @@
-﻿using LumStoreAPI.Application.DTOs.DocumentPageDTO;
+﻿using System.Web;
+using LumStoreAPI.Application.DTOs.DocumentPageDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
@@ -22,6 +23,7 @@ namespace LumStoreAPI.Controllers
         [HttpGet("{alias}")]
         public async Task<IActionResult> Index(string? alias)
         {
+            alias = HttpUtility.UrlDecode(alias);
             var node = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
                 query
@@ -38,7 +40,7 @@ namespace LumStoreAPI.Controllers
 
             if (node.FeatureQuery != null)
             {
-                node.SpecialContent = await _mediator.Send(node.FeatureQuery);
+                node.Fields = await _mediator.Send(node.FeatureQuery);
             }
 
             foreach (var x in node.DocumentPageWidgets)

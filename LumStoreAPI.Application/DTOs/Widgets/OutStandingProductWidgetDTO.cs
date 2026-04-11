@@ -13,5 +13,5 @@ public class OutStandingProductWidgetDTO
     public string? CTADescription { get; set; }
     public string[] CTAImages { get; set; } = [];
     public LinkControl? CTALink { get; set; }
-    public IEnumerable<DocumentClientGetDTO<ProductClientDTO>> Products { get; set; } = [];
+    public IEnumerable<DocumentClientGetDTO> Products { get; set; } = [];
 }

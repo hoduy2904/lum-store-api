@@ -17,19 +17,19 @@ IMediaService mediaService)
 {
     private readonly IPageRetrieveContext _pageRetrieveContext = pageRetrieveContext;
     private readonly IMediaService _mediaService = mediaService;
-    public Task<IEnumerable<DocumentClientGetDTO<ProductClientDTO>>> GetFeatureProducts(int topN)
+    public Task<IEnumerable<DocumentClientGetDTO>> GetFeatureProducts(int topN)
     {
         return this.GetProducts(x => x.IsBestSeller, topN);
     }
 
-    public Task<IEnumerable<DocumentClientGetDTO<ProductClientDTO>>> GetNewProducts(int topN)
+    public Task<IEnumerable<DocumentClientGetDTO>> GetNewProducts(int topN)
     {
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
         return this.GetProducts(x => x.CreatedAt >= sevenDaysAgo, topN);
     }
 
 
-    private async Task<IEnumerable<DocumentClientGetDTO<ProductClientDTO>>> GetProducts(Expression<Func<Product, bool>> where, int topN)
+    private async Task<IEnumerable<DocumentClientGetDTO>> GetProducts(Expression<Func<Product, bool>> where, int topN)
     {
         if (topN > 20)
         {
@@ -76,7 +76,7 @@ IMediaService mediaService)
                 Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray()
             };
 
-            var product = new DocumentClientGetDTO<ProductClientDTO>(productItem, x);
+            var product = new DocumentClientGetDTO(productItem, x);
             return product;
         });
 

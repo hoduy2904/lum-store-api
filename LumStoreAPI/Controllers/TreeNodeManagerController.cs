@@ -87,19 +87,6 @@ namespace LumStoreAPI.Controllers
                 return NotFound(APIResponse<DocumentPageGetDTO>.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Cannot found node with id: " + nodeId]));
             }
 
-            // if (node.FeatureQuery != null)
-            // {
-            //     node.SpecialContent = await _mediator.Send(node.FeatureQuery);
-            // }
-            //Only use for user side
-            //foreach (var x in node.DocumentPageWidgets)
-            //{
-            //    if (x.Properties != null && DocumentPageTypeHelper.DocumentWidgets.TryGetValue(x.WidgetCode, out var widgetType) && x.Properties.GetType() == widgetType)
-            //    {
-            //        x.Properties = await _mediator.Send(x.Properties);
-            //    }
-            //}
-
             return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
         }
 
