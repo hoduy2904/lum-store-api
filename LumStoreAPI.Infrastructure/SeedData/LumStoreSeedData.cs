@@ -50,7 +50,7 @@ namespace LumStoreAPI.Infrastructure.SeedData
                 Node = new Core.Entities.DocumentEngine.DocumentNode
                 {
                     ClassName = HomePage.CLASS_NAME,
-                    NodeAlias = "home",
+                    NodeAlias = "",
                     RelativeUrl = "",
                     NodeName = "Home",
                     NodeOrder = 1,

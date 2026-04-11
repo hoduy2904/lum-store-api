@@ -12,7 +12,6 @@ public record class ProductVariantGetDTO
     public int Stock { get; set; }
     public string[] Images { get; set; } = [];
     public string? Color { get; set; }
-    public string? ColorHex { get; set; }
     public string VariantName { get; set; } = default!;
 
     public ProductVariantGetDTO(ProductVariant productVariant, MediaItemDTO[]? mediaItemDTO = null)

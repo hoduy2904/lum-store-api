@@ -38,6 +38,7 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IDashboardService, DashboardService>();
                 services.AddScoped<IIntegrationConfigService, IntegrationConfigService>();
                 services.AddScoped<IDiscountRuleService, DiscountRuleService>();
+                services.AddScoped<IProductService, ProductService>();
                 services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizeHandler>();
                 return services;
             }
