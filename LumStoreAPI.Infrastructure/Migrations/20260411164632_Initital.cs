@@ -478,6 +478,26 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LinkLists",
+                columns: table => new
+                {
+                    PageID = table.Column<int>(type: "int", nullable: false),
+                    LinkListTitle = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    LinkListIcon = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    LinkUrl = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LinkLists", x => x.PageID);
+                    table.ForeignKey(
+                        name: "FK_LinkLists_DocumentPages_PageID",
+                        column: x => x.PageID,
+                        principalTable: "DocumentPages",
+                        principalColumn: "PageID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ProductCategories",
                 columns: table => new
                 {
@@ -1052,6 +1072,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "IntegrationConfigs");
+
+            migrationBuilder.DropTable(
+                name: "LinkLists");
 
             migrationBuilder.DropTable(
                 name: "LoyaltyPoints");

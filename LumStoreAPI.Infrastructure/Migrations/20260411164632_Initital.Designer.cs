@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260411160412_Initital")]
+    [Migration("20260411164632_Initital")]
     partial class Initital
     {
         /// <inheritdoc />
@@ -1120,6 +1120,27 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("CTAImages");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.LinkListItem", b =>
+                {
+                    b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
+
+                    b.Property<string>("LinkListIcon")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("LinkListTitle")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LinkUrl")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.ToTable("LinkLists");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.HomePage", b =>
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
@@ -1462,6 +1483,15 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage", null)
                         .WithOne()
                         .HasForeignKey("LumStoreAPI.Core.Entities.DocumentTypes.CTAImageItem", "PageID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.LinkListItem", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage", null)
+                        .WithOne()
+                        .HasForeignKey("LumStoreAPI.Core.Entities.DocumentTypes.LinkListItem", "PageID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
