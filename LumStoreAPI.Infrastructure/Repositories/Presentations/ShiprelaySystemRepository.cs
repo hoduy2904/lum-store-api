@@ -1,5 +1,5 @@
-﻿using LumStoreAPI.Core.Entities.Integrations;
-using LumStoreAPI.Core.Entities.Pages;
+﻿using LumStoreAPI.Core.Entities.DocumentTypes;
+using LumStoreAPI.Core.Entities.Integrations;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Models.Enums;
@@ -32,78 +32,104 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return new PagedEnumerable<ShiprelayDataSync>(await data.ToListAsync(), count);
         }
 
-        public async Task SyncProductShiprelayAsync(Product product)
+        public async Task SyncProductShiprelayAsync(int productId, EntryActionStatus entryActionStatus, int? variantId = null)
         {
-            var variants = await _context
-                .ProductVariants
-                .Where(x => x.ProductID == product.NodeID)
-                .AsNoTracking()
-                .Select(x => x.ItemID)
-                .ToListAsync();
-
-            if (variants.Count == 0)
-                return;
-
-            await _context
-                 .ShiprelayDataSyncs
-                 .Where(x => variants.Contains(x.VariantID) && x.ProductNodeID == product.NodeID && x.Status != EmailStatus.Success)
-                 .ExecuteDeleteAsync();
-
-            await _context.ShiprelayDataSyncs.AddRangeAsync(variants.Select(x => new ShiprelayDataSync
-            {
-                ProductNodeID = product.NodeID,
-                VariantID = x,
-                Status = EmailStatus.Waiting
-            }));
-        }
-
-        public async Task SyncProductShiprelayAsync(int productId, int? variantId = null)
-        {
-            if (!(await UpdateShiprelayDataAsync(productId, variantId, EmailStatus.Waiting)) && variantId != null)
+            if (!await UpdateShiprelayDataAsync(productId, variantId, EmailStatus.Waiting, entryActionStatus) && variantId != null)
             {
                 _context.Add(new ShiprelayDataSync
                 {
                     Status = EmailStatus.Waiting,
                     VariantID = variantId.Value,
-                    ProductNodeID = productId
+                    EntryActionStatus = entryActionStatus
                 });
 
                 await _context.SaveChangesAsync();
             }
         }
 
-        public async Task SyncVariantShiprelayAsync(int variantId)
+        public async Task SyncProductShiprelaysAsync(int[] productIds, EntryActionStatus entryActionStatus)
         {
-            var shiprelayItem = await _context.ShiprelayDataSyncs.FirstOrDefaultAsync(x => x.VariantID == variantId && x.Status != EmailStatus.Success);
+            if (productIds.Length == 0) return;
+            var variantIds = await _context
+                .ProductVariants
+                .AsNoTracking()
+                .Where(x => productIds.Contains(x.ProductID))
+                .Select(x => x.ItemID).ToArrayAsync();
+
+            await this.SyncVariantShiprelayAsync(variantIds, entryActionStatus);
+        }
+
+        public async Task SyncVariantShiprelayAsync(int variantId, EntryActionStatus entryActionStatus)
+        {
+            var shiprelayItem = await _context.ShiprelayDataSyncs
+            .FirstOrDefaultAsync(x => x.VariantID == variantId);
             if (shiprelayItem == null)
             {
-                var variant = await _context.ProductVariants.FirstOrDefaultAsync(x => x.ItemID == variantId);
-                if (variant == null)
+                var variant = _context.ProductVariants.Any(x => x.ItemID == variantId);
+                if (!variant)
                     return;
                 _context.ShiprelayDataSyncs.Add(new ShiprelayDataSync
                 {
-                    ProductNodeID = variant.ProductID,
                     Status = EmailStatus.Waiting,
-                    VariantID = variantId
+                    VariantID = variantId,
+                    EntryActionStatus = entryActionStatus
                 });
             }
             else
             {
                 shiprelayItem.Status = EmailStatus.Waiting;
+                shiprelayItem.EntryActionStatus = entryActionStatus;
             }
 
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> UpdateShiprelayDataAsync(int productId, int? variantId, EmailStatus status, string? message = null)
+        public async Task SyncVariantShiprelayAsync(int[] variantIds, EntryActionStatus entryActionStatus)
         {
+            if (variantIds.Length == 0) return;
+
+            await _context.ShiprelayDataSyncs
+                .Where(x => variantIds.Contains(x.VariantID))
+                .ExecuteDeleteAsync();
+
+            _context.ShiprelayDataSyncs.AddRange(variantIds.Select(x => new ShiprelayDataSync
+            {
+                EntryActionStatus = entryActionStatus,
+                VariantID = x,
+                Status = EmailStatus.Waiting,
+            }));
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> UpdateShiprelayDataAsync(int productId, int? variantId, EmailStatus status, EntryActionStatus entryActionStatus, string? message = null)
+        {
+            var variantIds = _context.ProductVariants
+                .Where(x => x.ProductID == productId)
+                .AsNoTracking()
+                .Select(X => X.ItemID);
+
             var shiprelaySystem = await _context.ShiprelayDataSyncs
-                .Where(x => x.ProductNodeID == productId && (variantId != null ? x.VariantID == variantId.Value : true) && x.Status != EmailStatus.Success)
+                .Where(x => (variantId != null ? x.VariantID == variantId.Value : variantIds.Contains(x.VariantID)) && x.Status != EmailStatus.Success)
                 .ExecuteUpdateAsync(x =>
                 x.SetProperty(p => p.UpdatedAt, DateTime.UtcNow)
                 .SetProperty(p => p.Status, status)
                 .SetProperty(p => p.Message, message)
+                .SetProperty(p => p.EntryActionStatus, entryActionStatus)
                 .SetProperty(p => p.RunnedAt, p => status == EmailStatus.Waiting ? p.RunnedAt : DateTime.UtcNow));
+
+            return shiprelaySystem > 0;
+        }
+
+        public async Task<bool> UpdateShiprelayDataAsync(int itemId, EmailStatus status, EntryActionStatus entryActionStatus, string? message = null)
+        {
+            var shiprelaySystem = await _context.ShiprelayDataSyncs
+                 .Where(x => x.ItemID == itemId)
+                 .ExecuteUpdateAsync(x =>
+                 x.SetProperty(p => p.UpdatedAt, DateTime.UtcNow)
+                 .SetProperty(p => p.Status, status)
+                 .SetProperty(p => p.Message, message)
+                 .SetProperty(p => p.EntryActionStatus, entryActionStatus)
+                 .SetProperty(p => p.RunnedAt, p => status == EmailStatus.Waiting ? p.RunnedAt : DateTime.UtcNow));
 
             return shiprelaySystem > 0;
         }

@@ -16,4 +16,8 @@
     <ProjectReference Include="..\LumStoreAPI.Libraries\LumStoreAPI.Libraries.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Interceptors/" />
+  </ItemGroup>
+
 </Project>

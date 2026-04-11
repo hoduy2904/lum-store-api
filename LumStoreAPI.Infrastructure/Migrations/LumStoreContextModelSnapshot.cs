@@ -576,9 +576,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ProductNodeID")
-                        .HasColumnType("int");
-
                     b.Property<DateTimeOffset>("RunnedAt")
                         .HasColumnType("datetimeoffset");
 

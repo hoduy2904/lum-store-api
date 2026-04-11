@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class Initital : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -171,7 +171,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 columns: table => new
                 {
                     ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
-                    ProductNodeID = table.Column<int>(type: "int", nullable: false),
                     VariantID = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: true),

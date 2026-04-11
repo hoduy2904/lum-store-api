@@ -5,7 +5,6 @@ namespace LumStoreAPI.Core.Entities.Integrations
 {
     public class ShiprelayDataSync : BaseClassItem
     {
-        public int ProductNodeID { get; set; }
         public int VariantID { get; set; }
         public EmailStatus Status { get; set; } = EmailStatus.Waiting;
         public string? Message { get; set; }

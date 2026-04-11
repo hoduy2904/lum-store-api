@@ -16,9 +16,15 @@ internal class ProductVariantService : IProductVariantService
         _mediaService = mediaService;
         _shiprelaySystemRespository = shiprelaySystemRespository;
     }
-    public Task<int> DeleteProductVariantsAsync(int[] variantIds)
+    public async Task<int> DeleteProductVariantsAsync(int[] variantIds)
     {
-        return _productVariantRepository.DeleteProductVariantsAsync(x => variantIds.Contains(x.ItemID));
+        var count = await _productVariantRepository.DeleteProductVariantsAsync(x => variantIds.Contains(x.ItemID));
+        if (count > 0)
+        {
+            await _shiprelaySystemRespository.SyncVariantShiprelayAsync(variantIds.ToArray(), Core.Models.Enums.EntryActionStatus.DELETE);
+        }
+
+        return count;
     }
 
     public async Task<ProductVariantGetDTO?> GetProductVariantAsync(int variantId)
@@ -57,7 +63,7 @@ internal class ProductVariantService : IProductVariantService
     {
         var entity = await _productVariantRepository.InsertProductVariantAsync(request.GetEntity());
         var mediaItems = await _mediaService.GetMediaItemsAsync(entity.Images);
-        await _shiprelaySystemRespository.SyncProductShiprelayAsync(entity.ProductID, entity.ItemID);
+        await _shiprelaySystemRespository.SyncProductShiprelayAsync(entity.ProductID, Core.Models.Enums.EntryActionStatus.INSERT, entity.ItemID);
         return new ProductVariantGetDTO(entity, mediaItems.ToArray());
     }
 
@@ -74,7 +80,7 @@ internal class ProductVariantService : IProductVariantService
 
         if (count > 0)
         {
-            await _shiprelaySystemRespository.SyncVariantShiprelayAsync(variantId);
+            await _shiprelaySystemRespository.SyncVariantShiprelayAsync(variantId, Core.Models.Enums.EntryActionStatus.UPDATE);
         }
         return count;
     }

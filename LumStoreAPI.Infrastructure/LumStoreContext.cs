@@ -8,6 +8,7 @@ using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Riches;
+using LumStoreAPI.Infrastructure.Interceptors;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,13 +18,15 @@ namespace LumStoreAPI.Infrastructure
 {
     public partial class LumStoreContext : DbContext
     {
+        private readonly IServiceProvider _serviceProvider;
         protected readonly IConfiguration Configuration;
         protected readonly ICacheService _cacheService;
-        public LumStoreContext(DbContextOptions<LumStoreContext> options, IConfiguration configuration, ICacheService cacheService)
+        public LumStoreContext(DbContextOptions<LumStoreContext> options, IConfiguration configuration, ICacheService cacheService, IServiceProvider serviceProvider)
             : base(options)
         {
             Configuration = configuration;
             _cacheService = cacheService;
+            _serviceProvider = serviceProvider;
         }
         public DbSet<User> Users { get; set; }
         public DbSet<UserToken> UserTokens { get; set; }
@@ -73,6 +76,7 @@ namespace LumStoreAPI.Infrastructure
                 var connectionString = Configuration.GetConnectionString("LumDbContext");
                 optionsBuilder.UseSqlServer(connectionString);
             }
+            optionsBuilder.AddInterceptors(new ProductInterceptor(_serviceProvider));
             base.OnConfiguring(optionsBuilder);
         }
 

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260410125413_Initial")]
-    partial class Initial
+    [Migration("20260411160412_Initital")]
+    partial class Initital
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -578,9 +578,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProductNodeID")
-                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("RunnedAt")
                         .HasColumnType("datetimeoffset");

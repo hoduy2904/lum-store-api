@@ -63,6 +63,15 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                                                    .Contains(x.Descendant))
                        .ExecuteDeleteAsync();
 
+                    var isProduct = _lumStoreContext.Products
+                        .Any(x => childrenNodes.Contains(x.NodeID));
+
+                    if (isProduct)
+                    {
+                        await _shiprelaySystemRespository
+                            .SyncProductShiprelaysAsync(childrenNodes.ToArray(), Core.Models.Enums.EntryActionStatus.DELETE);
+                    }
+
                     await _lumStoreContext.DocumentNodes
                     .Where(x => childrenNodes
                             .Any(s => s == x.NodeID))
@@ -375,11 +384,6 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 
             await _lumStoreContext.SaveChangesAsync();
             _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(nodeID).ClassName(className).GetDependencies().ToArray());
-
-            if (page is Product product)
-            {
-               await _shiprelaySystemRespository.SyncProductShiprelayAsync(product);
-            }
             return page;
         }
 
