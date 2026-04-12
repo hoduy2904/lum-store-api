@@ -436,6 +436,25 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ContactUs",
+                columns: table => new
+                {
+                    PageID = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Descrition = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContactUs", x => x.PageID);
+                    table.ForeignKey(
+                        name: "FK_ContactUs_DocumentPages_PageID",
+                        column: x => x.PageID,
+                        principalTable: "DocumentPages",
+                        principalColumn: "PageID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CTAImages",
                 columns: table => new
                 {
@@ -1045,6 +1064,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "BaseClassItem");
+
+            migrationBuilder.DropTable(
+                name: "ContactUs");
 
             migrationBuilder.DropTable(
                 name: "CTAImages");

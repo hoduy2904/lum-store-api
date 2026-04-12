@@ -62,7 +62,7 @@ namespace LumStoreAPI.Application.Services
 
             return categories.Select(c => new StoreCategoryDTO
             {
-                Id = c.NodeID.ToString(),
+                Id = c.NodeID,
                 Slug = c.Node?.NodeAlias ?? "",
                 Name = c.CategoryName,
                 Image = categoryImage.FirstOrDefault(ci => c.CategoryImage.Contains(ci.FileID))?.FileURL,
@@ -86,7 +86,7 @@ namespace LumStoreAPI.Application.Services
             var images = await _mediaService.GetMediaItemsAsync(cat.CategoryImage);
             return new StoreCategoryDTO
             {
-                Id = cat.NodeID.ToString(),
+                Id = cat.NodeID,
                 Slug = cat.Node?.NodeAlias ?? "",
                 Name = cat.CategoryName,
                 Image = images.FirstOrDefault()?.FileURL,

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260411164632_Initital")]
+    [Migration("20260412115737_Initital")]
     partial class Initital
     {
         /// <inheritdoc />
@@ -1141,6 +1141,22 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("LinkLists");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.ContactUs", b =>
+                {
+                    b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
+
+                    b.Property<string>("Descrition")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.ToTable("ContactUs");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.HomePage", b =>
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
@@ -1492,6 +1508,15 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage", null)
                         .WithOne()
                         .HasForeignKey("LumStoreAPI.Core.Entities.DocumentTypes.LinkListItem", "PageID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.ContactUs", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage", null)
+                        .WithOne()
+                        .HasForeignKey("LumStoreAPI.Core.Entities.Pages.ContactUs", "PageID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

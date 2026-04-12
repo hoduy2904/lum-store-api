@@ -8,7 +8,7 @@ using LumStoreAPI.Libraries.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LumStoreAPI.Controllers
+namespace LumStoreAPI.ClientControllers
 {
     [Route("api/[controller]")]
     [ApiController]

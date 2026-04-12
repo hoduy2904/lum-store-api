@@ -42,7 +42,7 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductVariant> ProductVariants { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
-        public DbSet<ShiprelayDataSync> ShiprelayDataSyncs { get; set; }
+        public DbSet<ContactUs> ContactUs { get; set; }
 
         // ── Orders ────────────────────────────────────────────────────────────
         public DbSet<Order> Orders { get; set; }
