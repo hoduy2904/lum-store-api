@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions/" />
+    <Folder Include="Shiprelay/Handlers/" />
+    <Folder Include="Shiprelay/Interfaces/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../LumStoreAPI.Core/LumStoreAPI.Core.csproj" />
+    <ProjectReference Include="../LumStoreAPI.Libraries/LumStoreAPI.Libraries.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -3,6 +3,7 @@ using LumStoreAPI.Application.Middlewares;
 using LumStoreAPI.DataEngine;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.SeedData;
+using LumStoreAPI.SDK;
 using LumStoreAPI.Tasks;
 using Scalar.AspNetCore;
 using Serilog;
@@ -24,6 +25,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Configuration.SDKConfigure();
 builder.Services.AddCustomSettings(builder.Configuration);
 builder.Services
     .AddHttpContextAccessor()
@@ -33,7 +35,8 @@ builder.Services
     .AddExceptionHandler<GlobalExceptionHandler>()
     .AddProblemDetails()
     .RegisterTasks()
-    .AddCMSCache();
+    .AddCMSCache()
+    .AddLumStoreSDK();
 
 builder.Services.AddJwtAuthentication();
 

@@ -15,6 +15,7 @@ namespace LumStoreAPI.ClientControllers
      : ControllerBase
     {
         private readonly IProductService _productService = productService;
+
         [HttpGet]
         public async Task<IActionResult> GetProducts([FromQuery] ProductClientRequestDTO request)
         {
