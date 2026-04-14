@@ -223,17 +223,15 @@ namespace LumStoreAPI.Application.Services
             var homePages = await _pageRetrieveContext.GetPagesAsync<HomePage>(query =>
             {
                 query
-                    .Published(TreeNodePublished.All)
-                    .Where(x => !string.IsNullOrEmpty(x.HeroSlidesJson));
+                    .Published(TreeNodePublished.All);
             });
 
             var homePage = homePages.FirstOrDefault();
-            if (homePage?.HeroSlidesJson == null) return [];
 
             try
             {
                 var slides = JsonSerializer.Deserialize<StoreHeroSlideDTO[]>(
-                    homePage.HeroSlidesJson,
+                    homePage.Description,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 return slides ?? [];
             }

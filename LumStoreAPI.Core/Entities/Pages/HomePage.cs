@@ -1,6 +1,6 @@
-using System.ComponentModel;
 using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using System.ComponentModel;
 
 namespace LumStoreAPI.Core.Entities.Pages
 {
@@ -14,13 +14,5 @@ namespace LumStoreAPI.Core.Entities.Pages
         public string PageTitle { get; set; } = default!;
 
         public string? Description { get; set; }
-
-        /// <summary>
-        /// JSON array of hero slides.
-        /// Schema: [{ pretitle, title, description, image, primaryCtaText, primaryCtaLink,
-        ///            secondaryCtaText, secondaryCtaLink }]
-        /// </summary>
-        [DisplayName("Hero slides (JSON)")]
-        public string? HeroSlidesJson { get; set; }
     }
 }

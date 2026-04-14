@@ -11,8 +11,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.Property(x => x.PageTitle)
                 .HasMaxLength(200);
 
-            builder.Property(x => x.HeroSlidesJson)
-                .HasMaxLength(-1);  // nvarchar(max) — stores JSON array
         }
     }
 }

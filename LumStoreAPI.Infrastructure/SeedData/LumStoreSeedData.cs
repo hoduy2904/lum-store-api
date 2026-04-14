@@ -22,7 +22,7 @@ namespace LumStoreAPI.Infrastructure.SeedData
 
             try
             {
-                if (await context.Users.AnyAsync() && await context.DocumentNodes.AnyAsync())
+                if (await context.Users.AnyAsync())
                 {
                     logger.LogInformation("Seed data already exists. Skipping.");
                     return;
@@ -32,8 +32,8 @@ namespace LumStoreAPI.Infrastructure.SeedData
 
                 await SeedUsersAsync(context);
                 await SeedSettingsAsync(context);
-                await SeedMediaLibraryAsync(context);
-                await SeedDocumentTreeAsync(context);
+                //await SeedMediaLibraryAsync(context);
+                //await SeedDocumentTreeAsync(context);
 
                 logger.LogInformation("LUM Nails database seeded successfully.");
             }
@@ -197,13 +197,13 @@ namespace LumStoreAPI.Infrastructure.SeedData
 
             // ── Level 1: Main pages + 6 categories directly under root ─────────
 
-            var home      = new DocumentNode { NodeName = "Home",       NodeAlias = "home",       RelativeUrl = "/home",       NodeOrder = 1, ParentNodeID = root.NodeID };
-            var catGel     = new DocumentNode { NodeName = "Gel Polish", NodeAlias = "gel-polish", RelativeUrl = "/gel-polish", NodeOrder = 2, ParentNodeID = root.NodeID };
-            var catNailArt = new DocumentNode { NodeName = "Nail Art",   NodeAlias = "nail-art",   RelativeUrl = "/nail-art",   NodeOrder = 3, ParentNodeID = root.NodeID };
-            var catBundles = new DocumentNode { NodeName = "Bundles",    NodeAlias = "bundles",    RelativeUrl = "/bundles",    NodeOrder = 4, ParentNodeID = root.NodeID };
-            var catTools   = new DocumentNode { NodeName = "Tools",      NodeAlias = "tools",      RelativeUrl = "/tools",      NodeOrder = 5, ParentNodeID = root.NodeID };
-            var catCare    = new DocumentNode { NodeName = "Care",       NodeAlias = "care",       RelativeUrl = "/care",       NodeOrder = 6, ParentNodeID = root.NodeID };
-            var catHoliday = new DocumentNode { NodeName = "Holiday",    NodeAlias = "holiday",    RelativeUrl = "/holiday",    NodeOrder = 7, ParentNodeID = root.NodeID };
+            var home = new DocumentNode { NodeName = "Home", NodeAlias = "home", RelativeUrl = "/home", NodeOrder = 1, ParentNodeID = root.NodeID };
+            var catGel = new DocumentNode { NodeName = "Gel Polish", NodeAlias = "gel-polish", RelativeUrl = "/gel-polish", NodeOrder = 2, ParentNodeID = root.NodeID };
+            var catNailArt = new DocumentNode { NodeName = "Nail Art", NodeAlias = "nail-art", RelativeUrl = "/nail-art", NodeOrder = 3, ParentNodeID = root.NodeID };
+            var catBundles = new DocumentNode { NodeName = "Bundles", NodeAlias = "bundles", RelativeUrl = "/bundles", NodeOrder = 4, ParentNodeID = root.NodeID };
+            var catTools = new DocumentNode { NodeName = "Tools", NodeAlias = "tools", RelativeUrl = "/tools", NodeOrder = 5, ParentNodeID = root.NodeID };
+            var catCare = new DocumentNode { NodeName = "Care", NodeAlias = "care", RelativeUrl = "/care", NodeOrder = 6, ParentNodeID = root.NodeID };
+            var catHoliday = new DocumentNode { NodeName = "Holiday", NodeAlias = "holiday", RelativeUrl = "/holiday", NodeOrder = 7, ParentNodeID = root.NodeID };
 
             await context.DocumentNodes.AddRangeAsync(home, catGel, catNailArt, catBundles, catTools, catCare, catHoliday);
             await context.SaveChangesAsync();
@@ -211,24 +211,24 @@ namespace LumStoreAPI.Infrastructure.SeedData
             // ── Level 2: 12 product nodes under their categories ───────────────
 
             // Gel Polish — 4 products
-            var nodeBlackWhite = new DocumentNode { NodeName = "Black White Gel Duo",        NodeAlias = "black-white-gel-duo",        RelativeUrl = "/gel-polish/black-white-gel-duo",        NodeOrder = 1, ParentNodeID = catGel.NodeID };
-            var nodeNude       = new DocumentNode { NodeName = "Nude Collection Gel Polish",  NodeAlias = "nude-collection-gel-polish",  RelativeUrl = "/gel-polish/nude-collection-gel-polish",  NodeOrder = 2, ParentNodeID = catGel.NodeID };
-            var nodeNeon       = new DocumentNode { NodeName = "Neon Summer Collection",      NodeAlias = "neon-summer-collection",      RelativeUrl = "/gel-polish/neon-summer-collection",      NodeOrder = 3, ParentNodeID = catGel.NodeID };
-            var nodeTopCoat    = new DocumentNode { NodeName = "Gel Top Coat Shiny",          NodeAlias = "gel-top-coat-shiny",          RelativeUrl = "/gel-polish/gel-top-coat-shiny",          NodeOrder = 4, ParentNodeID = catGel.NodeID };
+            var nodeBlackWhite = new DocumentNode { NodeName = "Black White Gel Duo", NodeAlias = "black-white-gel-duo", RelativeUrl = "/gel-polish/black-white-gel-duo", NodeOrder = 1, ParentNodeID = catGel.NodeID };
+            var nodeNude = new DocumentNode { NodeName = "Nude Collection Gel Polish", NodeAlias = "nude-collection-gel-polish", RelativeUrl = "/gel-polish/nude-collection-gel-polish", NodeOrder = 2, ParentNodeID = catGel.NodeID };
+            var nodeNeon = new DocumentNode { NodeName = "Neon Summer Collection", NodeAlias = "neon-summer-collection", RelativeUrl = "/gel-polish/neon-summer-collection", NodeOrder = 3, ParentNodeID = catGel.NodeID };
+            var nodeTopCoat = new DocumentNode { NodeName = "Gel Top Coat Shiny", NodeAlias = "gel-top-coat-shiny", RelativeUrl = "/gel-polish/gel-top-coat-shiny", NodeOrder = 4, ParentNodeID = catGel.NodeID };
 
             // Nail Art — 1 product
             var nodeChrome = new DocumentNode { NodeName = "Chrome Powder Kit", NodeAlias = "chrome-powder-kit", RelativeUrl = "/nail-art/chrome-powder-kit", NodeOrder = 1, ParentNodeID = catNailArt.NodeID };
 
             // Bundles — 2 products
-            var nodeHalloween  = new DocumentNode { NodeName = "V2 Halloween Bundle", NodeAlias = "v2-halloween-bundle", RelativeUrl = "/bundles/v2-halloween-bundle", NodeOrder = 1, ParentNodeID = catBundles.NodeID };
-            var nodeStarterKit = new DocumentNode { NodeName = "Gel Starter Kit",     NodeAlias = "gel-starter-kit",     RelativeUrl = "/bundles/gel-starter-kit",     NodeOrder = 2, ParentNodeID = catBundles.NodeID };
+            var nodeHalloween = new DocumentNode { NodeName = "V2 Halloween Bundle", NodeAlias = "v2-halloween-bundle", RelativeUrl = "/bundles/v2-halloween-bundle", NodeOrder = 1, ParentNodeID = catBundles.NodeID };
+            var nodeStarterKit = new DocumentNode { NodeName = "Gel Starter Kit", NodeAlias = "gel-starter-kit", RelativeUrl = "/bundles/gel-starter-kit", NodeOrder = 2, ParentNodeID = catBundles.NodeID };
 
             // Tools — 2 products
             var nodeBrushSet = new DocumentNode { NodeName = "Precision Nail Art Brush Set", NodeAlias = "precision-nail-art-brush-set", RelativeUrl = "/tools/precision-nail-art-brush-set", NodeOrder = 1, ParentNodeID = catTools.NodeID };
-            var nodeFileSet  = new DocumentNode { NodeName = "Nail File Buffer Set",          NodeAlias = "nail-file-buffer-set",          RelativeUrl = "/tools/nail-file-buffer-set",          NodeOrder = 2, ParentNodeID = catTools.NodeID };
+            var nodeFileSet = new DocumentNode { NodeName = "Nail File Buffer Set", NodeAlias = "nail-file-buffer-set", RelativeUrl = "/tools/nail-file-buffer-set", NodeOrder = 2, ParentNodeID = catTools.NodeID };
 
             // Care — 2 products
-            var nodeCuticle   = new DocumentNode { NodeName = "Cuticle Oil Trio",  NodeAlias = "cuticle-oil-trio",  RelativeUrl = "/care/cuticle-oil-trio",  NodeOrder = 1, ParentNodeID = catCare.NodeID };
+            var nodeCuticle = new DocumentNode { NodeName = "Cuticle Oil Trio", NodeAlias = "cuticle-oil-trio", RelativeUrl = "/care/cuticle-oil-trio", NodeOrder = 1, ParentNodeID = catCare.NodeID };
             var nodeHandCream = new DocumentNode { NodeName = "Hand Cream Luxury", NodeAlias = "hand-cream-luxury", RelativeUrl = "/care/hand-cream-luxury", NodeOrder = 2, ParentNodeID = catCare.NodeID };
 
             // Holiday — 1 product
@@ -287,7 +287,6 @@ namespace LumStoreAPI.Infrastructure.SeedData
                 DocumentName = "Home",
                 PageTitle = "LUM Nails — Premium Nail Beauty",
                 Description = "Discover professional-grade nail products for salon-quality results at home.",
-                HeroSlidesJson = heroSlidesJson
             });
 
             // ── ProductCategory pages (match lum-nails categories exactly) ─────
