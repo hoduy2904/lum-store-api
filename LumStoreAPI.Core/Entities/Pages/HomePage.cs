@@ -1,6 +1,6 @@
+using System.ComponentModel;
 using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
-using System.ComponentModel;
 
 namespace LumStoreAPI.Core.Entities.Pages
 {
@@ -14,5 +14,6 @@ namespace LumStoreAPI.Core.Entities.Pages
         public string PageTitle { get; set; } = default!;
 
         public string? Description { get; set; }
+        public int CarouselPathId { get; set; }
     }
 }

@@ -8,8 +8,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            builder.HasKey(x => x.ItemID);
-
             builder.HasIndex(x => x.UserName).IsUnique();
 
             builder.HasIndex(x => x.Email).IsUnique();

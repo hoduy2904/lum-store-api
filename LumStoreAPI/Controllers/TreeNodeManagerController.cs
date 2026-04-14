@@ -86,14 +86,6 @@ namespace LumStoreAPI.Controllers
             {
                 return NotFound(APIResponse<DocumentPageGetDTO>.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Cannot found node with id: " + nodeId]));
             }
-            //Only use for user side
-            //foreach (var x in node.DocumentPageWidgets)
-            //{
-            //    if (x.Properties != null && DocumentPageTypeHelper.DocumentWidgets.TryGetValue(x.WidgetCode, out var widgetType) && x.Properties.GetType() == widgetType)
-            //    {
-            //        x.Properties = await _mediator.Send(x.Properties);
-            //    }
-            //}
 
             return Ok(APIResponse<DocumentPageGetDTO>.Success(node, ["Success"]));
         }
@@ -129,8 +121,7 @@ namespace LumStoreAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Insert(DocumentPageInsertDTO documentPageDTO)
         {
-            var document = await _treeNodeRepository.InsertAsync(documentPageDTO.GetEntity()
-                , documentPageDTO.ParentNodeID == null ? null : new DocumentNode { NodeID = documentPageDTO.ParentNodeID.Value });
+            var document = await _treeNodeRepository.InsertAsync(documentPageDTO.GetEntity(), new DocumentNode { NodeID = documentPageDTO.ParentNodeID });
             if (document == null)
             {
                 return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR, ["Cannot create page, Please try later"]));

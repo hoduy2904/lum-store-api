@@ -29,15 +29,9 @@ namespace LumStoreAPI.Core.Entities.Pages
 
         public decimal PriceDiscount { get; set; }
 
-        // ── Storefront flags ──────────────────────────────────────────────────
-
-        [DisplayName("New arrival")]
-        public bool IsNew { get; set; }
-
         [DisplayName("Best seller")]
         public bool IsBestSeller { get; set; }
 
-        /// <summary>Tags for filtering/search (comma-separated → string[]).</summary>
         public string[] Tags { get; set; } = [];
 
         [DisplayName("Rating")]
@@ -45,8 +39,6 @@ namespace LumStoreAPI.Core.Entities.Pages
 
         [DisplayName("Review count")]
         public int ReviewCount { get; set; }
-
-        // ── Shipping / logistics ──────────────────────────────────────────────
 
         public double Length { get; set; }
         public double Width { get; set; }
@@ -57,7 +49,6 @@ namespace LumStoreAPI.Core.Entities.Pages
         public bool IsHazmat { get; set; }
         public bool IsNeedBox { get; set; }
         public bool IsFragile { get; set; }
-        public int ShiprelayID { get; set; }
 
         public virtual ICollection<ProductVariant> ProductVariants { get; set; } = [];
     }

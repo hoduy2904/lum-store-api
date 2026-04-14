@@ -9,14 +9,22 @@ internal class ProductVariantService : IProductVariantService
 {
     private readonly IProductVariantRepository _productVariantRepository;
     private readonly IMediaService _mediaService;
-    public ProductVariantService(IProductVariantRepository productVariantRepository, IMediaService mediaService)
+    private readonly IShiprelaySystemRespository _shiprelaySystemRespository;
+    public ProductVariantService(IProductVariantRepository productVariantRepository, IMediaService mediaService, IShiprelaySystemRespository shiprelaySystemRespository)
     {
         _productVariantRepository = productVariantRepository;
         _mediaService = mediaService;
+        _shiprelaySystemRespository = shiprelaySystemRespository;
     }
-    public Task<int> DeleteProductVariantsAsync(int[] variantIds)
+    public async Task<int> DeleteProductVariantsAsync(int[] variantIds)
     {
-        return _productVariantRepository.DeleteProductVariantsAsync(x => variantIds.Contains(x.ItemID));
+        var count = await _productVariantRepository.DeleteProductVariantsAsync(x => variantIds.Contains(x.ItemID));
+        if (count > 0)
+        {
+            await _shiprelaySystemRespository.SyncVariantShiprelayAsync(variantIds.ToArray(), Core.Models.Enums.EntryActionStatus.DELETE);
+        }
+
+        return count;
     }
 
     public async Task<ProductVariantGetDTO?> GetProductVariantAsync(int variantId)
@@ -55,17 +63,25 @@ internal class ProductVariantService : IProductVariantService
     {
         var entity = await _productVariantRepository.InsertProductVariantAsync(request.GetEntity());
         var mediaItems = await _mediaService.GetMediaItemsAsync(entity.Images);
+        await _shiprelaySystemRespository.SyncProductShiprelayAsync(entity.ProductID, Core.Models.Enums.EntryActionStatus.INSERT, entity.ItemID);
         return new ProductVariantGetDTO(entity, mediaItems.ToArray());
     }
 
-    public Task<int> UpdateProductVariantAsync(int variantId, ProductVariantUpdateDTO request)
+    public async Task<int> UpdateProductVariantAsync(int variantId, ProductVariantUpdateDTO request)
     {
-        return _productVariantRepository.UpdateProductVariantsAsync(x => x.ItemID == variantId,
+
+        var count = await _productVariantRepository.UpdateProductVariantsAsync(x => x.ItemID == variantId,
         x => x.Set(p => p.Color, request.Color)
         .Set(p => p.Images, request.Images)
         .Set(p => p.SKU, request.SKU)
         .Set(p => p.UPC, request.UPC)
-        .Set(p => p.VariantName, request.UPC)
+        .Set(p => p.VariantName, request.VariantName)
         );
+
+        if (count > 0)
+        {
+            await _shiprelaySystemRespository.SyncVariantShiprelayAsync(variantId, Core.Models.Enums.EntryActionStatus.UPDATE);
+        }
+        return count;
     }
 }

@@ -13,9 +13,8 @@ namespace LumStoreAPI.Core.Entities.Pages
         [DisplayName("Category name")]
         public string CategoryName { get; set; } = default!;
 
-        /// <summary>Unsplash/CDN URL or relative path for the category cover image.</summary>
         [DisplayName("Category image URL")]
-        public string? CategoryImage { get; set; }
+        public Guid[] CategoryImage { get; set; } = [];
 
         [DisplayName("Category description")]
         public string? CategoryDescription { get; set; }

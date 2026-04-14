@@ -56,12 +56,16 @@ namespace LumStoreAPI.Application.Services
                 .Select(g => new { CategoryNodeId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.CategoryNodeId, x => x.Count);
 
+            var imageIds = categories.SelectMany(x => x.CategoryImage).ToArray();
+
+            var categoryImage = (await _mediaService.GetMediaItemsAsync(imageIds));
+
             return categories.Select(c => new StoreCategoryDTO
             {
-                Id = c.NodeID.ToString(),
+                Id = c.NodeID,
                 Slug = c.Node?.NodeAlias ?? "",
                 Name = c.CategoryName,
-                Image = c.CategoryImage,
+                Image = categoryImage.FirstOrDefault(ci => c.CategoryImage.Contains(ci.FileID))?.FileURL,
                 Description = c.CategoryDescription,
                 ProductCount = productCounts.TryGetValue(c.NodeID, out var cnt) ? cnt : 0
             });
@@ -78,12 +82,14 @@ namespace LumStoreAPI.Application.Services
 
             var cat = categories.FirstOrDefault();
             if (cat == null) return null;
+
+            var images = await _mediaService.GetMediaItemsAsync(cat.CategoryImage);
             return new StoreCategoryDTO
             {
-                Id = cat.NodeID.ToString(),
+                Id = cat.NodeID,
                 Slug = cat.Node?.NodeAlias ?? "",
                 Name = cat.CategoryName,
-                Image = cat.CategoryImage,
+                Image = images.FirstOrDefault()?.FileURL,
                 Description = cat.CategoryDescription,
                 ProductCount = 0
             };
@@ -117,7 +123,6 @@ namespace LumStoreAPI.Application.Services
                     (string.IsNullOrEmpty(request.Search) ||
                         x.ProductName.Contains(request.Search) ||
                         x.ShortDescription!.Contains(request.Search))
-                    && (!request.IsNew.HasValue || x.IsNew == request.IsNew)
                     && (!request.IsBestSeller.HasValue || x.IsBestSeller == request.IsBestSeller)
                     && (!request.IsSale.HasValue || (request.IsSale.Value ? x.PriceDiscount > 0 : x.PriceDiscount == 0))
                     && (!request.MinPrice.HasValue || (x.Price - x.PriceDiscount) >= request.MinPrice)
@@ -129,7 +134,6 @@ namespace LumStoreAPI.Application.Services
                 {
                     "price_asc" => q.OrderBy(x => x.Price - x.PriceDiscount),
                     "price_desc" => q.OrderByDescending(x => x.Price - x.PriceDiscount),
-                    "newest" => q.OrderByDescending(x => x.IsNew).ThenByDescending(x => x.PageID),
                     "bestseller" => q.OrderByDescending(x => x.IsBestSeller).ThenByDescending(x => x.ReviewCount),
                     "rating" => q.OrderByDescending(x => x.Rating),
                     _ => q.OrderBy(x => x.Node.NodeOrder)
@@ -151,7 +155,7 @@ namespace LumStoreAPI.Application.Services
             {
                 query
                     .Published(TreeNodePublished.All)
-                    .Where(x => x.IsBestSeller || x.IsNew)
+                    .Where(x => x.IsBestSeller)
                     .IncludeQueryable(q => q
                         .OrderByDescending(x => x.IsBestSeller)
                         .ThenByDescending(x => x.ReviewCount)
@@ -167,7 +171,6 @@ namespace LumStoreAPI.Application.Services
             {
                 query
                     .Published(TreeNodePublished.All)
-                    .Where(x => x.IsNew)
                     .IncludeQueryable(q => q.OrderByDescending(x => x.PageID).Take(limit));
             });
 
@@ -214,31 +217,6 @@ namespace LumStoreAPI.Application.Services
                 var variantMedia = mediaItems.Where(m => v.Images.Contains(m.FileID)).ToArray();
                 return new ProductVariantGetDTO(v, variantMedia);
             });
-        }
-
-        // ─── Hero Slides ──────────────────────────────────────────────────────
-
-        public async Task<IEnumerable<StoreHeroSlideDTO>> GetHeroSlidesAsync()
-        {
-            var homePages = await _pageRetrieveContext.GetPagesAsync<HomePage>(query =>
-            {
-                query
-                    .Published(TreeNodePublished.All);
-            });
-
-            var homePage = homePages.FirstOrDefault();
-
-            try
-            {
-                var slides = JsonSerializer.Deserialize<StoreHeroSlideDTO[]>(
-                    homePage.Description,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return slides ?? [];
-            }
-            catch
-            {
-                return [];
-            }
         }
 
         // ─── Private helpers ──────────────────────────────────────────────────
@@ -326,7 +304,6 @@ namespace LumStoreAPI.Application.Services
                     Tags = p.Tags,
                     Description = p.Description,
                     ShortDescription = p.ShortDescription,
-                    IsNew = p.IsNew,
                     IsBestSeller = p.IsBestSeller,
                     IsSale = p.PriceDiscount > 0,
                     Rating = p.Rating,

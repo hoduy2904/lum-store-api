@@ -1,8 +1,5 @@
-using System;
 using LumStoreAPI.Application.DTOs.MediaDTO;
-using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.DocumentTypes;
-using LumStoreAPI.Libraries.Helpers;
 
 namespace LumStoreAPI.Application.DTOs.ProductVariantDTO;
 
@@ -15,7 +12,6 @@ public record class ProductVariantGetDTO
     public int Stock { get; set; }
     public string[] Images { get; set; } = [];
     public string? Color { get; set; }
-    public string? ColorHex { get; set; }
     public string VariantName { get; set; } = default!;
 
     public ProductVariantGetDTO(ProductVariant productVariant, MediaItemDTO[]? mediaItemDTO = null)
@@ -30,7 +26,6 @@ public record class ProductVariantGetDTO
             this.Images = mediaItemDTO.Select(x => x.FileURL).ToArray();
         }
         this.Color = productVariant.Color;
-        this.ColorHex = productVariant.ColorHex;
         this.VariantName = productVariant.VariantName;
     }
 }

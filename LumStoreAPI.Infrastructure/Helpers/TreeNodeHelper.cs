@@ -19,7 +19,8 @@ namespace LumStoreAPI.Infrastructure.Helpers
                  ld => ld.Ancestor,
                  ((node, ld) => new { node.NodeAlias, ld.Depth })
              )
-             .OrderBy(x => x.Depth)
+             .OrderByDescending(x => x.Depth)
+             .Where(x => !string.IsNullOrWhiteSpace(x.NodeAlias))
              .Select(x => x.NodeAlias)
              .ToArrayAsync();
 

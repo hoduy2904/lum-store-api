@@ -8,7 +8,6 @@ internal class CustomerProfileConfiguration : IEntityTypeConfiguration<CustomerP
 {
     public void Configure(EntityTypeBuilder<CustomerProfile> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.HasIndex(x => x.UserId).IsUnique();
         builder.HasIndex(x => x.TierLevel);
 

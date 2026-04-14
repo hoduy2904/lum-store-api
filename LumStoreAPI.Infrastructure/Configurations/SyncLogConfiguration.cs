@@ -8,7 +8,6 @@ internal class SyncLogConfiguration : IEntityTypeConfiguration<SyncLog>
 {
     public void Configure(EntityTypeBuilder<SyncLog> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.HasIndex(x => x.IntegrationType);
         builder.HasIndex(x => x.StartedAt);
 

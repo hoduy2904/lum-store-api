@@ -135,6 +135,12 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             return this;
         }
 
+        public ITreeNodeContent<T> OnlyPages()
+        {
+            _query = _query.Where(x => x.Node.ClassName.StartsWith("Pages."));
+            return this;
+        }
+
         public ITreeNodeContent<T> Select(Expression<Func<T, T>> selector)
         {
             _selector = selector;

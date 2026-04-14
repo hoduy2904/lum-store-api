@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <Folder Include="Converters/" />
-    <Folder Include="Exceptions/" />
+    <Folder Include="DTOs/ProductDTO/" />
     <Folder Include="Helpers\" />
   </ItemGroup>
 

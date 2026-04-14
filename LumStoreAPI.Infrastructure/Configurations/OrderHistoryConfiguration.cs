@@ -8,7 +8,6 @@ internal class OrderHistoryConfiguration : IEntityTypeConfiguration<OrderHistory
 {
     public void Configure(EntityTypeBuilder<OrderHistory> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.HasIndex(x => x.OrderId);
 
         builder.Property(x => x.Comment).HasMaxLength(500);

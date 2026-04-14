@@ -8,8 +8,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<EventLog> builder)
         {
-            builder.HasKey(x => x.ItemID);
-
             builder.HasIndex(x => x.EventCode);
             builder.HasIndex(x => x.EventSource);
             builder.HasIndex(x => x.EventName);

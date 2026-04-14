@@ -1,5 +1,6 @@
 ﻿using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -9,17 +10,32 @@ namespace LumStoreAPI.Libraries.Helpers
     {
         public static Dictionary<string, Type> DocumentPageTypes = [];
         public static Dictionary<string, Type> DocumentWidgets = [];
+        public static Dictionary<Type, Type> DocumentFeatureQueries = [];
         public static void RegisterPageTypes()
         {
             DocumentPageTypes = [];
             var types = AppDomain.CurrentDomain.GetAssemblies()
                  .SelectMany(a => a.GetTypes())
-                 .Where(t => t.GetCustomAttribute<RegisterPageTypeAttribute>() != null);
+                 .Where(t => typeof(DocumentPage).IsAssignableFrom(t));
 
             foreach (var type in types)
             {
-                var attr = type.GetCustomAttribute<RegisterPageTypeAttribute>();
-                DocumentPageTypes.Add(attr!.ClassName, attr.Type);
+                string className = GetClassName(type);
+                DocumentPageTypes.Add(className, type);
+            }
+        }
+
+        public static void RegisterFeatureQueries()
+        {
+            DocumentFeatureQueries = [];
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                 .SelectMany(a => a.GetTypes())
+                 .Where(t => t.GetCustomAttribute<MappingFeatureQueryBaseAttribute>(true) != null);
+
+            foreach (var type in types)
+            {
+                var attr = type.GetCustomAttribute<MappingFeatureQueryBaseAttribute>(true);
+                DocumentFeatureQueries.Add(attr!.Entity, attr.Query);
             }
         }
 
@@ -42,7 +58,7 @@ namespace LumStoreAPI.Libraries.Helpers
         {
             return typeof(DocumentPage)
                 .GetProperties()
-                .Where(x => x.PropertyType.GetCustomAttribute<JsonIgnoreAttribute>(true) is not null)
+                .Where(x => x.PropertyType.GetCustomAttribute<JsonIgnoreAttribute>(true) is null)
                 .Any(x => x.Name.Equals(fieldName));
         }
 

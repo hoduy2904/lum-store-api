@@ -10,7 +10,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
         {
             builder.Property(x => x.PageTitle)
                 .HasMaxLength(200);
-
         }
     }
 }
