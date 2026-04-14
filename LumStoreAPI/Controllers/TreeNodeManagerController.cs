@@ -8,13 +8,14 @@ using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    // [Authorize(Roles = nameof(UserRole.ADMIN))]
+    [Authorize(Roles = nameof(UserRole.ADMIN))]
     public class TreeNodeManagerController : ControllerBase
     {
         private readonly IPageRetrieveContext _pageRetrieveContext;
@@ -102,7 +103,7 @@ namespace LumStoreAPI.Controllers
         [HttpPatch("Rename")]
         public async Task<IActionResult> RenameNode(DocumentPageRenameRequest request)
         {
-            var result = await _treeNodeRepository.RenameNodeAsync(request.NodeID, request.DocumentName);
+            var result = await _treeNodeRepository.RenameNodeAsync(request.NodeID, request.NodeName);
             if (result > 0)
             {
                 return Ok(APIResponseBase.Success(["Success"]));

@@ -72,7 +72,7 @@ namespace LumStoreAPI.Infrastructure.Identity
 
         private int GetExpiresInMinutes(bool isRemember)
         {
-            return isRemember ? 10080 : 1440;
+            return 15;
         }
     }
 }

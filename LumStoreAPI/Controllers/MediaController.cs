@@ -12,7 +12,7 @@ namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize(Roles = nameof(UserRole.ADMIN))]
+    [Authorize(Roles = nameof(UserRole.ADMIN))]
     public class MediaController : ControllerBase
     {
         private readonly IMediaService _mediaService;
