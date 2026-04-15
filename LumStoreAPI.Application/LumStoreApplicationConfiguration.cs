@@ -1,7 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Security.Claims;
-using LumStoreAPI.Application.DTOs.Responses;
+﻿using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Application.Middlewares;
 using LumStoreAPI.Application.Services;
@@ -18,6 +15,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Security.Claims;
 
 namespace LumStoreAPI.Application
 {
@@ -33,7 +33,6 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IUserService, UserService>();
                 services.AddScoped<IMediaService, MediaService>();
                 services.AddScoped<IProductVariantService, ProductVariantService>();
-                services.AddScoped<IStoreService, StoreService>();
                 services.AddScoped<IOrderService, OrderService>();
                 services.AddScoped<ICustomerService, CustomerService>();
                 services.AddScoped<IShiprelayService, ShiprelayService>();
