@@ -85,14 +85,21 @@ namespace LumStoreAPI.Application.Services
             return _userRepository.CheckUserAsync(x => x.ItemID == userID && !string.IsNullOrEmpty(x.VerifyCode) && x.VerifyCode.Equals(code.Trim()));
         }
 
-        public Task LogoutAsync()
+        public async Task LogoutAsync()
         {
-            var logoutCookieOpt = cookieOptions;
+            string? token = _httpContextAccessor.HttpContext?.Request.Cookies[AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME];
+            if (string.IsNullOrWhiteSpace(token)) return;
+
+            var tokenInfo = JwtTokenHelper.GetJwtSecurityToken(token);
+
+            if (Guid.TryParse(tokenInfo.Id, out Guid jwtId))
+            {
+                await _userTokenRepository.DeleteToken(jwtId);
+            }
 
             _httpContextAccessor.HttpContext?.Response.Cookies.Delete(AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME);
             _httpContextAccessor.HttpContext?.Response.Cookies.Delete(AuthSystemConstants.REFRESH_TOKEN_COOKIE_NAME);
 
-            return Task.CompletedTask;
         }
 
         public async Task<APIResponse<TokenResponse>> RefreshTokenAsync(TokenRequest request)
@@ -175,15 +182,13 @@ namespace LumStoreAPI.Application.Services
 
         private void SetCookies(string accessToken, string refreshToken)
         {
-            var securityToken = JwtTokenHelper.GetJwtSecurityToken(accessToken);
-
             var accessCookieOption = cookieOptions;
-            accessCookieOption.Expires = securityToken.ValidTo;
+            accessCookieOption.Expires = REFRESH_TOKEN_TIME;
             _httpContextAccessor?.HttpContext?.Response.Cookies.Append(AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken, accessCookieOption);
 
 
             var refreshCookieOption = cookieOptions;
-            accessCookieOption.Expires = REFRESH_TOKEN_TIME;
+            refreshCookieOption.Expires = REFRESH_TOKEN_TIME;
             _httpContextAccessor?.HttpContext?.Response.Cookies.Append(AuthSystemConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken, refreshCookieOption);
         }
     }

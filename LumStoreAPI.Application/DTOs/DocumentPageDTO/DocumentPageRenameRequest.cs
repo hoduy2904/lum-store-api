@@ -8,5 +8,5 @@ public class DocumentPageRenameRequest
     [Range(1, int.MaxValue)]
     public int NodeID { get; set; }
     [MinLength(1)]
-    public string DocumentName { get; set; } = default!;
+    public string NodeName { get; set; } = default!;
 }

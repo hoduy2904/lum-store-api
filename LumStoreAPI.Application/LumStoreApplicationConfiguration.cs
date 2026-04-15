@@ -1,9 +1,11 @@
-﻿using System.Net;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Application.Middlewares;
 using LumStoreAPI.Application.Services;
+using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
@@ -57,7 +59,8 @@ namespace LumStoreAPI.Application
                         {
                             ValidateIssuer = false,
                             ValidateAudience = false,
-                            ValidateLifetime = false,
+                            ValidateLifetime = true,
+                            ClockSkew = TimeSpan.Zero,
                             ValidateIssuerSigningKey = true,
                             IssuerSigningKey = new SymmetricSecurityKey(AppConfiguration.JwtSettings.EncodingKey)
                         };
@@ -82,9 +85,16 @@ namespace LumStoreAPI.Application
                             OnTokenValidated = async context =>
                             {
                                 var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
+                                var userTokenRepository = context.HttpContext.RequestServices.GetRequiredService<IUserTokenRepository>();
                                 if (!int.TryParse(context.Principal?.Claims.FirstOrDefault(c => c.Type == "id")?.Value, out int userID))
                                 {
                                     context.Fail("Invalid User");
+                                }
+
+                                var jwtIdStr = context.Principal?.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti)?.Value;
+                                if (!Guid.TryParse(jwtIdStr, out Guid jwtId) || !await userTokenRepository.IsValidToken(jwtId))
+                                {
+                                    context.Fail("Token is valid or expired");
                                 }
 
                                 var userStatus = await userService.CheckAccountStatusAsync(userID);
