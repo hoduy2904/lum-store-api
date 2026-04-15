@@ -1089,6 +1089,22 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.AccordionItem", b =>
+                {
+                    b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.ToTable("AccordionItems");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.CTAImageItem", b =>
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
@@ -1489,6 +1505,15 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasForeignKey("UserID");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.AccordionItem", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage", null)
+                        .WithOne()
+                        .HasForeignKey("LumStoreAPI.Core.Entities.DocumentTypes.AccordionItem", "PageID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.CTAImageItem", b =>
