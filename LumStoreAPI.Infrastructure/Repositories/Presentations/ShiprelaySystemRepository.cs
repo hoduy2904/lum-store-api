@@ -24,8 +24,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var data = _context.ShiprelayDataSyncs
                 .AsNoTracking()
                 .Where(where)
-                .Take(pageSize)
-                .Skip((page - 1) * pageSize);
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize);
 
             var count = await data.CountAsync();
 

@@ -7,5 +7,6 @@ namespace LumStoreAPI.Application.Interfaces
     {
         Task<IPagedEnumerable<EventLogGet>> GetEventLogsAsync(EventLogRequest request);
         Task<EventLogGet?> GetEventLogAsync(int eventID);
+        Task<int> ClearEventLogsAsync();
     }
 }
