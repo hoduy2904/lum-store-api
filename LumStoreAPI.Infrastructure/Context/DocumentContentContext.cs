@@ -8,6 +8,7 @@ namespace LumStoreAPI.Infrastructure
     {
         public DbSet<CTAImageItem> CTAImages { get; set; }
         public DbSet<LinkListItem> LinkLists { get; set; }
+        public DbSet<AccordionItem> AccordionItems { get; set; }
 
 
         public DbSet<ShiprelayDataSync> ShiprelayDataSyncs { get; set; }

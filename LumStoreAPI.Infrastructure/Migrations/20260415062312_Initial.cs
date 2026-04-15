@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initital : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -432,6 +432,25 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         column: x => x.UserID,
                         principalTable: "Users",
                         principalColumn: "ItemID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AccordionItems",
+                columns: table => new
+                {
+                    PageID = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccordionItems", x => x.PageID);
+                    table.ForeignKey(
+                        name: "FK_AccordionItems_DocumentPages_PageID",
+                        column: x => x.PageID,
+                        principalTable: "DocumentPages",
+                        principalColumn: "PageID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -1062,6 +1081,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AccordionItems");
+
             migrationBuilder.DropTable(
                 name: "BaseClassItem");
 
