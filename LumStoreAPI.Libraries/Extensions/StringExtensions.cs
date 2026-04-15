@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -15,6 +13,7 @@ namespace LumStoreAPI.Libraries.Extensions
             {
                 get
                 {
+                    if (string.IsNullOrEmpty(input)) return "";
                     string str = input.RemoveAccents().ToLower();
                     str = Regex.Replace(str, @"[^a-z0-9\s-]", "");
                     str = Regex.Replace(str, @"\s+", " ").Trim();
