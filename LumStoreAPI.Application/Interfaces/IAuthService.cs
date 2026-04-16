@@ -13,5 +13,8 @@ namespace LumStoreAPI.Application.Interfaces
         Task<UserDTO> RegisterUserAsync(UserCreateRequest request);
         Task<APIResponseBase> VerifyCode(string code);
         Task<bool> ResendVerifyCodeAsync(int user);
+        Task<APIResponseBase> ForgotPasswordAsync(ForgotPasswordRequest request);
+        Task<APIResponseBase> ResetPasswordAsync(ResetPasswordRequest request);
+        Task<APIResponseBase> ChangePasswordAsync(ChangePasswordRequest request);
     }
 }

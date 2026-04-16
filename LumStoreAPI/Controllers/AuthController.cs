@@ -56,6 +56,27 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponse<UserDTO?>.Success(user));
         }
 
+        [HttpPost("ChangePassword")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            return Ok(await _authService.ChangePasswordAsync(request));
+        }
+
+        [HttpPost("ForgotPassword")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            return Ok(await _authService.ForgotPasswordAsync(request));
+        }
+
+        [HttpPost("ResetPassword")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            return Ok(await _authService.ResetPasswordAsync(request));
+        }
+
         [HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken()
         {

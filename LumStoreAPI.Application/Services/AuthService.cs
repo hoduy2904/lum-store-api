@@ -164,6 +164,54 @@ namespace LumStoreAPI.Application.Services
             throw new NotImplementedException();
         }
 
+        public async Task<APIResponseBase> ForgotPasswordAsync(ForgotPasswordRequest request)
+        {
+            var user = (await _userRepository.GetUsersAsync(query =>
+                query.Where(x => x.Email.Equals(request.Email) && x.IsEnabled && x.IsVerified).Take(1)
+            )).FirstOrDefault();
+
+            // Always return success to avoid email enumeration
+            if (user == null)
+                return APIResponseBase.Success(["If your email is registered, you will receive a reset code."]);
+
+            var code = StringHelper.GenerateCode();
+
+            await _userRepository.UpdateUsersAsync(
+                x => x.ItemID == user.ItemID,
+                x => x.Set(p => p.VerifyCode, code)
+                       .Set(p => p.TimeActionCode, _ => (DateTimeOffset?)DateTimeOffset.UtcNow));
+
+            await _emailService.SendEmailAsync(new EmailMessage
+            {
+                EmailTo = [user.Email],
+                EmailSubject = "Reset Password",
+                EmailFrom = "noreply@lumstore.com",
+                EmailBody = "Your password reset code is: " + code + ". This code is valid for 15 minutes."
+            });
+
+            return APIResponseBase.Success(["If your email is registered, you will receive a reset code."]);
+        }
+
+        public async Task<APIResponseBase> ResetPasswordAsync(ResetPasswordRequest request)
+        {
+            var expiry = DateTimeOffset.UtcNow.AddMinutes(-15);
+
+            var updated = await _userRepository.UpdateUsersAsync(
+                x => x.Email.Equals(request.Email)
+                     && x.IsEnabled
+                     && x.VerifyCode != null
+                     && x.VerifyCode.Equals(request.Code.Trim())
+                     && x.TimeActionCode != null
+                     && x.TimeActionCode >= expiry,
+                x => x.Set(p => p.UserPassword, HashHelper.HashPassword(request.NewPassword))
+                       .Set(p => p.VerifyCode, (string?)null)
+                       .Set(p => p.TimeActionCode, (DateTimeOffset?)null));
+
+            return updated > 0
+                ? APIResponseBase.Success(["Password reset successfully. You can now log in."])
+                : APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Invalid or expired reset code."]);
+        }
+
         public async Task<APIResponseBase> VerifyCode(string code)
         {
             if (!int.TryParse(_httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(x => x.Type.Equals("id"))?.Value, out int userId))
@@ -178,6 +226,22 @@ namespace LumStoreAPI.Application.Services
                 .Set(p => p.IsVerified, true));
 
             return user > 0 ? APIResponseBase.Success(["Verified, please login"]) : APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Invalid verify code, please try again"]);
+        }
+
+        public async Task<APIResponseBase> ChangePasswordAsync(ChangePasswordRequest request)
+        {
+            if (!int.TryParse(_httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(x => x.Type.Equals("id"))?.Value, out int userId))
+                throw new ForbidException("Invalid user");
+
+            var user = await _userRepository.GetUserAsync(userId);
+            if (user == null || !HashHelper.VerifyPassword(request.CurrentPassword, user.UserPassword))
+                return APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Current password is incorrect."]);
+
+            await _userRepository.UpdateUsersAsync(
+                x => x.ItemID == userId,
+                x => x.Set(p => p.UserPassword, HashHelper.HashPassword(request.NewPassword)));
+
+            return APIResponseBase.Success(["Password changed successfully."]);
         }
 
         private void SetCookies(string accessToken, string refreshToken)
