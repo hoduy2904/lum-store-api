@@ -8,34 +8,58 @@ using MediatR;
 
 namespace LumStoreAPI.Widgets;
 
-public class LinkListWidgetHandler
-(IPageRetrieveContext pageRetrieveContext,
-IMediaService mediaService) : IRequestHandler<LinkListWidget, LinkListWidgetDTO>
+public class LinkListWidgetHandler(
+    IPageRetrieveContext pageContext,
+    IMediaService mediaService,
+    ILogger<LinkListWidgetHandler> logger
+) : IRequestHandler<LinkListWidget, LinkListWidgetDTO>
 {
-    private readonly IPageRetrieveContext _pageRetrieveContext = pageRetrieveContext;
-    private readonly IMediaService _mediaService = mediaService;
     public async Task<LinkListWidgetDTO> Handle(LinkListWidget request, CancellationToken cancellationToken)
     {
-        var model = new LinkListWidgetDTO();
+        var model = new LinkListWidgetDTO { ItemPathId = request.ItemPathId };
         if (request.ItemPathId == 0) return model;
 
-        var items = await _pageRetrieveContext.GetPagesAsync<LinkListItem>(query =>
-        {
-            query.GetDescendants(request.ItemPathId)
-            .Select(x => new LinkListItem
-            {
-                LinkUrl = x.LinkUrl,
-                LinkListIcon = x.LinkListIcon,
-                LinkListTitle = x.LinkListTitle
-            });
-        });
+        // Step 1: Fetch direct children ordered by NodeOrder, projecting only the three
+        // fields consumed downstream. GetChildren uses Node.ParentNodeID (not the closure
+        // table) so it works even when DocumentLinkedNode rows are missing.
+        // OrderBy is applied before Select so EF Core can include the JOIN for NodeOrder
+        // in its ORDER BY clause without needing it in the SELECT list.
+        var items = (await pageContext.GetPagesAsync<LinkListItem>(q =>
+            q.GetChildren(request.ItemPathId)
+             .OrderBy(x => x.Node.NodeOrder)
+             .Select(x => new LinkListItem
+             {
+                 NodeID        = x.NodeID,
+                 LinkListTitle = x.LinkListTitle,
+                 LinkListIcon  = x.LinkListIcon,
+                 LinkUrl       = x.LinkUrl
+             })
+        )).ToList();
 
-        var images = await _mediaService.GetMediaItemsAsync(items.SelectMany(x => x.LinkListIcon).ToArray());
+        logger.LogDebug(
+            "LinkListWidget itemPathId={ItemPathId}: fetched {Count} item(s)",
+            request.ItemPathId, items.Count);
+
+        if (items.Count == 0) return model;
+
+        // Step 2: Collect every icon GUID across all items, deduplicate, then resolve
+        // all images in a single IMediaService call — no N+1.
+        // Guard skips the network/DB round-trip entirely when no item has an icon.
+        var allIconIds = items
+            .SelectMany(x => x.LinkListIcon)
+            .Distinct()
+            .ToArray();
+
+        var images = allIconIds.Length > 0
+            ? await mediaService.GetMediaItemsAsync(allIconIds)
+            : [];
+
+        // Step 3: Map to DTOs. The list order from Step 1 already reflects NodeOrder,
+        // so no secondary sort is needed here.
         model.Items = items.Select(x =>
         {
-            var image = images.FirstOrDefault(i => x.LinkListIcon.Contains(i.FileID))?.FileURL;
-            var item = new LinkListItemDTO(x, image);
-            return item;
+            var icon = images.FirstOrDefault(i => x.LinkListIcon.Contains(i.FileID))?.FileURL;
+            return new LinkListItemDTO(x, icon);
         });
 
         return model;

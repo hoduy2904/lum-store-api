@@ -4,7 +4,7 @@ using MediatR;
 
 namespace LumStoreAPI.Application.Widgets;
 
-[RegisterWidget("linkListItemsWidget", typeof(OutStandingProductWidget))]
+[RegisterWidget("linkListItemsWidget", typeof(LinkListWidget))]
 public class LinkListWidget : IRequest<LinkListWidgetDTO>
 {
     public int ItemPathId { get; set; }
