@@ -15,7 +15,7 @@ namespace LumStoreAPI.Infrastructure.Extensions
                 var realQuery = query;
                 int count = await query.CountAsync();
 
-                var data = await realQuery.Take(pageSize).Skip((page - 1) * pageSize).ToListAsync();
+                var data = await realQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
                 return new PagedEnumerable<T>(data ?? [], count);
             }

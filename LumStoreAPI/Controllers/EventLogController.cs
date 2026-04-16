@@ -1,6 +1,8 @@
-﻿using LumStoreAPI.Application.DTOs.EventLogDTO;
+﻿using System.Net;
+using LumStoreAPI.Application.DTOs.EventLogDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -19,14 +21,17 @@ namespace LumStoreAPI.Controllers
             _eventLogData = eventLogData;
         }
         [HttpGet]
+        [ProducesResponseType<PagedResponse<EventLogGet>>((int)HttpStatusCode.OK)]
 
         public async Task<IActionResult> GetEventLogs([FromQuery] EventLogRequest eventLogRequest)
         {
             var data = await _eventLogData.GetEventLogsAsync(eventLogRequest);
-            return Ok(APIResponse<IEnumerable<EventLogGet>>.Success(data));
+            return Ok(PagedResponse<EventLogGet>.Success(data, eventLogRequest.Page, eventLogRequest.PageSize));
         }
 
         [HttpGet("{eventID}")]
+        [ProducesResponseType<EventLogGet>((int)HttpStatusCode.OK)]
+        [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> GetEventLog(int eventID)
         {
             var data = await _eventLogData.GetEventLogAsync(eventID);
@@ -34,6 +39,13 @@ namespace LumStoreAPI.Controllers
                 return NotFound(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND));
 
             return Ok(APIResponse<EventLogGet>.Success(data));
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteEventLogs()
+        {
+            await _eventLogData.ClearEventLogsAsync();
+            return NoContent();
         }
     }
 }
