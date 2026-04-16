@@ -44,9 +44,10 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return count;
         }
 
-        public async Task<SettingKeyValue?> GetSettingKey(string key)
+        public Task<SettingKeyValue?> GetSettingKeyAsync(string key)
         {
-            return await _lumStoreContext.SettingKeyValues.FindAsync(key);
+            return _cacheService.GetCacheAsync(async () => await _lumStoreContext.SettingKeyValues.FindAsync(key),
+             cache => cache.Dependencies(x => x.SettingKey(key)).Key("getbykey|" + key));
         }
 
         public async Task<IEnumerable<SettingKeyValue>> GetSettingKeysAsync(Expression<Func<SettingKeyValue, bool>> func)

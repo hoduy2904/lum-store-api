@@ -62,6 +62,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+else
+{
+    app.UseStaticFiles();
+    app.UseDefaultFiles();
+    app.MapFallbackToFile("index.html");
+}
 
 //app.UseHttpsRedirection();
 
