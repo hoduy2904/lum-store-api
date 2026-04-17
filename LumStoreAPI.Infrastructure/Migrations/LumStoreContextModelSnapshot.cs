@@ -247,8 +247,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("SettingValue")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("SettingCode");
 
@@ -1137,10 +1136,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
 
-                    b.Property<string>("LinkListIcon")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
+                    b.Property<string>("IconName")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("LinkListTitle")
                         .IsRequired()

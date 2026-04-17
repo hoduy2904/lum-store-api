@@ -69,7 +69,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         {
             _lumStoreContext.SettingKeyValues.Add(settingKeyValue);
             await _lumStoreContext.SaveChangesAsync();
-            _cacheService.TouchKey(new CacheDependency().SettingKeys().GetDependencies().ToArray());
+            _cacheService.TouchKey(new CacheDependency().SettingKeys().SettingKey(settingKeyValue.SettingCode).GetDependencies().ToArray());
 
             return settingKeyValue;
         }
