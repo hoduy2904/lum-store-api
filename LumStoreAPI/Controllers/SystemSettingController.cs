@@ -1,13 +1,14 @@
-using System.Net;
 using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Application.DTOs.Systems;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Repositories;
-using LumStoreAPI.Core.Models.Constants;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
+using LumStoreAPI.Libraries.Helpers;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using System.Text.Json;
 
 namespace LumStoreAPI.Controllers
 {
@@ -77,6 +78,65 @@ namespace LumStoreAPI.Controllers
             if (settingKey == null) return NotFound(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR));
 
             return Ok(APIResponse<SettingKeyValue>.Success(settingKey));
+        }
+
+        [HttpPut("bysystem")]
+        [ProducesResponseType<APIResponse<SettingKeySystemRequest>>((int)HttpStatusCode.OK)]
+        [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.NotFound)]
+
+        public async Task<IActionResult> PutSystemSettingKey(SettingKeySystemRequest request)
+        {
+            if (!SettingKeyHelper.SystemSettingTypeMapping.TryGetValue(request.SettingCode, out Type? systemType))
+            {
+                return NotFound(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND));
+            }
+            try
+            {
+                var obj = request.SettingValue.Deserialize(systemType, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                });
+
+                var objJson = JsonSerializer.Serialize(obj);
+
+                var settingEntity = new SettingKeyValue
+                {
+                    SettingCode = request.SettingCode,
+                    SettingName = request.SettingName,
+                    SettingValue = objJson
+                };
+                var updated = await _settingKeyValueRepository.UpdateSettingKeyAsync(settingEntity);
+
+                if (updated is null)
+                {
+                    await _settingKeyValueRepository.InsertSettingKeyAsync(settingEntity);
+                }
+
+                return Ok(APIResponse<object>.Success(obj!));
+            }
+            catch
+            {
+                return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR, ["Please try later"]));
+            }
+        }
+
+        [HttpGet("{key}/bysystem")]
+        [ProducesResponseType<APIResponse<SettingKeySystemRequest>>((int)HttpStatusCode.OK)]
+        [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.NotFound)]
+        public async Task<IActionResult> GetSystemKeySetting(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key) || !key.StartsWith("System")) return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.INVALID_DATA));
+            if (!SettingKeyHelper.SystemSettingTypeMapping.TryGetValue(key, out Type? settingKeyType)) return NotFound();
+            var model = new SettingKeySystemResponse();
+            var settingKey = await _settingKeyValueRepository.GetSettingKeyAsync(key);
+
+            model.SettingName = settingKey?.SettingName ?? "";
+            model.SettingCode = settingKey?.SettingCode ?? key;
+            model.SettingValue = JsonHelper.Deserialize(settingKey?.SettingValue, null, settingKeyType);
+
+            return Ok(APIResponse<SettingKeySystemResponse>.Success(model));
         }
     }
 }

@@ -74,10 +74,14 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return settingKeyValue;
         }
 
-        public async Task<SettingKeyValue> UpdateSettingKeyAsync(SettingKeyValue settingKeyValue)
+        public async Task<SettingKeyValue?> UpdateSettingKeyAsync(SettingKeyValue settingKeyValue)
         {
-            _lumStoreContext.SettingKeyValues.Update(settingKeyValue);
-            await _lumStoreContext.SaveChangesAsync();
+            var result = await _lumStoreContext.SettingKeyValues.Where(x => x.SettingCode.Equals(settingKeyValue.SettingCode))
+                 .ExecuteUpdateAsync(x =>
+                 x.SetProperty(p => p.SettingCode, settingKeyValue.SettingCode)
+                 .SetProperty(p => p.SettingName, settingKeyValue.SettingName)
+                 .SetProperty(p => p.SettingValue, settingKeyValue.SettingValue));
+            if (result == 0) return null;
 
             _cacheService.TouchKey(new CacheDependency().SettingKeys().SettingKey(settingKeyValue.SettingCode).GetDependencies().ToArray());
             return settingKeyValue;
