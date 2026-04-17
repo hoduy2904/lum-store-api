@@ -15,8 +15,7 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.Property(x => x.SettingName)
                 .HasMaxLength(60);
 
-            builder.Property(x => x.SettingValue)
-                .HasMaxLength(255);
+            builder.Property(x => x.SettingValue);
         }
     }
 }
