@@ -47,7 +47,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public Task<SettingKeyValue?> GetSettingKeyAsync(string key)
         {
             return _cacheService.GetCacheAsync(async () => await _lumStoreContext.SettingKeyValues.FindAsync(key),
-             cache => cache.Dependencies(x => x.SettingKey(key)).Key("getbykey|" + key));
+             cache => cache.Dependencies(x => x.SettingKey(key)).Key("getbykey|" + key).Expiration(0));
         }
 
         public async Task<IEnumerable<SettingKeyValue>> GetSettingKeysAsync(Expression<Func<SettingKeyValue, bool>> func)
@@ -74,9 +74,9 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return settingKeyValue;
         }
 
-        public async Task<SettingKeyValue?> UpdateSettingKeyAsync(SettingKeyValue settingKeyValue)
+        public async Task<SettingKeyValue?> UpdateSettingKeyAsync(string settingCode, SettingKeyValue settingKeyValue)
         {
-            var result = await _lumStoreContext.SettingKeyValues.Where(x => x.SettingCode.Equals(settingKeyValue.SettingCode))
+            var result = await _lumStoreContext.SettingKeyValues.Where(x => x.SettingCode.Equals(settingCode))
                  .ExecuteUpdateAsync(x =>
                  x.SetProperty(p => p.SettingCode, settingKeyValue.SettingCode)
                  .SetProperty(p => p.SettingName, settingKeyValue.SettingName)

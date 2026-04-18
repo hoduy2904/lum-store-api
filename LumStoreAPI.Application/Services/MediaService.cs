@@ -69,7 +69,7 @@ namespace LumStoreAPI.Application.Services
         {
             var folders = await _mediaLibraryCategoryRepository.GetMediaLibraryCategoriesAsync(page, pageSize,
 
-                x => string.IsNullOrWhiteSpace(search) || x.CategoryName.Contains(search));
+                x => string.IsNullOrEmpty(search) || x.CategoryName.Contains(search));
 
             var data = folders.Select(x => new MediaFolderDTO(x));
 

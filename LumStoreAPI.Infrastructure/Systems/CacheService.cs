@@ -102,8 +102,11 @@ namespace LumStoreAPI.Infrastructure.Systems
 
             item = await func();
 
-            var options = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(cacheBuilderPr.CacheSetting.CacheMinutes));
+            var options = new MemoryCacheEntryOptions();
+            if (cacheBuilderPr.CacheSetting.CacheMinutes > 0)
+            {
+                options.SetAbsoluteExpiration(TimeSpan.FromMinutes(cacheBuilderPr.CacheSetting.CacheMinutes));
+            }
             var childrenPathReg = new Regex(@"node\|\d+\|children");
 
             var childrenParents = new CacheDependency();

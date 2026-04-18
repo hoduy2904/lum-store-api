@@ -36,8 +36,9 @@ namespace LumStoreAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetSettings(int page, int pageSize, string? search = null)
         {
+            search = search?.Trim();
             var settingKeys = await _settingKeyValueRepository.GetSettingKeysAsync(page, pageSize,
-             query => string.IsNullOrWhiteSpace(search) || query.SettingCode.StartsWith(search));
+             query => !query.SettingCode.StartsWith("System.") && (string.IsNullOrWhiteSpace(search) || query.SettingCode.StartsWith(search)));
 
             return Ok(PagedResponse<SettingKeyValue>.Success(settingKeys, page, pageSize));
         }
@@ -67,14 +68,14 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponse<SettingKeyValue>.Success(settingKey));
         }
 
-        [HttpPut]
+        [HttpPut("{settingCode}")]
         [ProducesResponseType<APIResponse<SettingKeyValue>>((int)HttpStatusCode.OK)]
         [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.BadRequest)]
         [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.NotFound)]
-        public async Task<IActionResult> PutSettingKey(SettingKeyValue settingKeyValue)
+        public async Task<IActionResult> PutSettingKey(string settingCode, SettingKeyValue settingKeyValue)
         {
             if (settingKeyValue.SettingCode.StartsWith("System")) return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.INVALID_DATA, ["Cannot use system code name"]));
-            var settingKey = await _settingKeyValueRepository.UpdateSettingKeyAsync(settingKeyValue);
+            var settingKey = await _settingKeyValueRepository.UpdateSettingKeyAsync(settingCode, settingKeyValue);
             if (settingKey == null) return NotFound(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR));
 
             return Ok(APIResponse<SettingKeyValue>.Success(settingKey));
@@ -106,7 +107,7 @@ namespace LumStoreAPI.Controllers
                     SettingName = request.SettingName,
                     SettingValue = objJson
                 };
-                var updated = await _settingKeyValueRepository.UpdateSettingKeyAsync(settingEntity);
+                var updated = await _settingKeyValueRepository.UpdateSettingKeyAsync(request.SettingCode, settingEntity);
 
                 if (updated is null)
                 {

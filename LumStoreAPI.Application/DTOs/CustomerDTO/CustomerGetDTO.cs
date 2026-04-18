@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using LumStoreAPI.Core.Models.Enums;
 
 namespace LumStoreAPI.Application.DTOs.CustomerDTO;
@@ -10,13 +11,9 @@ public class CustomerGetDTO
     public string Email { get; set; } = default!;
     public string? Phone { get; set; }
     public string? Avatar { get; set; }
-    public string? Address { get; set; }
-    public string? City { get; set; }
-    public string? State { get; set; }
-    public string? ZipCode { get; set; }
-    public string? Country { get; set; }
+    [JsonIgnore]
     public CustomerTierLevel TierLevel { get; set; }
-    public string TierName => TierLevel.ToString();
+    public string? TierName => Enum.GetName(TierLevel);
     public int TotalPoints { get; set; }
     public int AvailablePoints { get; set; }
     public decimal TotalSpent { get; set; }
