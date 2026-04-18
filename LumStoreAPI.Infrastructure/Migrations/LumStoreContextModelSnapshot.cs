@@ -276,6 +276,47 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("UserTokens");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerAddress", b =>
+                {
+                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasIndex("CustomerId");
+
+                    b.ToTable("CustomerAddresses");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerNote", b =>
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
@@ -307,31 +348,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
 
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<int>("AvailablePoints")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("Birthday")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Country")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
                     b.Property<string>("Phone")
+                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("State")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("TierLevel")
                         .HasColumnType("int");
@@ -343,15 +369,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("TotalSpent")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
-
-                    b.Property<string>("ZipCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
 
                     b.HasIndex("TierLevel");
 
@@ -1349,6 +1370,17 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerAddress", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "CustomerProfile")
+                        .WithMany("CustomerAddresses")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CustomerProfile");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerNote", b =>
                 {
                     b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "Author")
@@ -1403,7 +1435,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.Order", b =>
                 {
-                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "Customer")
+                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1586,6 +1618,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
                 {
+                    b.Navigation("CustomerAddresses");
+
                     b.Navigation("CustomerNotes");
 
                     b.Navigation("LoyaltyPoints");
