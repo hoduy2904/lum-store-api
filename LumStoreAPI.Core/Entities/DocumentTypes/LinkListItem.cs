@@ -9,6 +9,6 @@ public class LinkListItem : DocumentPage
 
     [DocumentName]
     public string LinkListTitle { get; set; } = default!;
-    public Guid[] LinkListIcon { get; set; } = [];
+    public string? IconName { get; set; }
     public string? LinkUrl { get; set; }
 }

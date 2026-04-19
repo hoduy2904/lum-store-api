@@ -10,7 +10,7 @@ namespace LumStoreAPI.Core.Interfaces.Repositories
         Task<IEnumerable<SettingKeyValue>> GetSettingKeysAsync(Expression<Func<SettingKeyValue, bool>> func);
         Task<IPagedEnumerable<SettingKeyValue>> GetSettingKeysAsync(int page, int pageSize, Expression<Func<SettingKeyValue, bool>> func);
         Task<SettingKeyValue> InsertSettingKeyAsync(SettingKeyValue settingKeyValue);
-        Task<SettingKeyValue> UpdateSettingKeyAsync(SettingKeyValue settingKeyValue);
+        Task<SettingKeyValue?> UpdateSettingKeyAsync(string settingCode, SettingKeyValue settingKeyValue);
         Task<int> DeleteSettingKeyAsync(string key);
         Task<int> DeleteSettingKeysAsync(string[] keys);
     }

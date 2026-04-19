@@ -12,10 +12,8 @@ public class LinkListItemConfiguration : IEntityTypeConfiguration<LinkListItem>
         builder.Property(x => x.LinkListTitle)
         .HasMaxLength(50);
 
-        builder.Property(x => x.LinkListIcon)
-            .HasMaxLength(40)
-            .HasConversion(ConverterHelper.ArrayGuidConverter(','))
-            .Metadata.SetValueComparer(ValueCompareHelper.GUIDArrayCompare);
+        builder.Property(x => x.IconName)
+            .HasMaxLength(20);
 
         builder.Property(x => x.LinkUrl)
             .HasMaxLength(100);

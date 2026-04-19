@@ -13,15 +13,11 @@ public class CustomerProfile : BaseClassItem
     public int AvailablePoints { get; set; }
     public decimal TotalSpent { get; set; }
     public int TotalOrders { get; set; }
-    public string? Phone { get; set; }
-    public string? Address { get; set; }
-    public string? City { get; set; }
-    public string? State { get; set; }
-    public string? ZipCode { get; set; }
-    public string? Country { get; set; }
+    public string Phone { get; set; } = default!;
     public DateTimeOffset? Birthday { get; set; }
 
     public virtual User User { get; set; } = default!;
     public virtual ICollection<LoyaltyPoint> LoyaltyPoints { get; set; } = [];
     public virtual ICollection<CustomerNote> CustomerNotes { get; set; } = [];
+    public virtual ICollection<CustomerAddress> CustomerAddresses { get; set; } = [];
 }

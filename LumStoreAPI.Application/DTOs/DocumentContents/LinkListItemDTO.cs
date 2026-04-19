@@ -6,13 +6,13 @@ namespace LumStoreAPI.Application.DTOs.DocumentContents;
 public record class LinkListItemDTO
 {
     public string Title { get; set; }
-    public string? Icon { get; set; }
+    public string? IconName { get; set; }
     public LinkControl? Link { get; set; }
 
-    public LinkListItemDTO(LinkListItem linkListItem, string? icon = null)
+    public LinkListItemDTO(LinkListItem linkListItem)
     {
         this.Title = linkListItem.LinkListTitle;
-        this.Icon = icon;
+        this.IconName = linkListItem.IconName;
         this.Link = !string.IsNullOrEmpty(linkListItem.LinkUrl)
             ? new LinkControl { Name = linkListItem.LinkListTitle, Url = linkListItem.LinkUrl, Target = null }
             : null;

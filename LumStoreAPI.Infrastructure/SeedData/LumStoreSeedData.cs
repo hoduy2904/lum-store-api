@@ -1,6 +1,5 @@
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
-using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

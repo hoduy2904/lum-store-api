@@ -61,11 +61,6 @@ public class CustomerService : ICustomerService
         var updated = await _customerRepo.UpdateProfileAsync(profileId, p =>
         {
             if (dto.Phone != null) p.Phone = dto.Phone;
-            if (dto.Address != null) p.Address = dto.Address;
-            if (dto.City != null) p.City = dto.City;
-            if (dto.State != null) p.State = dto.State;
-            if (dto.ZipCode != null) p.ZipCode = dto.ZipCode;
-            if (dto.Country != null) p.Country = dto.Country;
             if (dto.Birthday.HasValue) p.Birthday = dto.Birthday;
         });
         return MapToDTO(updated);
@@ -238,11 +233,6 @@ public class CustomerService : ICustomerService
         Email = p.User?.Email ?? "",
         Phone = p.Phone,
         Avatar = p.User?.Avatar,
-        Address = p.Address,
-        City = p.City,
-        State = p.State,
-        ZipCode = p.ZipCode,
-        Country = p.Country,
         TierLevel = p.TierLevel,
         TotalPoints = p.TotalPoints,
         AvailablePoints = p.AvailablePoints,

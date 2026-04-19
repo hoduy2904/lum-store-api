@@ -247,8 +247,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("SettingValue")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("SettingCode");
 
@@ -281,37 +280,39 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<string>("City")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Details")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("State")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Street")
+                    b.Property<string>("ZipCode")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasIndex("UserId");
+                    b.HasIndex("CustomerId");
 
                     b.ToTable("CustomerAddresses");
                 });
@@ -347,31 +348,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
 
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<int>("AvailablePoints")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("Birthday")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Country")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
                     b.Property<string>("Phone")
+                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("State")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("TierLevel")
                         .HasColumnType("int");
@@ -383,15 +369,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("TotalSpent")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
-
-                    b.Property<string>("ZipCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
 
                     b.HasIndex("TierLevel");
 
@@ -1158,16 +1139,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasColumnType("nvarchar(250)");
 
                     b.Property<string>("Pretitle")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("PrimaryButton")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(70)
-                        .HasColumnType("nvarchar(70)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.ToTable("CTAImages");
                 });
@@ -1176,10 +1157,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
 
-                    b.Property<string>("LinkListIcon")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
+                    b.Property<string>("IconName")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("LinkListTitle")
                         .IsRequired()
@@ -1392,13 +1372,13 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerAddress", b =>
                 {
-                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "CustomerProfile")
+                        .WithMany("CustomerAddresses")
+                        .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("CustomerProfile");
                 });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerNote", b =>
@@ -1455,7 +1435,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.Order", b =>
                 {
-                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "Customer")
+                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1638,6 +1618,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
                 {
+                    b.Navigation("CustomerAddresses");
+
                     b.Navigation("CustomerNotes");
 
                     b.Navigation("LoyaltyPoints");
