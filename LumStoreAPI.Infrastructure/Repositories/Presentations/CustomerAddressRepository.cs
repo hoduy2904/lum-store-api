@@ -50,15 +50,9 @@ internal class CustomerAddressRepository : ICustomerAddressRepository
         await using var tx = await _ctx.Database.BeginTransactionAsync(ct);
         try
         {
-            // Clear all defaults for this user
             await _ctx.CustomerAddresses
-                .Where(a => a.UserId == userId && a.IsDefault)
-                .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDefault, false), ct);
-
-            // Promote the target address
-            await _ctx.CustomerAddresses
-                .Where(a => a.ItemID == addressId && a.UserId == userId)
-                .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDefault, true), ct);
+                .Where(a => a.UserId == userId)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDefault, x => x.UserId == userId && x.ItemID == addressId), ct);
 
             await tx.CommitAsync(ct);
         }
