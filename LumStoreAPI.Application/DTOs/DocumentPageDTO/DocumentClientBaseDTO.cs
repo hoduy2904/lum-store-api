@@ -18,6 +18,7 @@ public class DocumentClientBaseDTO
     public int NodeOrder { get; set; }
     public string NodeAlias { get; set; } = default!;
     public bool IsPublished { get; internal set; }
+    public bool RequireAuthentication { get; set; }
 
     [JsonIgnore]
     public IGenericFeatureQuery? FeatureQuery { get; set; }
@@ -39,6 +40,7 @@ public class DocumentClientBaseDTO
         this.NodeAlias = documentPage.Node?.NodeAlias ?? string.Empty;
         this.NodeName = documentPage.Node?.NodeName ?? string.Empty;
         this.IsPublished = documentPage.IsPublished;
+        this.RequireAuthentication = documentPage.RequireAuthentication;
 
     }
 }

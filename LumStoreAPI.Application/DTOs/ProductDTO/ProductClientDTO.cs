@@ -1,4 +1,3 @@
-using System;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Core.Entities.Pages;
 
@@ -10,6 +9,8 @@ public class ProductClientDTO
     public string? ShortDescription { get; set; }
     public string? Description { get; set; }
     public bool IsBestSeller { get; set; }
+    public decimal? Price { get; set; }
+    public decimal? PriceDiscount { get; set; }
     public string[] Images { get; set; } = [];
     public double Length { get; set; }
     public double Width { get; set; }
@@ -28,6 +29,8 @@ public class ProductClientDTO
         this.ShortDescription = product.ShortDescription;
         this.Description = product.Description;
         this.IsBestSeller = product.IsBestSeller;
+        this.Price = product.Price;
+        this.PriceDiscount = product.PriceDiscount;
         this.Length = product.Length;
         this.Width = product.Width;
         this.Height = product.Height;
@@ -35,6 +38,7 @@ public class ProductClientDTO
         this.IsFoldable = product.IsFoldable;
         this.IsAlcoholic = product.IsAlcoholic;
         this.IsHazmat = product.IsHazmat;
+        this.IsNeedBox = product.IsNeedBox;
         this.IsFragile = product.IsFragile;
     }
 }

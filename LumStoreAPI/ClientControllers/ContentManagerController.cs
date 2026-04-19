@@ -1,5 +1,4 @@
-﻿using System.Web;
-using LumStoreAPI.Application.DTOs.DocumentPageDTO;
+﻿using LumStoreAPI.Application.DTOs.DocumentPageDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
@@ -7,6 +6,7 @@ using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Libraries.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Web;
 
 namespace LumStoreAPI.ClientControllers
 {
@@ -27,7 +27,7 @@ namespace LumStoreAPI.ClientControllers
             var node = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
                 query
-                    .Where(x => string.IsNullOrEmpty(alias) ? x.Node.RelativeUrl.Equals(string.Empty) : x.Node.RelativeUrl.Equals(alias))
+                    .Where(x => string.IsNullOrEmpty(alias) ? x.Node.NodeAlias.Equals(string.Empty) : x.Node.NodeAlias.Equals(alias))
                         .Published(Core.Models.Enums.TreeNodePublished.Published)
                         .OnlyPages()
                         .IncludeQueryable(q => q.Take(1));
