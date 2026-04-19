@@ -50,17 +50,6 @@ builder.Services.AddMediatR(cfg =>
 
 builder.AddLumStoreStaticConfiguration();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.WithOrigins("http://localhost:3000", "https://localhost:3000")
-            .AllowCredentials()// Allow requests from all origins
-                   .AllowAnyMethod() // Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
-                   .AllowAnyHeader(); // Allow all request headers
-        });
-});
 var app = builder.Build();
 
 await LumStoreSeedData.SeedAsync(app.Services);
@@ -74,8 +63,8 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseStaticFiles();
     app.UseDefaultFiles();
+    app.UseStaticFiles();
     app.MapFallbackToFile("index.html");
 }
 
@@ -83,7 +72,6 @@ else
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowAll");
 
 app.MapControllers();
 
