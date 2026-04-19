@@ -1,7 +1,6 @@
-using System;
-using System.Linq.Expressions;
 using LumStoreAPI.Application.DTOs.DocumentPageDTO;
 using LumStoreAPI.Application.DTOs.ProductDTO;
+using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Pages;
@@ -9,7 +8,7 @@ using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Math.EC.Rfc7748;
+using System.Linq.Expressions;
 
 
 namespace LumStoreAPI.Application.Services;
@@ -18,12 +17,14 @@ internal class ProductService
 (
 IPageRetrieveContext pageRetrieveContext,
 LumStoreContext lumStoreContext,
-IMediaService mediaService)
+IMediaService mediaService,
+IProductVariantRepository productVariantRepository)
  : IProductService
 {
     private readonly IPageRetrieveContext _pageRetrieveContext = pageRetrieveContext;
     private readonly IMediaService _mediaService = mediaService;
     private readonly LumStoreContext _lumStoreContext = lumStoreContext;
+    private readonly IProductVariantRepository _productVariantRepository = productVariantRepository;
     public Task<IEnumerable<DocumentClientGetDTO>> GetFeatureProducts(int topN)
     {
         return this.GetProducts(x => x.IsBestSeller, topN);
@@ -102,11 +103,13 @@ IMediaService mediaService)
 
         var imageGuids = products.SelectMany(x => x.Images).ToArray();
         var images = await _mediaService.GetMediaItemsAsync(imageGuids);
+        var variantsByProduct = await LoadVariantsAsync(products.Select(x => x.NodeID));
         var productDTOs = products.Select(x =>
         {
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray()
+                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
             };
 
             var product = new DocumentClientGetDTO(productItem, x);
@@ -154,13 +157,16 @@ IMediaService mediaService)
              });
          });
 
-        var imageGuids = products.SelectMany(x => x.Images).ToArray();
+        var productList = products.ToList();
+        var imageGuids = productList.SelectMany(x => x.Images).ToArray();
         var images = await _mediaService.GetMediaItemsAsync(imageGuids);
-        var productDTOs = products.Select(x =>
+        var variantsByProduct = await LoadVariantsAsync(productList.Select(x => x.NodeID));
+        var productDTOs = productList.Select(x =>
         {
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray()
+                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
             };
 
             var product = new DocumentClientGetDTO(productItem, x);
@@ -168,5 +174,35 @@ IMediaService mediaService)
         });
 
         return productDTOs;
+    }
+
+    /// <summary>
+    /// Batch-loads variants for a set of product IDs and resolves their images in one media call.
+    /// Returns a dictionary keyed by ProductID → list of mapped DTOs.
+    /// </summary>
+    private async Task<Dictionary<int, List<ProductVariantGetDTO>>> LoadVariantsAsync(IEnumerable<int> productIds)
+    {
+        var ids = productIds.ToList();
+        if (ids.Count == 0)
+            return [];
+
+        var variants = (await _productVariantRepository.GetProductVariantsAsync(v => ids.Contains(v.ProductID))).ToList();
+        if (variants.Count == 0)
+            return [];
+
+        var variantImageGuids = variants.SelectMany(v => v.Images).Distinct().ToArray();
+        var variantImages = variantImageGuids.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(variantImageGuids)).ToList()
+            : [];
+
+        return variants
+            .GroupBy(v => v.ProductID)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(v => new ProductVariantGetDTO(
+                    v,
+                    variantImages.Where(img => v.Images.Contains(img.FileID)).ToArray()
+                )).ToList()
+            );
     }
 }
