@@ -54,7 +54,6 @@ namespace LumStoreAPI.Infrastructure
 
         // ── Customers ─────────────────────────────────────────────────────────
         public DbSet<CustomerProfile> CustomerProfiles { get; set; }
-        public DbSet<CustomerAddress> CustomerAddresses { get; set; }
         public DbSet<LoyaltyPoint> LoyaltyPoints { get; set; }
         public DbSet<CustomerTier> CustomerTiers { get; set; }
         public DbSet<CustomerNote> CustomerNotes { get; set; }
