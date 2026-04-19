@@ -6,7 +6,7 @@ public class AddressDTO
 {
     public int Id { get; set; }
     public string Phone { get; set; } = default!;
-    public string Street { get; set; } = default!;
+    public string Address { get; set; } = default!;
     public string City { get; set; } = default!;
     public string State { get; set; } = default!;
     public string Details { get; set; } = string.Empty;
@@ -16,7 +16,7 @@ public class AddressDTO
     {
         Id = a.ItemID;
         Phone = a.Phone;
-        Street = a.Street;
+        Address = a.Address;
         City = a.City;
         State = a.State;
         Details = a.Details ?? string.Empty;

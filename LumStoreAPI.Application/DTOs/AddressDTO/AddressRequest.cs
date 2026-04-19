@@ -8,9 +8,9 @@ public class AddressRequest
     [MaxLength(30)]
     public string Phone { get; set; } = default!;
 
-    [Required(ErrorMessage = "Street is required.")]
-    [MaxLength(200)]
-    public string Street { get; set; } = default!;
+    [Required(ErrorMessage = "Address is required.")]
+    [MaxLength(300)]
+    public string Address { get; set; } = default!;
 
     [Required(ErrorMessage = "City is required.")]
     [MaxLength(100)]

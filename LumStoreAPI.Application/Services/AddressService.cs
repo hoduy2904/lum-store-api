@@ -52,7 +52,7 @@ internal class AddressService : IAddressService
         {
             UserId = userId,
             Phone = request.Phone,
-            Street = request.Street,
+            Address = request.Address,
             City = request.City,
             State = request.State,
             Details = request.Details,
@@ -77,7 +77,7 @@ internal class AddressService : IAddressService
         var updated = await _repo.UpdateAsync(id, a =>
         {
             a.Phone = request.Phone;
-            a.Street = request.Street;
+            a.Address = request.Address;
             a.City = request.City;
             a.State = request.State;
             a.Details = request.Details;
