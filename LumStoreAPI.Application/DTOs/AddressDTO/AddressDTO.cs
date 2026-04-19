@@ -16,7 +16,7 @@ public class AddressDTO
     {
         Id = a.ItemID;
         Phone = a.Phone;
-        Address = a.Address;
+        Address = a.Address ?? string.Empty;
         City = a.City;
         State = a.State;
         Details = a.Details ?? string.Empty;
