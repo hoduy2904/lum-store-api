@@ -1,5 +1,3 @@
-using System;
-
 namespace LumStoreAPI.Core.Models.Constants.Systems;
 
 public class SystemSettingKeyConstants
