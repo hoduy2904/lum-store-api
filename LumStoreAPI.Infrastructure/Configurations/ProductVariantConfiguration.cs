@@ -15,9 +15,9 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
             builder.HasIndex(x => x.SKU).IsUnique();
 
-            builder.HasOne(x => x.Product)
-                .WithMany(x => x.ProductVariants)
-                .HasForeignKey(x => x.ProductID);
+            // ProductVariant.ProductID stores DocumentNode.NodeID (not Product.PageID).
+            // No EF FK constraint — integrity is enforced at the application layer.
+            builder.Ignore(x => x.Product);
 
             builder.Property(x => x.SKU)
                 .HasMaxLength(30);
