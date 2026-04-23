@@ -7,14 +7,10 @@ public class CustomerAddress : BaseClassItem
 {
     public int UserId { get; set; }
     public string Phone { get; set; } = default!;
+    public string Address { get; set; } = default!;
     public string City { get; set; } = default!;
     public string State { get; set; } = default!;
     public string? Details { get; set; }
     public bool IsDefault { get; set; }
     public virtual User User { get; set; } = default!;
-    public int CustomerId { get; set; }
-    public string? Address { get; set; }
-    public string ZipCode { get; set; } = default!;
-    public string Country { get; set; } = default!;
-    public virtual CustomerProfile? CustomerProfile { get; set; }
 }

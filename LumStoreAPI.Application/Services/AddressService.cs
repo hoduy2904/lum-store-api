@@ -72,7 +72,7 @@ internal class AddressService : IAddressService
         var userId = GetCurrentUserId();
 
         if (!await _repo.ExistsForUserAsync(id, userId, ct))
-            return APIResponse<AddressDTO>.Failure("Address not found.");
+            return APIResponse<AddressDTO>.Failure("Forbidden");
 
         var updated = await _repo.UpdateAsync(id, a =>
         {
@@ -97,7 +97,7 @@ internal class AddressService : IAddressService
 
         var address = await _repo.GetByIdAsync(id, ct);
         if (address is null || address.UserId != userId)
-            return APIResponseBase.Failure("Address not found.");
+            return APIResponseBase.Failure("Forbidden");
 
         if (address.IsDefault)
             return APIResponseBase.Failure("Cannot delete the default address. Set another address as default first.");

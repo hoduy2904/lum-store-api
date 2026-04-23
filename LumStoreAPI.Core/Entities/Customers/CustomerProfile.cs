@@ -19,5 +19,4 @@ public class CustomerProfile : BaseClassItem
     public virtual User User { get; set; } = default!;
     public virtual ICollection<LoyaltyPoint> LoyaltyPoints { get; set; } = [];
     public virtual ICollection<CustomerNote> CustomerNotes { get; set; } = [];
-    public virtual ICollection<CustomerAddress> CustomerAddresses { get; set; } = [];
 }

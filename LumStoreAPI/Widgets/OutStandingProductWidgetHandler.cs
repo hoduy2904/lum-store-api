@@ -28,7 +28,7 @@ public class OutStandingProductWidgetHandler
             model.CTAImages = (await _mediaService.GetMediaItemsAsync(request.CTAImage)).Select(x => x.FileURL).ToArray();
         }
 
-        if (new[] { "feature", "new" }.Contains(request.Type))
+        if (new[] { "feature", "new" }.Contains(request.Type.ToLower()))
         {
             if (request.Type == "feature")
             {

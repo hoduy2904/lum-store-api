@@ -38,7 +38,8 @@ public class AddressController : ControllerBase
     public async Task<IActionResult> UpdateAddress(int id, [FromBody] AddressRequest request, CancellationToken ct)
     {
         var result = await _addressService.UpdateAddressAsync(id, request, ct);
-        return result.IsSuccess ? Ok(result) : NotFound(result);
+        if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : NotFound(result);
+        return Ok(result);
     }
 
     /// <summary>DELETE /api/addresses/{id} — remove an address (default address is protected).</summary>
@@ -46,7 +47,8 @@ public class AddressController : ControllerBase
     public async Task<IActionResult> DeleteAddress(int id, CancellationToken ct)
     {
         var result = await _addressService.DeleteAddressAsync(id, ct);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
+        if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : BadRequest(result);
+        return Ok(result);
     }
 
     /// <summary>PATCH /api/addresses/{id}/set-default — promote one address to default.</summary>

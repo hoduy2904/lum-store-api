@@ -28,8 +28,5 @@ internal class CustomerProfileConfiguration : IEntityTypeConfiguration<CustomerP
             .HasForeignKey(x => x.CustomerProfileId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(x => x.CustomerAddresses)
-                .WithOne(x => x.CustomerProfile)
-                .HasForeignKey(x => x.CustomerId);
     }
 }

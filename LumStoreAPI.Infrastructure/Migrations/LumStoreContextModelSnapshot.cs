@@ -346,6 +346,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
 
                     b.Property<string>("Address")
+                        .IsRequired()
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
@@ -353,14 +354,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Details")
                         .HasColumnType("nvarchar(max)");
@@ -370,8 +363,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("State")
                         .IsRequired()
@@ -380,13 +373,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
-
-                    b.Property<string>("ZipCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasIndex("CustomerId");
 
                     b.HasIndex("UserId");
 
@@ -1470,19 +1456,11 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerAddress", b =>
                 {
-                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "CustomerProfile")
-                        .WithMany("CustomerAddresses")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("CustomerProfile");
 
                     b.Navigation("User");
                 });
@@ -1715,8 +1693,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
                 {
-                    b.Navigation("CustomerAddresses");
-
                     b.Navigation("CustomerNotes");
 
                     b.Navigation("LoyaltyPoints");

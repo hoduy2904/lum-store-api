@@ -13,4 +13,11 @@ public interface IProductService
     Task<IPagedEnumerable<DocumentClientGetDTO>> GetProducts(ProductClientRequestDTO request);
     Task<IEnumerable<StoreCategoryDTO>> GetProductCategories();
     Task<IEnumerable<DocumentClientGetDTO>> GetProductsByNodeIdsAsync(int[] nodeIds);
+
+    /// <summary>Products under a category node, with raw image GUIDs (no URL resolution).</summary>
+    Task<IPagedEnumerable<DocumentClientGetDTO>> GetProductsByCategoryAsync(
+        int categoryNodeId, CategoryProductsRequest request);
+
+    /// <summary>Keyed by category NodeID → published product count.</summary>
+    Task<Dictionary<int, int>> GetPublishedProductCountsAsync(int[] categoryNodeIds);
 }
