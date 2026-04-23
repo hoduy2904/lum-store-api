@@ -4,6 +4,7 @@ using LumStoreAPI.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    partial class LumStoreContextModelSnapshot : ModelSnapshot
+    [Migration("20260422165842_AddUserWishlist")]
+    partial class AddUserWishlist
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,39 +47,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("BaseClassItem");
 
                     b.UseTpcMappingStrategy();
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.UserCart", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("NodeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("VariantId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NodeId");
-
-                    b.ToTable("UserCarts");
                 });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.UserWishlist", b =>
@@ -1385,17 +1355,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("ProductCategories");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.UserCart", b =>
-                {
-                    b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentNode", "Node")
-                        .WithMany()
-                        .HasForeignKey("NodeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Node");
-                });
-
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.UserWishlist", b =>
                 {
                     b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentNode", "Node")
@@ -1528,7 +1487,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("CustomerProfile");
                 });
 
-            // ProductVariant.ProductID stores DocumentNode.NodeID — no EF FK relationship.
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
+                        .WithMany("ProductVariants")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.Order", b =>
                 {
@@ -1745,6 +1713,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("UserTokens");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.Product", b =>
+                {
+                    b.Navigation("ProductVariants");
+                });
 #pragma warning restore 612, 618
         }
     }

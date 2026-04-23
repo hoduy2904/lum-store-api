@@ -4,6 +4,7 @@ using LumStoreAPI.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    partial class LumStoreContextModelSnapshot : ModelSnapshot
+    [Migration("20260423024545_AddUserCart")]
+    partial class AddUserCart
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1528,7 +1531,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("CustomerProfile");
                 });
 
-            // ProductVariant.ProductID stores DocumentNode.NodeID — no EF FK relationship.
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
+                        .WithMany("ProductVariants")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.Order", b =>
                 {
@@ -1745,6 +1757,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("UserTokens");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.Product", b =>
+                {
+                    b.Navigation("ProductVariants");
+                });
 #pragma warning restore 612, 618
         }
     }
