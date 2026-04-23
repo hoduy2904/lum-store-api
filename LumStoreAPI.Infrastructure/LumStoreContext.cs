@@ -63,6 +63,12 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<IntegrationConfig> IntegrationConfigs { get; set; }
         public DbSet<SyncLog> SyncLogs { get; set; }
 
+        // ── Wishlist ───────────────────────────────────────────────────────────
+        public DbSet<UserWishlist> UserWishlists { get; set; }
+
+        // ── Cart ───────────────────────────────────────────────────────────────
+        public DbSet<UserCart> UserCarts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
