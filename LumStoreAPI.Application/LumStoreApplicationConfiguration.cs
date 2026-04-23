@@ -42,6 +42,9 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IProductService, ProductService>();
                 services.AddScoped<IAddressService, AddressService>();
                 services.AddScoped<ISettingKeyValueService, SettingKeyValueService>();
+                services.AddScoped<IWishlistService, WishlistService>();
+                services.AddScoped<ICartService, CartService>();
+                services.AddScoped<IStoreOrderService, StoreOrderService>();
                 services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizeHandler>();
                 return services;
             }
