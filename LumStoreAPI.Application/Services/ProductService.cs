@@ -176,6 +176,12 @@ IProductVariantRepository productVariantRepository)
         return productDTOs;
     }
 
+    public Task<IEnumerable<DocumentClientGetDTO>> GetProductsByNodeIdsAsync(int[] nodeIds)
+    {
+        if (nodeIds.Length == 0) return Task.FromResult(Enumerable.Empty<DocumentClientGetDTO>());
+        return GetProducts(x => nodeIds.Contains(x.NodeID), nodeIds.Length);
+    }
+
     /// <summary>
     /// Batch-loads variants for a set of product IDs and resolves their images in one media call.
     /// Returns a dictionary keyed by ProductID → list of mapped DTOs.

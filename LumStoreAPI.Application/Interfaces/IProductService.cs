@@ -12,5 +12,5 @@ public interface IProductService
     Task<IEnumerable<DocumentClientGetDTO>> GetNewProducts(int topN);
     Task<IPagedEnumerable<DocumentClientGetDTO>> GetProducts(ProductClientRequestDTO request);
     Task<IEnumerable<StoreCategoryDTO>> GetProductCategories();
-
+    Task<IEnumerable<DocumentClientGetDTO>> GetProductsByNodeIdsAsync(int[] nodeIds);
 }
