@@ -18,12 +18,14 @@ namespace LumStoreAPI.ClientControllers
     public class ContentManagerController(
         IPageRetrieveContext pageRetrieveContext,
         IMediator mediator,
-        IProductService productService
+        IProductService productService,
+        IMediaService mediaService
         ) : ControllerBase
     {
         private readonly IPageRetrieveContext _pageRetrieveContext = pageRetrieveContext;
         private readonly IMediator _mediator = mediator;
         private readonly IProductService _productService = productService;
+        private readonly IMediaService _mediaService = mediaService;
 
         [HttpGet("{alias}/children")]
         public async Task<IActionResult> GetChildren(string alias)
@@ -59,7 +61,26 @@ namespace LumStoreAPI.ClientControllers
                 var dto = new DocumentPageGetDTO(c);
                 dto.Fields["productCount"] = productCounts.GetValueOrDefault(c.NodeID, 0);
                 return dto;
-            });
+            }).ToList();
+
+            // Resolve categoryImage GUIDs → file URLs
+            var allImageGuids = dtos
+                .Where(d => d.Fields.TryGetValue("categoryImage", out var v) && v is Guid[] imgs && imgs.Length > 0)
+                .SelectMany(d => (Guid[])d.Fields["categoryImage"]!)
+                .Distinct()
+                .ToArray();
+
+            if (allImageGuids.Length > 0)
+            {
+                var mediaMap = (await _mediaService.GetMediaItemsAsync(allImageGuids))
+                    .ToDictionary(m => m.FileID, m => m.FileURL);
+
+                foreach (var dto in dtos)
+                {
+                    if (dto.Fields.TryGetValue("categoryImage", out var v) && v is Guid[] guids)
+                        dto.Fields["categoryImage"] = guids.Select(g => mediaMap.GetValueOrDefault(g, string.Empty)).ToArray();
+                }
+            }
 
             return Ok(APIResponse<IEnumerable<DocumentPageGetDTO>>.Success(dtos, ["Success"]));
         }
