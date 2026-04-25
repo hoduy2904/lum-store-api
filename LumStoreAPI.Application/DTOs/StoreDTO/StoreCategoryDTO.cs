@@ -6,7 +6,7 @@ namespace LumStoreAPI.Application.DTOs.StoreDTO
     public class StoreCategoryDTO
     {
         /// <summary>NodeID as string.</summary>
-        public string Id { get; set; } = default!;
+        public int Id { get; set; } = default!;
 
         /// <summary>NodeAlias — used as URL slug: /collection/[slug]</summary>
         public string Slug { get; set; } = default!;

@@ -135,9 +135,32 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             return this;
         }
 
+        public ITreeNodeContent<T> OnlyPages()
+        {
+            _query = _query.Where(x => x.Node.ClassName.StartsWith("Pages."));
+            return this;
+        }
+
         public ITreeNodeContent<T> Select(Expression<Func<T, T>> selector)
         {
             _selector = selector;
+            return this;
+        }
+
+        public ITreeNodeContent<T> GetChildren(int parentNodeId)
+        {
+            // Filter via Node.ParentNodeID (direct FK join) rather than the closure table,
+            // so this works even when DocumentLinkedNode rows are absent for some nodes.
+            _query = _query.Where(x => x.Node.ParentNodeID == parentNodeId);
+            return this;
+        }
+
+        public ITreeNodeContent<T> OrderBy<TKey>(Expression<Func<T, TKey>> keySelector)
+        {
+            // Applied directly to _query so it lands in the expression tree before
+            // LatestQueries() appends the published-filter and selector.
+            // EF Core collapses all chained operations into a single SQL statement.
+            _query = _query.OrderBy(keySelector);
             return this;
         }
     }

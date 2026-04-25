@@ -8,8 +8,6 @@ internal class OrderNoteConfiguration : IEntityTypeConfiguration<OrderNote>
 {
     public void Configure(EntityTypeBuilder<OrderNote> builder)
     {
-        builder.HasKey(x => x.ItemID);
-
         builder.Property(x => x.Note).HasMaxLength(2000);
         builder.Property(x => x.AuthorName).HasMaxLength(150);
 

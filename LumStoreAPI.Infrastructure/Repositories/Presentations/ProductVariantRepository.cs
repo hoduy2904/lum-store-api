@@ -32,7 +32,7 @@ internal class ProductVariantRepository : IProductVariantRepository
     public async Task<IEnumerable<ProductVariant>> GetProductVariantsAsync(Expression<Func<ProductVariant, bool>>? where = null)
     {
         where ??= x => true;
-        return await _lumStoreContext.ProductVariants.Where(where).ToArrayAsync();
+        return await _lumStoreContext.ProductVariants.AsNoTracking().Where(where).ToArrayAsync();
     }
 
     public async Task<ProductVariant> InsertProductVariantAsync(ProductVariant productVariant)

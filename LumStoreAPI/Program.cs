@@ -3,6 +3,7 @@ using LumStoreAPI.Application.Middlewares;
 using LumStoreAPI.DataEngine;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.SeedData;
+using LumStoreAPI.SDK;
 using LumStoreAPI.Tasks;
 using Scalar.AspNetCore;
 using Serilog;
@@ -24,6 +25,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Configuration.SDKConfigure();
 builder.Services.AddCustomSettings(builder.Configuration);
 builder.Services
     .AddHttpContextAccessor()
@@ -33,7 +35,8 @@ builder.Services
     .AddExceptionHandler<GlobalExceptionHandler>()
     .AddProblemDetails()
     .RegisterTasks()
-    .AddCMSCache();
+    .AddCMSCache()
+    .AddLumStoreSDK();
 
 builder.Services.AddJwtAuthentication();
 
@@ -47,17 +50,6 @@ builder.Services.AddMediatR(cfg =>
 
 builder.AddLumStoreStaticConfiguration();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.WithOrigins("http://localhost:3000", "https://localhost:3000")
-            .AllowCredentials()// Allow requests from all origins
-                   .AllowAnyMethod() // Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
-                   .AllowAnyHeader(); // Allow all request headers
-        });
-});
 var app = builder.Build();
 
 await LumStoreSeedData.SeedAsync(app.Services);
@@ -69,12 +61,17 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+else
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+    app.MapFallbackToFile("index.html");
+}
 
 //app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowAll");
 
 app.MapControllers();
 

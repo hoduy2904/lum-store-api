@@ -8,6 +8,7 @@ using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Riches;
+using LumStoreAPI.Infrastructure.Interceptors;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -15,15 +16,17 @@ using System.Reflection;
 
 namespace LumStoreAPI.Infrastructure
 {
-    public class LumStoreContext : DbContext
+    public partial class LumStoreContext : DbContext
     {
+        private readonly IServiceProvider _serviceProvider;
         protected readonly IConfiguration Configuration;
         protected readonly ICacheService _cacheService;
-        public LumStoreContext(DbContextOptions<LumStoreContext> options, IConfiguration configuration, ICacheService cacheService)
+        public LumStoreContext(DbContextOptions<LumStoreContext> options, IConfiguration configuration, ICacheService cacheService, IServiceProvider serviceProvider)
             : base(options)
         {
             Configuration = configuration;
             _cacheService = cacheService;
+            _serviceProvider = serviceProvider;
         }
         public DbSet<User> Users { get; set; }
         public DbSet<UserToken> UserTokens { get; set; }
@@ -39,6 +42,7 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductVariant> ProductVariants { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
+        public DbSet<ContactUs> ContactUs { get; set; }
 
         // ── Orders ────────────────────────────────────────────────────────────
         public DbSet<Order> Orders { get; set; }
@@ -59,6 +63,12 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<IntegrationConfig> IntegrationConfigs { get; set; }
         public DbSet<SyncLog> SyncLogs { get; set; }
 
+        // ── Wishlist ───────────────────────────────────────────────────────────
+        public DbSet<UserWishlist> UserWishlists { get; set; }
+
+        // ── Cart ───────────────────────────────────────────────────────────────
+        public DbSet<UserCart> UserCarts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
@@ -72,6 +82,7 @@ namespace LumStoreAPI.Infrastructure
                 var connectionString = Configuration.GetConnectionString("LumDbContext");
                 optionsBuilder.UseSqlServer(connectionString);
             }
+            optionsBuilder.AddInterceptors(new ProductInterceptor(_serviceProvider));
             base.OnConfiguring(optionsBuilder);
         }
 

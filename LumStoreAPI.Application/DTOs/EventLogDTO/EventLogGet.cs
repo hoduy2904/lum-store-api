@@ -14,6 +14,7 @@ namespace LumStoreAPI.Application.DTOs.EventLogDTO
         public string? IPAddress { get; set; }
         public string? EventUrl { get; set; }
         public string? CreatedBy { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
 
         public EventLogGet(EventLog eventLog)
         {
@@ -26,6 +27,7 @@ namespace LumStoreAPI.Application.DTOs.EventLogDTO
             this.IPAddress = eventLog.IPAddress;
             this.EventUrl = eventLog.EventUrl;
             this.CreatedBy = eventLog.User?.FullName;
+            this.CreatedAt = eventLog.CreatedAt;
         }
     }
 }

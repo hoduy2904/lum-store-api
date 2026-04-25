@@ -1,4 +1,5 @@
 using LumStoreAPI.Core.Entities.Base;
+using LumStoreAPI.Core.Entities.Customers;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Models.Enums;
 
@@ -16,6 +17,7 @@ public class Order : BaseClassItem
 
     // ── Shipping address ──────────────────────────────────────────────────
     public string ShippingAddress { get; set; } = default!;
+    public string? ShippingDetails { get; set; }
     public string ShippingCity { get; set; } = default!;
     public string ShippingState { get; set; } = default!;
     public string ShippingZip { get; set; } = default!;
@@ -45,7 +47,7 @@ public class Order : BaseClassItem
     public string? CustomerNote { get; set; }
 
     // ── Navigation ────────────────────────────────────────────────────────
-    public virtual User? Customer { get; set; }
+    public virtual CustomerProfile? Customer { get; set; }
     public virtual ICollection<OrderItem> OrderItems { get; set; } = [];
     public virtual ICollection<OrderHistory> OrderHistories { get; set; } = [];
     public virtual ICollection<OrderNote> OrderNotes { get; set; } = [];

@@ -14,6 +14,12 @@ namespace LumStoreAPI.Application.Services
         {
             _context = context;
         }
+
+        public Task<int> ClearEventLogsAsync()
+        {
+            return _context.EventLogs.ExecuteDeleteAsync();
+        }
+
         public async Task<EventLogGet?> GetEventLogAsync(int eventID)
         {
             var eventLog = await _context.EventLogs.FindAsync(eventID);
@@ -24,14 +30,17 @@ namespace LumStoreAPI.Application.Services
         {
             var eventLogs = _context.EventLogs.Where(x =>
                   (string.IsNullOrEmpty(request.EventSource) || x.EventSource.Contains(request.EventSource))
-                  || (string.IsNullOrEmpty(request.EventName) || x.EventName != null && x.EventName.Equals(request.EventName)) ||
-                  (string.IsNullOrEmpty(request.EventCode) || x.EventCode != null && x.EventCode.Equals(request.EventCode)) ||
-                  (string.IsNullOrEmpty(request.IPAddress) || x.IPAddress != null && x.IPAddress.StartsWith(request.EventCode)) ||
+                  && (string.IsNullOrEmpty(request.EventName) || x.EventName != null && x.EventName.Equals(request.EventName)) &&
+                  (string.IsNullOrEmpty(request.EventCode) || x.EventCode != null && x.EventCode.Equals(request.EventCode)) &&
+                  (string.IsNullOrEmpty(request.IPAddress) || x.IPAddress != null && x.IPAddress.StartsWith(request.IPAddress)) &&
                   (request.EventLogType == null || x.EventLogType == request.EventLogType));
 
             var totalRecords = await eventLogs.CountAsync();
 
-            var data = await eventLogs.Take(request.PageSize).Skip((request.Page - 1) * request.PageSize).ToArrayAsync();
+            var data = await eventLogs
+            .OrderByDescending(x => x.ItemID)
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize).ToArrayAsync();
 
             return data.Select(x => new EventLogGet(x)).AsPagedEnumerable(totalRecords);
         }

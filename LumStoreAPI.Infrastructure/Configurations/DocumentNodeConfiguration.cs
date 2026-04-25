@@ -17,6 +17,7 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.HasIndex(x => new { x.ParentNodeID, x.NodeAlias }).IsUnique();
 
             builder.HasIndex(x => x.RelativeUrl);
+            builder.HasIndex(x => x.ClassName);
 
 
             builder.Property(x => x.RelativeUrl)

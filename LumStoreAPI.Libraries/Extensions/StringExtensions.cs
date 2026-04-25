@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -9,13 +7,14 @@ namespace LumStoreAPI.Libraries.Extensions
 {
     public static class StringExtensions
     {
-        extension(string input)
+        extension(string? input)
         {
             public string Slug
             {
                 get
                 {
-                    string str = input.RemoveAccents().ToLower();
+                    if (string.IsNullOrEmpty(input)) return "";
+                    string str = input.RemoveAccents()!.ToLower();
                     str = Regex.Replace(str, @"[^a-z0-9\s-]", "");
                     str = Regex.Replace(str, @"\s+", " ").Trim();
                     str = Regex.Replace(str, @"\s", "-");
@@ -23,7 +22,7 @@ namespace LumStoreAPI.Libraries.Extensions
                 }
             }
 
-            string RemoveAccents()
+            string? RemoveAccents()
             {
                 if (string.IsNullOrWhiteSpace(input))
                     return input;
@@ -37,6 +36,7 @@ namespace LumStoreAPI.Libraries.Extensions
 
             public string ToCamelCase()
             {
+                if (string.IsNullOrWhiteSpace(input)) return string.Empty;
                 return JsonNamingPolicy.CamelCase.ConvertName(input);
             }
 

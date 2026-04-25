@@ -46,7 +46,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             {
                 query = func.Invoke(query);
             }
-            query = query.Take(pageSize).Skip((page - 1) * pageSize);
+            query = query.Skip((page - 1) * pageSize).Take(pageSize);
 
             int totalRecords = await query.CountAsync();
 

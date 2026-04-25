@@ -1,6 +1,6 @@
 using LumStoreAPI.Core.Entities.DocumentTypes;
+using LumStoreAPI.Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LumStoreAPI.Infrastructure.Configurations
@@ -11,27 +11,19 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
         public void Configure(EntityTypeBuilder<ProductVariant> builder)
         {
-            var guidArrayComparer = new ValueComparer<Guid[]>(
-                (c1, c2) => c1.SequenceEqual(c2),
-                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                c => c.ToArray());
-
-            builder.HasKey(x => x.ItemID);
+            builder.HasIndex(x => x.ShiprelayId);
 
             builder.HasIndex(x => x.SKU).IsUnique();
 
-            builder.HasOne(x => x.Product)
-                .WithMany(x => x.ProductVariants)
-                .HasForeignKey(x => x.ProductID);
+            // ProductVariant.ProductID stores DocumentNode.NodeID (not Product.PageID).
+            // No EF FK constraint — integrity is enforced at the application layer.
+            builder.Ignore(x => x.Product);
 
             builder.Property(x => x.SKU)
                 .HasMaxLength(30);
 
             builder.Property(x => x.Color)
                 .HasMaxLength(50);
-
-            builder.Property(x => x.ColorHex)
-                .HasMaxLength(10);
 
             builder.Property(x => x.UPC)
                 .HasMaxLength(32);
@@ -40,10 +32,8 @@ namespace LumStoreAPI.Infrastructure.Configurations
                 .HasMaxLength(100);
 
             builder.Property(x => x.Images)
-                .HasConversion(
-                    x => string.Join(SPLIT_CHAR, x),
-                    x => x.Split(SPLIT_CHAR, StringSplitOptions.RemoveEmptyEntries).Select(Guid.Parse).ToArray())
-                .Metadata.SetValueComparer(guidArrayComparer);
+                .HasConversion(ConverterHelper.ArrayGuidConverter(','))
+                .Metadata.SetValueComparer(ValueCompareHelper.GUIDArrayCompare);
         }
     }
 }

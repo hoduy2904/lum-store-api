@@ -91,12 +91,20 @@ public class ShiprelayRateResult
 
 public class ShiprelayWebhookPayload
 {
-    [JsonPropertyName("event")] public string Event { get; set; } = default!;
-    [JsonPropertyName("shipment_id")] public string ShipmentId { get; set; } = default!;
-    [JsonPropertyName("tracking_number")] public string? TrackingNumber { get; set; }
-    [JsonPropertyName("tracking_url")] public string? TrackingUrl { get; set; }
-    [JsonPropertyName("carrier")] public string? Carrier { get; set; }
-    [JsonPropertyName("status")] public string Status { get; set; } = default!;
-    [JsonPropertyName("delivered_at")] public DateTimeOffset? DeliveredAt { get; set; }
-    [JsonPropertyName("order_reference")] public string? OrderReference { get; set; }
+    [JsonPropertyName("source_order_id")]    public string? SourceOrderId { get; set; }
+    [JsonPropertyName("source_shipment_id")] public string? ShipmentId { get; set; }
+    [JsonPropertyName("order_ref")]          public string? OrderRef { get; set; }
+    [JsonPropertyName("status")]             public string? Status { get; set; }
+    [JsonPropertyName("tracking_number")]    public string? TrackingNumber { get; set; }
+    [JsonPropertyName("tracking_url")]       public string? TrackingUrl { get; set; }
+    [JsonPropertyName("carrier")]            public string? Carrier { get; set; }
+    [JsonPropertyName("service")]            public string? Service { get; set; }
+}
+
+// ── Product / Inventory ───────────────────────────────────────────────────
+
+public class ShiprelayProductDTO
+{
+    public string Sku { get; set; } = default!;
+    public int AvailableStock { get; set; }
 }

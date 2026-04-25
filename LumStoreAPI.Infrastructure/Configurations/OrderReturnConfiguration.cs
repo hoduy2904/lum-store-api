@@ -8,8 +8,6 @@ internal class OrderReturnConfiguration : IEntityTypeConfiguration<OrderReturn>
 {
     public void Configure(EntityTypeBuilder<OrderReturn> builder)
     {
-        builder.HasKey(x => x.ItemID);
-
         builder.Property(x => x.Reason).HasMaxLength(1000);
         builder.Property(x => x.AdminNote).HasMaxLength(1000);
         builder.Property(x => x.RefundAmount).HasPrecision(18, 2);
@@ -35,7 +33,6 @@ internal class OrderReturnItemConfiguration : IEntityTypeConfiguration<OrderRetu
 {
     public void Configure(EntityTypeBuilder<OrderReturnItem> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.Property(x => x.Reason).HasMaxLength(500);
 
         builder.HasOne(x => x.OrderReturn)

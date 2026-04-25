@@ -8,7 +8,6 @@ internal class LoyaltyPointConfiguration : IEntityTypeConfiguration<LoyaltyPoint
 {
     public void Configure(EntityTypeBuilder<LoyaltyPoint> builder)
     {
-        builder.HasKey(x => x.ItemID);
         builder.HasIndex(x => x.CustomerProfileId);
 
         builder.Property(x => x.Description).HasMaxLength(300);

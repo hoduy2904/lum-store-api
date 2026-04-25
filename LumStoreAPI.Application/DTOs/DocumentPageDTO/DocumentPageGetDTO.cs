@@ -1,6 +1,9 @@
 ﻿using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Extensions;
+using LumStoreAPI.Libraries.Helpers;
+using System.Text.Json.Serialization;
 
 namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
 {
@@ -17,9 +20,9 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
         public bool RequireAuthentication { get; set; }
         public DateTimeOffset? PublishedFrom { get; set; }
         public DateTimeOffset? PublishedTo { get; set; }
-        public WidgetData<object>[] DocumentPageWidgets { get; set; } = [];
         public bool IsPublished => (PublishedFrom == null || PublishedFrom <= DateTime.UtcNow) && (PublishedTo == null || PublishedTo > DateTime.UtcNow);
         public Dictionary<string, object?> Fields { get; set; } = [];
+        public WidgetData<object>[] DocumentPageWidgets { get; set; }
 
         public DocumentPageGetDTO(DocumentPage documentPage)
         {

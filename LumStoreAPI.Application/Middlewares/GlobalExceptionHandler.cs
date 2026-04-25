@@ -2,10 +2,10 @@
 using LumStoreAPI.Application.Exceptions;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Constants.Systems;
-using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Net;
@@ -55,11 +55,30 @@ namespace LumStoreAPI.Application.Middlewares
                 await eventLogService.LogException(source, code, "", exception);
             }
 
+            string message = exception.Message;
+            if (exception is SystemException)
+            {
+                message = "Internal server error";
+            }
+            else if (exception is SqlException sqlException)
+            {
+                message = "Database error";
+
+                if (sqlException.Number == 2627)
+                {
+                    message = "Data already exists";
+                }
+                else if (sqlException.Number == 515)
+                {
+                    message = "Missing required data";
+                }
+            }
+
             var problemDetails = new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,
                 Title = "Server Error",
-                Detail = exception.Message,
+                Detail = message,
                 Instance = $"{httpContext.Request.Method} {httpContext.Request.Path}"
             };
 

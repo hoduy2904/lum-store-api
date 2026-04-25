@@ -43,8 +43,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             }
             int count = await categories.CountAsync();
             var data = await categories.OrderByDescending(x => x.CategoryID)
-                        .Take(pageSize)
                         .Skip((page - 1) * pageSize)
+                        .Take(pageSize)
                         .ToArrayAsync();
 
             return data.AsPagedEnumerable(count);

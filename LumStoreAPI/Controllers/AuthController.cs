@@ -2,6 +2,7 @@
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.UserDTO;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Models.Constants.Systems;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -53,6 +54,40 @@ namespace LumStoreAPI.Controllers
         {
             var user = await _userService.GetCurrentUserAsync();
             return Ok(APIResponse<UserDTO?>.Success(user));
+        }
+
+        [HttpPost("ChangePassword")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            return Ok(await _authService.ChangePasswordAsync(request));
+        }
+
+        [HttpPost("ForgotPassword")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            return Ok(await _authService.ForgotPasswordAsync(request));
+        }
+
+        [HttpPost("ResetPassword")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            return Ok(await _authService.ResetPasswordAsync(request));
+        }
+
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            string accessToken = Request.Cookies[AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME]!;
+            string? refreshToken = Request.Cookies[AuthSystemConstants.REFRESH_TOKEN_COOKIE_NAME];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return Unauthorized();
+            }
+            var token = await _authService.RefreshTokenAsync(new(accessToken, refreshToken));
+            return Ok(token);
         }
     }
 }

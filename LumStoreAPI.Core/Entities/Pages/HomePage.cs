@@ -14,13 +14,6 @@ namespace LumStoreAPI.Core.Entities.Pages
         public string PageTitle { get; set; } = default!;
 
         public string? Description { get; set; }
-
-        /// <summary>
-        /// JSON array of hero slides.
-        /// Schema: [{ pretitle, title, description, image, primaryCtaText, primaryCtaLink,
-        ///            secondaryCtaText, secondaryCtaLink }]
-        /// </summary>
-        [DisplayName("Hero slides (JSON)")]
-        public string? HeroSlidesJson { get; set; }
+        public int CarouselPathId { get; set; }
     }
 }

@@ -39,7 +39,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 
         public Task<bool> IsValidToken(Guid token)
         {
-            return _lumStoreContext.UserTokens.AnyAsync(x => x.TokenID == token);
+            return _lumStoreContext.UserTokens.AnyAsync(x => x.TokenID == token && x.ValidTo > DateTime.UtcNow);
         }
     }
 }

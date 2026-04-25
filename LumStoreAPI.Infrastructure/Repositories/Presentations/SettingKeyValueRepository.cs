@@ -44,9 +44,10 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return count;
         }
 
-        public async Task<SettingKeyValue?> GetSettingKey(string key)
+        public Task<SettingKeyValue?> GetSettingKeyAsync(string key)
         {
-            return await _lumStoreContext.SettingKeyValues.FindAsync(key);
+            return _cacheService.GetCacheAsync(async () => await _lumStoreContext.SettingKeyValues.FindAsync(key),
+             cache => cache.Dependencies(x => x.SettingKey(key)).Key("getbykey|" + key).Expiration(0));
         }
 
         public async Task<IEnumerable<SettingKeyValue>> GetSettingKeysAsync(Expression<Func<SettingKeyValue, bool>> func)
@@ -68,15 +69,19 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         {
             _lumStoreContext.SettingKeyValues.Add(settingKeyValue);
             await _lumStoreContext.SaveChangesAsync();
-            _cacheService.TouchKey(new CacheDependency().SettingKeys().GetDependencies().ToArray());
+            _cacheService.TouchKey(new CacheDependency().SettingKeys().SettingKey(settingKeyValue.SettingCode).GetDependencies().ToArray());
 
             return settingKeyValue;
         }
 
-        public async Task<SettingKeyValue> UpdateSettingKeyAsync(SettingKeyValue settingKeyValue)
+        public async Task<SettingKeyValue?> UpdateSettingKeyAsync(string settingCode, SettingKeyValue settingKeyValue)
         {
-            _lumStoreContext.SettingKeyValues.Update(settingKeyValue);
-            await _lumStoreContext.SaveChangesAsync();
+            var result = await _lumStoreContext.SettingKeyValues.Where(x => x.SettingCode.Equals(settingCode))
+                 .ExecuteUpdateAsync(x =>
+                 x.SetProperty(p => p.SettingCode, settingKeyValue.SettingCode)
+                 .SetProperty(p => p.SettingName, settingKeyValue.SettingName)
+                 .SetProperty(p => p.SettingValue, settingKeyValue.SettingValue));
+            if (result == 0) return null;
 
             _cacheService.TouchKey(new CacheDependency().SettingKeys().SettingKey(settingKeyValue.SettingCode).GetDependencies().ToArray());
             return settingKeyValue;

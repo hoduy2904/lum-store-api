@@ -43,11 +43,11 @@ internal class CustomerRepository : ICustomerRepository
 
         query = sortBy switch
         {
-            "TotalSpent"  => descending ? query.OrderByDescending(p => p.TotalSpent) : query.OrderBy(p => p.TotalSpent),
+            "TotalSpent" => descending ? query.OrderByDescending(p => p.TotalSpent) : query.OrderBy(p => p.TotalSpent),
             "TotalOrders" => descending ? query.OrderByDescending(p => p.TotalOrders) : query.OrderBy(p => p.TotalOrders),
             "TotalPoints" => descending ? query.OrderByDescending(p => p.TotalPoints) : query.OrderBy(p => p.TotalPoints),
-            "TierLevel"   => descending ? query.OrderByDescending(p => p.TierLevel) : query.OrderBy(p => p.TierLevel),
-            _             => descending ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt)
+            "TierLevel" => descending ? query.OrderByDescending(p => p.TierLevel) : query.OrderBy(p => p.TierLevel),
+            _ => descending ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt)
         };
 
         int total = await query.CountAsync();

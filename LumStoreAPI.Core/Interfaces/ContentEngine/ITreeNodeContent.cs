@@ -54,5 +54,38 @@ namespace LumStoreAPI.Core.Interfaces.DocumentPages
         ITreeNodeContent<T> Roots();
 
         ITreeNodeContent<T> Select(Expression<Func<T, T>> selector);
+
+        /// <summary>
+        /// Only get page can show on the client
+        /// </summary>
+        /// <returns></returns>
+        ITreeNodeContent<T> OnlyPages();
+
+        /// <summary>
+        /// Filters to the <em>direct</em> children of <paramref name="parentNodeId"/> using
+        /// <c>DocumentNode.ParentNodeID</c> (the FK column), not the closure table.
+        /// <para>
+        /// Prefer this over <see cref="GetDescendants(int,int)"/> with depth=1 when
+        /// <c>DocumentLinkedNode</c> rows may not be fully populated for every node.
+        /// </para>
+        /// </summary>
+        /// <param name="parentNodeId">NodeID of the parent whose immediate children are wanted.</param>
+        ITreeNodeContent<T> GetChildren(int parentNodeId);
+
+        /// <summary>
+        /// Applies an ascending ORDER BY on the underlying <see cref="IQueryable{T}"/>.
+        /// <para>
+        /// Must be called <b>before</b> <see cref="Paged"/> so that pagination skips/takes
+        /// are applied on an already-ordered set.
+        /// </para>
+        /// <para>
+        /// The ordering is preserved through subsequent <c>Where</c>, published-filter,
+        /// and <c>Select</c> operations because all are appended to the same expression tree
+        /// and translated to a single SQL query.
+        /// </para>
+        /// </summary>
+        /// <typeparam name="TKey">Type of the sort key.</typeparam>
+        /// <param name="keySelector">Expression selecting the sort key from the page entity.</param>
+        ITreeNodeContent<T> OrderBy<TKey>(Expression<Func<T, TKey>> keySelector);
     }
 }

@@ -1,5 +1,7 @@
 ﻿using LumStoreAPI.Core.Attributes;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Entities.Pages;
+using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Riches;
 using LumStoreAPI.Core.Models.Systems;
@@ -17,11 +19,16 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
     internal class TreeNodeRepository : ITreeNodeRepository
     {
         private readonly ICacheService _cacheService;
+        private readonly IShiprelaySystemRespository _shiprelaySystemRespository;
         private readonly LumStoreContext _lumStoreContext;
-        public TreeNodeRepository(LumStoreContext lumStoreContext, ICacheService cacheService)
+        public TreeNodeRepository(
+            LumStoreContext lumStoreContext,
+            ICacheService cacheService,
+            IShiprelaySystemRespository shiprelaySystemRespository)
         {
             _lumStoreContext = lumStoreContext;
             _cacheService = cacheService;
+            _shiprelaySystemRespository = shiprelaySystemRespository;
         }
         public Task<int> DeleteAsync(int nodeID, bool hardDelete = false)
         {
@@ -33,6 +40,12 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             int result = 0;
             if (nodeIDs.Length == 0)
                 return 0;
+
+            if (_lumStoreContext.DocumentNodes.Any(x => x.ParentNodeID == null && nodeIDs.Contains(x.NodeID)))
+            {
+                throw new InvalidDataException("Cannot delete the root node");
+            }
+
             if (hardDelete)
             {
                 using var tx = await _lumStoreContext.Database.BeginTransactionAsync();
@@ -49,6 +62,15 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                                                    .Select(s => s.Descendant)
                                                    .Contains(x.Descendant))
                        .ExecuteDeleteAsync();
+
+                    var isProduct = _lumStoreContext.Products
+                        .Any(x => childrenNodes.Contains(x.NodeID));
+
+                    if (isProduct)
+                    {
+                        await _shiprelaySystemRespository
+                            .SyncProductShiprelaysAsync(childrenNodes.ToArray(), Core.Models.Enums.EntryActionStatus.DELETE);
+                    }
 
                     await _lumStoreContext.DocumentNodes
                     .Where(x => childrenNodes
@@ -103,8 +125,12 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return string.Join("/", data.OrderBy(x => x.nodeOrder).Select(x => x.alias));
         }
 
-        public async Task<T?> InsertAsync<T>(T page, DocumentNode? parent = null) where T : DocumentPage
+        public async Task<T?> InsertAsync<T>(T page, DocumentNode parent) where T : DocumentPage
         {
+            if (parent is null)
+            {
+                throw new NullReferenceException("Parent node cannot null");
+            }
             using var tx = await _lumStoreContext.Database.BeginTransactionAsync();
 
 
@@ -221,7 +247,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public async Task<bool> MoveAsync(int nodeID, int? parentId = null, int? nestedNodeID = null)
         {
             var currentNode = await _lumStoreContext.DocumentNodes.FindAsync(nodeID);
-            if (currentNode == null)
+            if (currentNode == null || (currentNode.ClassName.Equals(HomePage.CLASS_NAME) && parentId != null))
                 return false;
 
             if (parentId != null && !_lumStoreContext.DocumentNodes.Any(x => x.NodeID == parentId))
@@ -302,6 +328,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             var type = DocumentPageTypeHelper.DocumentPageTypes.GetValueOrDefault(className, typeof(DocumentPage));
             var page = await _lumStoreContext
                  .DocumentPages
+                 .Include(x => x.Node)
                  .FirstOrDefaultAsync(x => x.NodeID == nodeID);
 
             if (page == null || page.GetType() != type)
@@ -332,6 +359,14 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                         {
                             value = JsonSerializer.Deserialize(
                                json.GetDateTimeOffset(),
+                               prop.PropertyType
+                           );
+                        }
+                        else if (json.ValueKind == JsonValueKind.Object)
+                        {
+                            value = JsonHelper.Deserialize(
+                               json.GetRawText(),
+                               null,
                                prop.PropertyType
                            );
                         }
@@ -367,7 +402,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public async Task<WidgetData<object>[]?> UpdateWidgets(int nodeID, WidgetData<object>[] widgetData)
         {
             int count = await _lumStoreContext.DocumentPages
-                  .Where(x => x.NodeID == x.NodeID)
+                  .Where(x => x.NodeID == nodeID)
                   .ExecuteUpdateAsync(x => x.SetProperty(p => p.DocumentPageWidgets, widgetData));
             if (count > 0)
             {

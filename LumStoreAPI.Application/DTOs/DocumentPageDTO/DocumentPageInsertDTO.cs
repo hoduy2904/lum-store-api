@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Application;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Libraries.Helpers;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Text.Json;
 
@@ -10,7 +11,8 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
     {
         public string DocumentName { get; set; } = default!;
         public string ClassName { get; set; } = default!;
-        public int? ParentNodeID { get; set; }
+        [Range(1, int.MaxValue)]
+        public int ParentNodeID { get; set; }
         public Dictionary<string, object> Fields { get; set; } = [];
 
         public DocumentPage GetEntity()
@@ -49,6 +51,14 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
                         {
                             value = JsonSerializer.Deserialize(
                                json.GetDateTimeOffset(),
+                               prop.PropertyType
+                           );
+                        }
+                        else if (json.ValueKind == JsonValueKind.Object)
+                        {
+                            value = JsonHelper.Deserialize(
+                               json.GetRawText(),
+                               null,
                                prop.PropertyType
                            );
                         }
