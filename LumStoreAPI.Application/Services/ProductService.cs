@@ -249,6 +249,95 @@ IProductVariantRepository productVariantRepository)
             .ToDictionaryAsync(x => x.NodeId, x => x.Count);
     }
 
+    public async Task<IEnumerable<SearchSuggestionDTO>> GetSearchSuggestionsAsync(string q, int limit)
+    {
+        if (string.IsNullOrWhiteSpace(q)) return [];
+        limit = Math.Min(limit, 10);
+
+        var now = DateTimeOffset.UtcNow;
+
+        // Find ProductIDs that have a variant whose SKU contains the query
+        var skuMatchIds = await _lumStoreContext.ProductVariants
+            .Where(v => v.SKU.Contains(q))
+            .Select(v => v.ProductID)
+            .Distinct()
+            .ToListAsync();
+
+        var raw = await _lumStoreContext.Products
+            .Where(p =>
+                !p.IsDeleted &&
+                (p.PublishedFrom == null || p.PublishedFrom <= now) &&
+                (p.PublishedTo == null || p.PublishedTo > now) &&
+                (p.ProductName.Contains(q) ||
+                 (p.ShortDescription != null && p.ShortDescription.Contains(q)) ||
+                 skuMatchIds.Contains(p.NodeID)))
+            .Select(p => new
+            {
+                p.NodeID,
+                p.Node.NodeAlias,
+                p.ProductName,
+                p.Price,
+                p.PriceDiscount,
+                p.Images,
+                ParentNodeID = p.Node.ParentNodeID,
+            })
+            .ToListAsync();
+
+        // Sort client-side: exact match → startsWith → contains
+        var sorted = raw
+            .OrderByDescending(p => p.ProductName.Equals(q, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(p => p.ProductName.StartsWith(q, StringComparison.OrdinalIgnoreCase))
+            .Take(limit)
+            .ToList();
+
+        if (sorted.Count == 0) return [];
+
+        // Resolve first image only per product
+        var allGuids = sorted.Where(p => p.Images.Length > 0).Select(p => p.Images[0]).Distinct().ToArray();
+        var mediaMap = allGuids.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(allGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : [];
+
+        // Resolve category names from parent nodes
+        var parentIds = sorted.Where(p => p.ParentNodeID.HasValue).Select(p => p.ParentNodeID!.Value).Distinct().ToArray();
+        var categoryMap = parentIds.Length > 0
+            ? await _lumStoreContext.ProductCategories
+                .Where(c => parentIds.Contains(c.NodeID))
+                .ToDictionaryAsync(c => c.NodeID, c => c.CategoryName)
+            : [];
+
+        return sorted.Select(p => new SearchSuggestionDTO
+        {
+            NodeAlias = p.NodeAlias,
+            Fields = new SearchSuggestionFieldsDTO
+            {
+                ProductName = p.ProductName,
+                Images = p.Images.Length > 0 && mediaMap.TryGetValue(p.Images[0], out var url) ? [url] : [],
+                Price = p.Price,
+                PriceDiscount = p.PriceDiscount > 0 ? p.PriceDiscount : null,
+                CategoryName = p.ParentNodeID.HasValue ? categoryMap.GetValueOrDefault(p.ParentNodeID.Value) : null
+            }
+        });
+    }
+
+    public async Task<IEnumerable<string>> GetSearchRecommendationsAsync(int limit)
+    {
+        limit = Math.Min(limit, 20);
+        var sevenDaysAgo = DateTime.UtcNow.Date.AddDays(-7);
+        var now = DateTimeOffset.UtcNow;
+
+        return await _lumStoreContext.Products
+            .Where(p =>
+                !p.IsDeleted &&
+                (p.PublishedFrom == null || p.PublishedFrom <= now) &&
+                (p.PublishedTo == null || p.PublishedTo > now) &&
+                (p.IsBestSeller || p.CreatedAt >= sevenDaysAgo))
+            .OrderBy(p => p.Node.NodeOrder)
+            .Take(limit)
+            .Select(p => p.ProductName)
+            .ToListAsync();
+    }
+
     /// <summary>
     /// Batch-loads variants and resolves their image GUIDs to URLs in one media call.
     /// Returns a dictionary keyed by ProductID → list of CategoryProductVariantDTO.

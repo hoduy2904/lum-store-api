@@ -20,4 +20,10 @@ public interface IProductService
 
     /// <summary>Keyed by category NodeID → published product count.</summary>
     Task<Dictionary<int, int>> GetPublishedProductCountsAsync(int[] categoryNodeIds);
+
+    /// <summary>Real-time search suggestions matching productName, shortDescription, or SKU.</summary>
+    Task<IEnumerable<SearchSuggestionDTO>> GetSearchSuggestionsAsync(string q, int limit);
+
+    /// <summary>Product names from best-seller / new products for search recommendation chips.</summary>
+    Task<IEnumerable<string>> GetSearchRecommendationsAsync(int limit);
 }
