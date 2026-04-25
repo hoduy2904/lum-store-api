@@ -21,16 +21,16 @@ public class StoreOrderController(IStoreOrderService storeOrderService) : Contro
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
+    public async Task<IActionResult> GetOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await _storeOrderService.GetOrdersAsync(page, pageSize, ct);
+        var result = await _storeOrderService.GetOrdersAsync(page, pageSize, CancellationToken.None);
         return Ok(result);
     }
 
     [HttpGet("{orderId:int}")]
-    public async Task<IActionResult> GetOrder(int orderId, CancellationToken ct)
+    public async Task<IActionResult> GetOrder(int orderId)
     {
-        var result = await _storeOrderService.GetOrderAsync(orderId, ct);
+        var result = await _storeOrderService.GetOrderAsync(orderId, CancellationToken.None);
         if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : NotFound(result);
         return Ok(result);
     }

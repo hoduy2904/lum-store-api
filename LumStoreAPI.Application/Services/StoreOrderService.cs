@@ -168,6 +168,7 @@ internal class StoreOrderService : IStoreOrderService
             CustomerEmail = user.Email,
             CustomerPhone = address.Phone,
             ShippingAddress = address.Address,
+            ShippingDetails = address.Details,
             ShippingCity = address.City,
             ShippingState = address.State,
             ShippingZip = string.Empty,
@@ -210,6 +211,7 @@ internal class StoreOrderService : IStoreOrderService
             OrderId = order.ItemID,
             OrderCode = order.OrderCode,
             Status = order.Status.ToString().ToLower(),
+            PaymentStatus = order.PaymentStatus.ToString().ToLower(),
             Total = order.Total,
             ItemCount = orderItems.Sum(i => i.Quantity),
             CreatedAt = order.CreatedAt
@@ -239,6 +241,7 @@ internal class StoreOrderService : IStoreOrderService
             OrderId = o.ItemID,
             OrderCode = o.OrderCode,
             Status = o.Status.ToString().ToLower(),
+            PaymentStatus = o.PaymentStatus.ToString().ToLower(),
             Total = o.Total,
             ItemCount = o.OrderItems.Sum(i => i.Quantity),
             CreatedAt = o.CreatedAt
@@ -267,13 +270,17 @@ internal class StoreOrderService : IStoreOrderService
             OrderId = order.ItemID,
             OrderCode = order.OrderCode,
             Status = order.Status.ToString().ToLower(),
+            PaymentStatus = order.PaymentStatus.ToString().ToLower(),
             Total = order.Total,
             ItemCount = order.OrderItems.Sum(i => i.Quantity),
             CreatedAt = order.CreatedAt,
             Note = order.CustomerNote,
+            TrackingNumber = order.TrackingNumber,
+            TrackingUrl = order.TrackingUrl,
             Address = new StoreOrderAddressDTO
             {
                 Address = order.ShippingAddress,
+                Details = order.ShippingDetails,
                 Phone = order.CustomerPhone,
                 City = order.ShippingCity,
                 State = order.ShippingState,
@@ -287,7 +294,9 @@ internal class StoreOrderService : IStoreOrderService
                 Image = i.ImageUrl,
                 Price = i.UnitPrice,
                 Quantity = i.Quantity,
+                VariantId = i.VariantId,
                 VariantName = i.VariantName,
+                SKU = i.SKU,
                 LineTotal = i.Total
             }),
             Subtotal = order.SubTotal,

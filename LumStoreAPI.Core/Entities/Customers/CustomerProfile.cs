@@ -13,7 +13,7 @@ public class CustomerProfile : BaseClassItem
     public int AvailablePoints { get; set; }
     public decimal TotalSpent { get; set; }
     public int TotalOrders { get; set; }
-    public string Phone { get; set; } = default!;
+    public string? Phone { get; set; }
     public DateTimeOffset? Birthday { get; set; }
 
     public virtual User User { get; set; } = default!;

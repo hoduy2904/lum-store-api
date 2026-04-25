@@ -13,9 +13,9 @@ public class StoreWishlistController(IWishlistService wishlistService) : Control
     private readonly IWishlistService _wishlistService = wishlistService;
 
     [HttpGet]
-    public async Task<IActionResult> GetWishlist(CancellationToken ct)
+    public async Task<IActionResult> GetWishlist()
     {
-        var result = await _wishlistService.GetWishlistAsync(ct);
+        var result = await _wishlistService.GetWishlistAsync(CancellationToken.None);
         return Ok(result);
     }
 

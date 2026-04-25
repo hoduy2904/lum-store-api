@@ -19,9 +19,9 @@ public class AddressController : ControllerBase
 
     /// <summary>GET /api/addresses — returns all addresses for the current user.</summary>
     [HttpGet]
-    public async Task<IActionResult> GetAddresses(CancellationToken ct)
+    public async Task<IActionResult> GetAddresses()
     {
-        var result = await _addressService.GetAddressesAsync(ct);
+        var result = await _addressService.GetAddressesAsync(CancellationToken.None);
         return Ok(result);
     }
 

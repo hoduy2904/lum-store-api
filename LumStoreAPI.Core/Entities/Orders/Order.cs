@@ -17,6 +17,7 @@ public class Order : BaseClassItem
 
     // ── Shipping address ──────────────────────────────────────────────────
     public string ShippingAddress { get; set; } = default!;
+    public string? ShippingDetails { get; set; }
     public string ShippingCity { get; set; } = default!;
     public string ShippingState { get; set; } = default!;
     public string ShippingZip { get; set; } = default!;

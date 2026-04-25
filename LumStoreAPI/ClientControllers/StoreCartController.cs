@@ -13,9 +13,9 @@ public class StoreCartController(ICartService cartService) : ControllerBase
     private readonly ICartService _cartService = cartService;
 
     [HttpGet]
-    public async Task<IActionResult> GetCart(CancellationToken ct)
+    public async Task<IActionResult> GetCart()
     {
-        var result = await _cartService.GetCartAsync(ct);
+        var result = await _cartService.GetCartAsync(CancellationToken.None);
         return Ok(result);
     }
 
