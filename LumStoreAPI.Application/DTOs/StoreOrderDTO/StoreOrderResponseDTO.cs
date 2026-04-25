@@ -9,6 +9,16 @@ public class StoreOrderSummaryDTO
     public decimal Total { get; set; }
     public int ItemCount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public IEnumerable<OrderPreviewItemDTO> PreviewItems { get; set; } = [];
+}
+
+public class OrderPreviewItemDTO
+{
+    public string ProductName { get; set; } = default!;
+    public string? Image { get; set; }
+    public string? VariantName { get; set; }
+    public decimal Price { get; set; }
+    public int Quantity { get; set; }
 }
 
 public class StoreOrderDetailDTO : StoreOrderSummaryDTO

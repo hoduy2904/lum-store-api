@@ -244,7 +244,15 @@ internal class StoreOrderService : IStoreOrderService
             PaymentStatus = o.PaymentStatus.ToString().ToLower(),
             Total = o.Total,
             ItemCount = o.OrderItems.Sum(i => i.Quantity),
-            CreatedAt = o.CreatedAt
+            CreatedAt = o.CreatedAt,
+            PreviewItems = o.OrderItems.Take(3).Select(i => new OrderPreviewItemDTO
+            {
+                ProductName = i.ProductName,
+                Image = i.ImageUrl,
+                VariantName = i.VariantName,
+                Price = i.UnitPrice,
+                Quantity = i.Quantity
+            })
         }).AsPagedEnumerable(total);
 
         return PagedResponse<StoreOrderSummaryDTO>.Success(dtos, page, pageSize);
