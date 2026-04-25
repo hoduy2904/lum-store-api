@@ -32,7 +32,7 @@ IProductVariantRepository productVariantRepository)
 
     public Task<IEnumerable<DocumentClientGetDTO>> GetNewProducts(int topN)
     {
-        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+        var sevenDaysAgo = DateTime.UtcNow.Date.AddDays(-7);
         return this.GetProducts(x => x.CreatedAt >= sevenDaysAgo, topN);
     }
 

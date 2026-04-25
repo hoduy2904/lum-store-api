@@ -32,7 +32,7 @@ public class OutStandingProductWidgetHandler
         {
             if (request.Type == "feature")
             {
-                model.Products = await _productService.GetFeatureProducts(4);
+                model.Products = await _productService.GetFeatureProducts(8);
             }
             else
             {
