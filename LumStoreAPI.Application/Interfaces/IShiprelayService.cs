@@ -18,4 +18,7 @@ public interface IShiprelayService
 
     /// <summary>Validate incoming webhook signature from Shiprelay.</summary>
     bool ValidateWebhookSignature(string payload, string signature);
+
+    /// <summary>Get product stock info from Shiprelay by SKU. Returns null if not found.</summary>
+    Task<ShiprelayProductDTO?> GetProductBySkuAsync(string sku);
 }

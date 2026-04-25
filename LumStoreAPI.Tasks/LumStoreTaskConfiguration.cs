@@ -10,6 +10,7 @@ namespace LumStoreAPI.Tasks
             public IServiceCollection RegisterTasks()
             {
                 services.AddHostedService<EmailSenderBackgroundService>();
+                services.AddHostedService<ShiprelaySyncBackgroundService>();
                 return services;
             }
         }

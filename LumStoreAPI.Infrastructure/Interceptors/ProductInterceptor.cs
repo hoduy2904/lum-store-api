@@ -17,20 +17,30 @@ public class ProductInterceptor
         var context = eventData.Context;
         if (context is null) return await base.SavedChangesAsync(eventData, result, cancellationToken);
 
+        // Only care about entities that were actually mutated (not mere tracked reads)
+        var entities = context.ChangeTracker.Entries()
+            .Where(x => (x.Entity is Product || x.Entity is ProductVariant) &&
+                        x.State != EntityState.Unchanged &&
+                        x.State != EntityState.Detached)
+            .ToList();
+
+        // Skip scope creation entirely when no product/variant changes are present
+        if (!entities.Any())
+            return await base.SavedChangesAsync(eventData, result, cancellationToken);
+
         var scope = _serviceProvider.CreateScope();
         var shiprelaySyncRepository = scope.ServiceProvider.GetRequiredService<IShiprelaySystemRespository>();
 
-        var entities = context.ChangeTracker.Entries()
-            .Where(x => x.Entity is Product || x.Entity is ProductVariant);
-
         var variants = entities.Where(x => x.Entity is ProductVariant)
             .Select(x => new { Entity = (ProductVariant)x.Entity, x.State })
-            .GroupBy(x => x.State);
+            .GroupBy(x => x.State)
+            .ToList();
 
         var products = entities
             .Where(x => x.Entity is Product)
             .Select(x => new { Entity = (Product)x.Entity, x.State })
-            .GroupBy(x => x.State);
+            .GroupBy(x => x.State)
+            .ToList();
 
         if (variants.Any())
         {

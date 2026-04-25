@@ -1,5 +1,6 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Orders;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
@@ -14,11 +15,13 @@ public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepo;
     private readonly IEventLogService _eventLog;
+    private readonly IShiprelayService _shiprelayService;
 
-    public OrderService(IOrderRepository orderRepo, IEventLogService eventLog)
+    public OrderService(IOrderRepository orderRepo, IEventLogService eventLog, IShiprelayService shiprelayService)
     {
         _orderRepo = orderRepo;
         _eventLog = eventLog;
+        _shiprelayService = shiprelayService;
     }
 
     public async Task<PagedResponse<OrderGetDTO>> GetOrdersAsync(OrderListRequest request)
@@ -106,6 +109,16 @@ public class OrderService : IOrderService
             ?? throw new KeyNotFoundException($"Order {orderId} not found");
 
         var prevStatus = order.Status;
+
+        // Cancel shipment on ShipRelay before persisting — fire and forget errors (admin can resolve manually)
+        if (dto.NewStatus == OrderStatus.Cancelled && !string.IsNullOrEmpty(order.ShiprelayShipmentId))
+        {
+            var cancelled = await _shiprelayService.CancelShipmentAsync(order.ShiprelayShipmentId);
+            if (!cancelled)
+                await _eventLog.LogWarning("OrderService", "SHIPRELAY_CANCEL_FAILED",
+                    $"Failed to cancel ShipRelay shipment {order.ShiprelayShipmentId} for OrderId={orderId}");
+        }
+
         var updated = await _orderRepo.UpdateOrderAsync(orderId, o =>
         {
             o.Status = dto.NewStatus;

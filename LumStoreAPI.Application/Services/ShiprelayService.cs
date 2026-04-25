@@ -64,12 +64,12 @@ public class ShiprelayService : IShiprelayService
             if (!response.IsSuccessStatusCode)
             {
                 await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_CREATE_FAILED",
-                    $"Create shipment failed for OrderId={dto.OrderId}: {content}");
+                    $"POST shipments failed | OrderId={dto.OrderId} | HTTP {(int)response.StatusCode} | {content}");
                 return new ShiprelayShipmentResult { Success = false, ErrorMessage = content };
             }
 
             var result = JsonSerializer.Deserialize<JsonElement>(content);
-            return new ShiprelayShipmentResult
+            var shipmentResult = new ShiprelayShipmentResult
             {
                 Success = true,
                 ShipmentId = GetString(result, "id") ?? GetString(result, "shipment_id") ?? "",
@@ -78,10 +78,17 @@ public class ShiprelayService : IShiprelayService
                 Carrier = GetString(result, "carrier"),
                 Status = GetString(result, "status") ?? "created"
             };
+
+            await _eventLog.LogInformation("ShiprelayService", "SHIPRELAY_CREATE_SUCCESS",
+                $"POST shipments OK | OrderId={dto.OrderId} | ShipmentId={shipmentResult.ShipmentId} | Status={shipmentResult.Status}");
+
+            return shipmentResult;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Shiprelay CreateShipment error for OrderId={OrderId}", dto.OrderId);
+            await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_CREATE_EXCEPTION",
+                $"POST shipments exception | OrderId={dto.OrderId} | {ex.Message}");
             return new ShiprelayShipmentResult { Success = false, ErrorMessage = ex.Message };
         }
     }
@@ -92,7 +99,12 @@ public class ShiprelayService : IShiprelayService
         try
         {
             var response = await client.GetAsync($"shipments/{shipmentId}");
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_TRACKING_FAILED",
+                    $"GET shipments/{shipmentId} | HTTP {(int)response.StatusCode}");
+                return null;
+            }
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
@@ -125,6 +137,8 @@ public class ShiprelayService : IShiprelayService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Shiprelay GetTracking error for ShipmentId={ShipmentId}", shipmentId);
+            await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_TRACKING_EXCEPTION",
+                $"GET shipments/{shipmentId} exception | {ex.Message}");
             return null;
         }
     }
@@ -143,7 +157,13 @@ public class ShiprelayService : IShiprelayService
         try
         {
             var response = await client.PostAsJsonAsync("rates", payload);
-            if (!response.IsSuccessStatusCode) return [];
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_RATES_FAILED",
+                    $"POST rates failed | OrderId={dto.OrderId} | HTTP {(int)response.StatusCode} | {err}");
+                return [];
+            }
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
@@ -151,7 +171,7 @@ public class ShiprelayService : IShiprelayService
             if (!result.TryGetProperty("rates", out var ratesEl) || ratesEl.ValueKind != JsonValueKind.Array)
                 return [];
 
-            return ratesEl.EnumerateArray().Select(r => new ShiprelayRateResult
+            var rates = ratesEl.EnumerateArray().Select(r => new ShiprelayRateResult
             {
                 ServiceCode = GetString(r, "service_code") ?? "",
                 ServiceName = GetString(r, "service_name") ?? "",
@@ -160,10 +180,17 @@ public class ShiprelayService : IShiprelayService
                 Currency = GetString(r, "currency") ?? "USD",
                 EstimatedDays = r.TryGetProperty("estimated_days", out var days) ? days.GetInt32() : null
             }).ToList();
+
+            await _eventLog.LogInformation("ShiprelayService", "SHIPRELAY_RATES_SUCCESS",
+                $"POST rates OK | OrderId={dto.OrderId} | {rates.Count} rates returned");
+
+            return rates;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Shiprelay GetRates error for OrderId={OrderId}", dto.OrderId);
+            await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_RATES_EXCEPTION",
+                $"POST rates exception | OrderId={dto.OrderId} | {ex.Message}");
             return [];
         }
     }
@@ -173,13 +200,55 @@ public class ShiprelayService : IShiprelayService
         var client = await BuildClientAsync();
         try
         {
-            var response = await client.DeleteAsync($"shipments/{shipmentId}");
-            return response.IsSuccessStatusCode;
+            var response = await client.PatchAsync($"shipments/{shipmentId}/archive", null);
+            if (response.IsSuccessStatusCode)
+            {
+                await _eventLog.LogInformation("ShiprelayService", "SHIPRELAY_CANCEL_SUCCESS",
+                    $"PATCH shipments/{shipmentId}/archive OK");
+                return true;
+            }
+
+            var err = await response.Content.ReadAsStringAsync();
+            await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_CANCEL_FAILED",
+                $"PATCH shipments/{shipmentId}/archive | HTTP {(int)response.StatusCode} | {err}");
+            return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Shiprelay CancelShipment error for ShipmentId={ShipmentId}", shipmentId);
+            await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_CANCEL_EXCEPTION",
+                $"PATCH shipments/{shipmentId}/archive exception | {ex.Message}");
             return false;
+        }
+    }
+
+    public async Task<ShiprelayProductDTO?> GetProductBySkuAsync(string sku)
+    {
+        try
+        {
+            var client = await BuildClientAsync();
+            var response = await client.GetAsync($"products?sku={Uri.EscapeDataString(sku)}&per_page=1");
+            if (!response.IsSuccessStatusCode) return null;
+
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<JsonElement>(content);
+
+            if (!result.TryGetProperty("data", out var data) || data.GetArrayLength() == 0)
+                return null;
+
+            var item = data[0];
+            return new ShiprelayProductDTO
+            {
+                Sku = GetString(item, "sku") ?? sku,
+                AvailableStock = item.TryGetProperty("stock_count", out var qty) ? qty.GetInt32() : 0
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Shiprelay GetProductBySku error for SKU={Sku}", sku);
+            await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_GET_PRODUCT_EXCEPTION",
+                $"GET products?sku={sku} exception | {ex.Message}");
+            return null;
         }
     }
 

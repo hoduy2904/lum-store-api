@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.DTOs.StoreOrderDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Orders;
@@ -14,15 +15,18 @@ namespace LumStoreAPI.Application.Services;
 internal class StoreOrderService : IStoreOrderService
 {
     private readonly ICustomerService _customerService;
+    private readonly IShiprelayService _shiprelayService;
     private readonly LumStoreContext _ctx;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public StoreOrderService(
         ICustomerService customerService,
+        IShiprelayService shiprelayService,
         LumStoreContext ctx,
         IHttpContextAccessor httpContextAccessor)
     {
         _customerService = customerService;
+        _shiprelayService = shiprelayService;
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -92,16 +96,6 @@ internal class StoreOrderService : IStoreOrderService
                 .ToDictionaryAsync(m => m.FileID, ct)
             : new Dictionary<Guid, Core.Entities.Systems.MediaLibrary>();
 
-        // Validate stock for variant items
-        foreach (var cartItem in cartItems.Where(c => c.VariantId.HasValue))
-        {
-            var variant = variants.FirstOrDefault(v => v.ItemID == cartItem.VariantId);
-            if (variant is null)
-                return APIResponse<StoreOrderSummaryDTO>.Failure($"Variant not found for a cart item");
-            if (cartItem.Quantity > variant.Stock)
-                return APIResponse<StoreOrderSummaryDTO>.Failure($"Item out of stock: {products.FirstOrDefault(p => p.NodeID == cartItem.NodeId)?.ProductName ?? "Unknown"}");
-        }
-
         // Build order items
         var orderItems = new List<OrderItem>();
         decimal subTotal = 0;
@@ -159,6 +153,33 @@ internal class StoreOrderService : IStoreOrderService
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
 
+        // Call ShipRelay BEFORE saving — if it fails we do not create the order
+        var shipmentDto = new ShiprelayCreateShipmentDTO
+        {
+            OrderId   = 0, // temp — no ID yet
+            RecipientName = user.FullName,
+            Email     = user.Email,
+            Phone     = address.Phone,
+            Address1  = address.Address,
+            Address2  = address.Details,
+            City      = address.City,
+            State     = address.State,
+            Zip       = string.Empty,
+            Country   = "US",
+            Notes     = request.Note,
+            Items     = orderItems.Select(i => new ShiprelayItemDTO
+            {
+                Sku         = i.SKU ?? string.Empty,
+                Quantity    = i.Quantity,
+                ProductName = i.ProductName
+            }).ToList()
+        };
+
+        var shipResult = await _shiprelayService.CreateShipmentAsync(shipmentDto);
+        if (!shipResult.Success)
+            return APIResponse<StoreOrderSummaryDTO>.Failure(
+                shipResult.ErrorMessage ?? "Unable to create shipment. Please try again.");
+
         // Create order
         var order = new Order
         {
@@ -178,8 +199,12 @@ internal class StoreOrderService : IStoreOrderService
             ShippingFee = shippingFee,
             Tax = tax,
             Total = total,
-            Status = OrderStatus.Pending,
+            Status = OrderStatus.Confirmed,
             PaymentStatus = PaymentStatus.Unpaid,
+            ShiprelayShipmentId = shipResult.ShipmentId,
+            TrackingNumber = shipResult.TrackingNumber,
+            TrackingUrl = shipResult.TrackingUrl,
+            ShippingCarrier = shipResult.Carrier,
             OrderItems = orderItems
         };
 
@@ -190,8 +215,8 @@ internal class StoreOrderService : IStoreOrderService
         _ctx.OrderHistories.Add(new OrderHistory
         {
             OrderId = order.ItemID,
-            ToStatus = OrderStatus.Pending,
-            Comment = "Order placed by customer",
+            ToStatus = OrderStatus.Confirmed,
+            Comment = "Order confirmed via ShipRelay",
             IsSystemAction = true
         });
         await _ctx.SaveChangesAsync(ct);
@@ -215,7 +240,8 @@ internal class StoreOrderService : IStoreOrderService
             Total = order.Total,
             ItemCount = orderItems.Sum(i => i.Quantity),
             CreatedAt = order.CreatedAt
-        }, ["Order placed successfully"]);
+        }, ["Order placed and confirmed"]);
+
     }
 
     // ── Queries ───────────────────────────────────────────────────────────────
