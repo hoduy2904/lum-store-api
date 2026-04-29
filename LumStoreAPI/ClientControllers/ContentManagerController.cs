@@ -27,36 +27,24 @@ namespace LumStoreAPI.ClientControllers
         private readonly IProductService _productService = productService;
         private readonly IMediaService _mediaService = mediaService;
 
-        [HttpGet("{alias}/children")]
-        public async Task<IActionResult> GetChildren(string alias)
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetProductCategories()
         {
-            alias = HttpUtility.UrlDecode(alias);
-
-            var parent = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
-            {
-                query
-                    .Where(x => x.Node.NodeAlias.Equals(alias))
-                    .IncludeQueryable(q => q.Take(1));
-            })).FirstOrDefault();
-
-            if (parent is null)
-                return NotFound(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND, [$"Not found node with alias: {alias}"]));
-
-            var children = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(
+            var categories = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(
                 query =>
                 {
                     query
-                        .GetDescendants(parent.NodeID, 1)
+                        .Where(x => x.Node.ClassName.Equals("Pages.ProductCategory"))
                         .Published(Core.Models.Enums.TreeNodePublished.Published)
                         .IncludeQueryable(q => q.OfType<DocumentPage>().OrderBy(o => o.Node.NodeOrder));
                 },
-                cache => cache.Dependencies(d => d.Nodes().NodeID(parent.NodeID)).Key($"getChildren|{parent.NodeID}")))
+                cache => cache.Dependencies(d => d.Nodes()).Key("getAllProductCategories")))
                 .ToList();
 
-            var nodeIds = children.Select(c => c.NodeID).ToArray();
+            var nodeIds = categories.Select(c => c.NodeID).ToArray();
             var productCounts = await _productService.GetPublishedProductCountsAsync(nodeIds);
 
-            var dtos = children.Select(c =>
+            var dtos = categories.Select(c =>
             {
                 var dto = new DocumentPageGetDTO(c);
                 dto.Fields["productCount"] = productCounts.GetValueOrDefault(c.NodeID, 0);

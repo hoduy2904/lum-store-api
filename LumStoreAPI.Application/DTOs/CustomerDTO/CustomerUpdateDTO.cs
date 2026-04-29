@@ -31,3 +31,11 @@ public class CustomerStatsDTO
     public int GoldCustomers { get; set; }
     public int VipCustomers { get; set; }
 }
+
+public class StoreLoyaltyDTO
+{
+    public int TotalPoints { get; set; }
+    public int AvailablePoints { get; set; }
+    public string? TierLevel { get; set; }
+    public IEnumerable<LoyaltyPointGetDTO> History { get; set; } = [];
+}

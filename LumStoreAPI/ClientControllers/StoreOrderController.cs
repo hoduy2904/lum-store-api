@@ -1,3 +1,4 @@
+using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.StoreOrderDTO;
 using LumStoreAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -32,6 +33,24 @@ public class StoreOrderController(IStoreOrderService storeOrderService) : Contro
     {
         var result = await _storeOrderService.GetOrderAsync(orderId, CancellationToken.None);
         if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : NotFound(result);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/store/orders/{orderId}/returns — List returns for own order.</summary>
+    [HttpGet("{orderId:int}/returns")]
+    public async Task<IActionResult> GetOrderReturns(int orderId, CancellationToken ct)
+    {
+        var result = await _storeOrderService.GetOrderReturnsAsync(orderId, ct);
+        if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : NotFound(result);
+        return Ok(result);
+    }
+
+    /// <summary>POST /api/store/orders/{orderId}/returns — Submit a return request.</summary>
+    [HttpPost("{orderId:int}/returns")]
+    public async Task<IActionResult> SubmitReturn(int orderId, [FromBody] OrderReturnCreateDTO dto, CancellationToken ct)
+    {
+        var result = await _storeOrderService.SubmitReturnAsync(orderId, dto, ct);
+        if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : BadRequest(result);
         return Ok(result);
     }
 }

@@ -10,3 +10,9 @@ public class StorePlaceOrderRequest
     [MaxLength(1000)]
     public string? Note { get; set; }
 }
+
+public class StoreCheckoutPreviewRequest
+{
+    [Required]
+    public int AddressId { get; set; }
+}
