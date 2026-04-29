@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Restore packages') {
+            steps {
+                dir('LumStoreAPI') {
+                    bat 'dotnet restore'
+                }
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                dir('LumStoreAPI') {
+                    bat 'dotnet build --configuration Release'
+                }
+            }
+        }
+
+        stage('Publish Application') {
+            steps {
+                dir('LumStoreAPI') {
+                    bat 'dotnet publish --configuration Release'
+                }
+            }
+        }
+
+        stage('Deploy to IIS') {
+            steps {
+                dir('LumStoreAPI') {
+                   bat '%systemroot%\\system32\\inetsrv\\appcmd stop apppool "admin-lumstore.duyhodev.site"'
+                   bat 'xcopy bin\\Release\\net10.0\\publish C:\\inetpub\\lumstore /E /Y /I'
+                   bat '%systemroot%\\system32\\inetsrv\\appcmd start apppool "admin-lumstore.duyhodev.site"'
+               }
+
+            }
+        }
+
+    }
+}
