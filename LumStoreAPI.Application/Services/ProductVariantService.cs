@@ -1,7 +1,9 @@
 using LumStoreAPI.Application.DTOs.MediaDTO;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
+using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace LumStoreAPI.Application.Services;
 
@@ -47,6 +49,24 @@ internal class ProductVariantService : IProductVariantService
         if (productVariant == null) return null;
         var mediaItems = (await _mediaService.GetMediaItemsAsync(productVariant.Images)).ToArray();
         return new ProductVariantGetDTO(productVariant, mediaItems);
+    }
+
+    public async Task<IEnumerable<ContentKeyValue>> GetProductVariantColorsAsync(int MaxColor)
+    {
+        var colors = _productVariantRepository.GetProductVariants()
+             .Select(x => new ContentKeyValue
+             {
+                 Key = x.VariantName,
+                 Value = x.Color
+             })
+             .Distinct();
+
+        if (MaxColor > 0)
+        {
+            colors = colors.Take(MaxColor);
+        }
+
+        return await colors.ToArrayAsync();
     }
 
     public async Task<IEnumerable<ProductVariantGetDTO>> GetProductVariantsAsync(int productId)
