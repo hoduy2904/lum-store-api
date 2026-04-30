@@ -143,9 +143,3 @@ public class CustomerController : ControllerBase
         return (id > 0 ? id : null, name);
     }
 }
-
-public class AwardPointsDTO
-{
-    public int Points { get; set; }
-    public string Description { get; set; } = default!;
-}

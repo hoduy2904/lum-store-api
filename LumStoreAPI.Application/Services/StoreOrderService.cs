@@ -1,3 +1,4 @@
+using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.DTOs.StoreOrderDTO;
@@ -16,17 +17,20 @@ internal class StoreOrderService : IStoreOrderService
 {
     private readonly ICustomerService _customerService;
     private readonly IShiprelayService _shiprelayService;
+    private readonly IOrderService _orderService;
     private readonly LumStoreContext _ctx;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public StoreOrderService(
         ICustomerService customerService,
         IShiprelayService shiprelayService,
+        IOrderService orderService,
         LumStoreContext ctx,
         IHttpContextAccessor httpContextAccessor)
     {
         _customerService = customerService;
         _shiprelayService = shiprelayService;
+        _orderService = orderService;
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -46,6 +50,7 @@ internal class StoreOrderService : IStoreOrderService
 
     private static string GenerateOrderCode()
         => $"ORD-{DateTimeOffset.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
+
 
     // ── Commands ──────────────────────────────────────────────────────────────
 
@@ -153,25 +158,32 @@ internal class StoreOrderService : IStoreOrderService
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
 
+        // Generate order code before calling ShipRelay so it can be used as order_ref
+        var orderCode = GenerateOrderCode();
+
         // Call ShipRelay BEFORE saving — if it fails we do not create the order
         var shipmentDto = new ShiprelayCreateShipmentDTO
         {
-            OrderId   = 0, // temp — no ID yet
-            RecipientName = user.FullName,
-            Email     = user.Email,
-            Phone     = address.Phone,
-            Address1  = address.Address,
-            Address2  = address.Details,
-            City      = address.City,
-            State     = address.State,
-            Zip       = string.Empty,
-            Country   = "US",
-            Notes     = request.Note,
-            Items     = orderItems.Select(i => new ShiprelayItemDTO
+            OrderId           = 0,              // no DB ID yet
+            OrderRef          = orderCode,
+            ShipmentTotalCost = total,
+            PackageRef        = 1,
+            ShipmentCreatedAt = DateTimeOffset.UtcNow,
+            RecipientName     = user.FullName,
+            Email             = user.Email,
+            Phone             = address.Phone,
+            Address1          = address.Address,
+            Address2          = address.Details,
+            City              = address.City,
+            State             = address.State,
+            Zip               = string.Empty,
+            Country           = "US",
+            Notes             = request.Note,
+            Items             = orderItems.Select(i => new ShiprelayItemDTO
             {
-                Sku         = i.SKU ?? string.Empty,
-                Quantity    = i.Quantity,
-                ProductName = i.ProductName
+                ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
+                Quantity  = i.Quantity,
+                Price     = i.UnitPrice
             }).ToList()
         };
 
@@ -183,7 +195,7 @@ internal class StoreOrderService : IStoreOrderService
         // Create order
         var order = new Order
         {
-            OrderCode = GenerateOrderCode(),
+            OrderCode = orderCode,
             CustomerId = profileDto.ProfileId,
             CustomerName = user.FullName,
             CustomerEmail = user.Email,
@@ -339,5 +351,144 @@ internal class StoreOrderService : IStoreOrderService
         };
 
         return APIResponse<StoreOrderDetailDTO>.Success(detail);
+    }
+
+    // ── Checkout Preview ──────────────────────────────────────────────────────
+
+    public async Task<APIResponse<StoreCheckoutPreviewDTO>> GetCheckoutPreviewAsync(
+        StoreCheckoutPreviewRequest request, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+
+        var cartItems = await _ctx.UserCarts
+            .Where(c => c.UserId == userId)
+            .ToListAsync(ct);
+
+        if (cartItems.Count == 0)
+            return APIResponse<StoreCheckoutPreviewDTO>.Failure("Cart is empty");
+
+        var address = await _ctx.CustomerAddresses
+            .FirstOrDefaultAsync(a => a.ItemID == request.AddressId && a.UserId == userId, ct);
+
+        if (address is null)
+            return APIResponse<StoreCheckoutPreviewDTO>.Failure("Address not found");
+
+        var nodeIds = cartItems.Select(c => c.NodeId).Distinct().ToArray();
+        var products = await _ctx.Products
+            .Where(p => nodeIds.Contains(p.NodeID))
+            .ToListAsync(ct);
+
+        var variantIds = cartItems.Where(c => c.VariantId.HasValue).Select(c => c.VariantId!.Value).ToArray();
+        var variants = variantIds.Length > 0
+            ? await _ctx.ProductVariants.Where(v => variantIds.Contains(v.ItemID)).ToListAsync(ct)
+            : [];
+
+        var allImageGuids = products.SelectMany(p => p.Images).Distinct().ToArray();
+        var mediaByGuid = allImageGuids.Length > 0
+            ? await _ctx.MediaLibraries
+                .Where(m => allImageGuids.Contains(m.FileID))
+                .ToDictionaryAsync(m => m.FileID, ct)
+            : new Dictionary<Guid, Core.Entities.Systems.MediaLibrary>();
+
+        var previewItems = new List<StoreCheckoutPreviewItemDTO>();
+        decimal subTotal = 0;
+
+        foreach (var cartItem in cartItems)
+        {
+            var product = products.FirstOrDefault(p => p.NodeID == cartItem.NodeId);
+            if (product is null) continue;
+
+            var variant = cartItem.VariantId.HasValue
+                ? variants.FirstOrDefault(v => v.ItemID == cartItem.VariantId)
+                : null;
+
+            var unitPrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+            var lineTotal = unitPrice * cartItem.Quantity;
+            subTotal += lineTotal;
+
+            string? imageUrl = null;
+            if (product.Images.Length > 0 && mediaByGuid.TryGetValue(product.Images[0], out var media))
+                imageUrl = MediaLibraryHelper.GetFileURL(media);
+
+            previewItems.Add(new StoreCheckoutPreviewItemDTO
+            {
+                NodeId = cartItem.NodeId,
+                ProductName = product.ProductName,
+                VariantName = variant?.VariantName,
+                SKU = variant?.SKU,
+                Image = imageUrl,
+                UnitPrice = unitPrice,
+                Quantity = cartItem.Quantity,
+                LineTotal = lineTotal
+            });
+        }
+
+        if (previewItems.Count == 0)
+            return APIResponse<StoreCheckoutPreviewDTO>.Failure("No valid products found in cart");
+
+        decimal taxRate = 0;
+        var taxSetting = await _ctx.SettingKeyValues
+            .FirstOrDefaultAsync(s => s.SettingCode == "Site.TaxRate", ct);
+        if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
+            taxRate = parsedRate;
+
+        decimal shippingFee = 9.99m;
+        var shippingSetting = await _ctx.SettingKeyValues
+            .FirstOrDefaultAsync(s => s.SettingCode == "Site.FreeShippingThreshold", ct);
+        if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var threshold))
+            if (subTotal >= threshold) shippingFee = 0;
+
+        var tax = Math.Round(subTotal * taxRate, 2);
+        var total = subTotal + shippingFee + tax;
+
+        return APIResponse<StoreCheckoutPreviewDTO>.Success(new StoreCheckoutPreviewDTO
+        {
+            Subtotal = subTotal,
+            ShippingFee = shippingFee,
+            Tax = tax,
+            Total = total,
+            ItemCount = previewItems.Sum(i => i.Quantity),
+            Items = previewItems
+        });
+    }
+
+    // ── Returns ───────────────────────────────────────────────────────────────
+
+    public async Task<APIResponse<IEnumerable<OrderReturnGetDTO>>> GetOrderReturnsAsync(
+        int orderId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
+
+        var order = await _ctx.Orders.FirstOrDefaultAsync(o => o.ItemID == orderId, ct);
+        if (order is null)
+            return APIResponse<IEnumerable<OrderReturnGetDTO>>.Failure("Order not found");
+
+        if (order.CustomerId != profileDto.ProfileId)
+            return APIResponse<IEnumerable<OrderReturnGetDTO>>.Failure("Forbidden");
+
+        var returns = await _orderService.GetOrderReturnsAsync(orderId);
+        return APIResponse<IEnumerable<OrderReturnGetDTO>>.Success(returns);
+    }
+
+    public async Task<APIResponse<OrderReturnGetDTO>> SubmitReturnAsync(
+        int orderId, OrderReturnCreateDTO dto, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
+
+        var order = await _ctx.Orders.FirstOrDefaultAsync(o => o.ItemID == orderId, ct);
+        if (order is null)
+            return APIResponse<OrderReturnGetDTO>.Failure("Order not found");
+
+        if (order.CustomerId != profileDto.ProfileId)
+            return APIResponse<OrderReturnGetDTO>.Failure("Forbidden");
+
+        if (order.Status is not (OrderStatus.Delivered or OrderStatus.Completed))
+            return APIResponse<OrderReturnGetDTO>.Failure(
+                "Returns can only be submitted for delivered or completed orders");
+
+        var result = await _orderService.CreateReturnAsync(orderId, dto);
+        return APIResponse<OrderReturnGetDTO>.Success(result, ["Return request submitted successfully"]);
     }
 }

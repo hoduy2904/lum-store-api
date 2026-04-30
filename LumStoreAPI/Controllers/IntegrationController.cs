@@ -77,7 +77,12 @@ public class IntegrationController : ControllerBase
         var result = await shiprelayService.CreateShipmentAsync(new()
         {
             OrderId = orderId,
+            OrderRef = request.OrderRef,
+            ShipmentTotalCost = request.ShipmentTotalCost,
+            PackageRef = request.PackageRef,
+            Type = request.Type,
             RecipientName = request.RecipientName,
+            Company = request.Company,
             Address1 = request.Address1,
             Address2 = request.Address2,
             City = request.City,
@@ -86,9 +91,9 @@ public class IntegrationController : ControllerBase
             Country = request.Country,
             Phone = request.Phone,
             Email = request.Email,
+            Notes = request.Notes,
             Items = request.Items,
-            ServiceCode = request.ServiceCode,
-            WarehouseId = request.WarehouseId
+            ShippingSelectedRef = request.ShippingSelectedRef
         });
         if (!result.Success)
             return BadRequest(APIResponseBase.Failure("SHIPRELAY_ERROR", [result.ErrorMessage ?? "Failed to create shipment"]));
@@ -103,33 +108,19 @@ public class IntegrationController : ControllerBase
         var rates = await shiprelayService.GetRatesAsync(new()
         {
             OrderId = orderId,
-            ToZip = request.ToZip,
-            ToCountry = request.ToCountry ?? "US",
+            RecipientName = request.RecipientName,
+            Address1 = request.Address1,
+            Address2 = request.Address2,
+            City = request.City,
+            Region = request.Region,
+            Country = request.Country ?? "US",
+            Zip = request.Zip,
+            Company = request.Company,
+            Phone = request.Phone,
+            Email = request.Email,
+            SessionId = request.SessionId,
             Items = request.Items
         });
         return Ok(APIResponse<object>.Success(rates));
     }
-}
-
-public class CreateShipmentRequest
-{
-    public string RecipientName { get; set; } = default!;
-    public string Address1 { get; set; } = default!;
-    public string? Address2 { get; set; }
-    public string City { get; set; } = default!;
-    public string? State { get; set; }
-    public string Zip { get; set; } = default!;
-    public string Country { get; set; } = "US";
-    public string? Phone { get; set; }
-    public string? Email { get; set; }
-    public List<LumStoreAPI.Application.DTOs.ShiprelayDTO.ShiprelayItemDTO> Items { get; set; } = [];
-    public string? ServiceCode { get; set; }
-    public string? WarehouseId { get; set; }
-}
-
-public class GetRatesRequest
-{
-    public string ToZip { get; set; } = default!;
-    public string? ToCountry { get; set; }
-    public List<LumStoreAPI.Application.DTOs.ShiprelayDTO.ShiprelayItemDTO> Items { get; set; } = [];
 }

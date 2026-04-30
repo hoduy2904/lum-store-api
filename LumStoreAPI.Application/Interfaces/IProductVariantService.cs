@@ -1,5 +1,6 @@
 using System;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
+using LumStoreAPI.Application.DTOs.StoreDTO;
 
 namespace LumStoreAPI.Application.Interfaces;
 
@@ -11,4 +12,5 @@ public interface IProductVariantService
     Task<int> UpdateProductVariantAsync(int variantId, ProductVariantUpdateDTO request);
     Task<ProductVariantGetDTO> InsertProductVariantAsync(ProductVariantRequestDTO request);
     Task<int> DeleteProductVariantsAsync(int[] variantIds);
+    Task<IEnumerable<ContentKeyValue>> GetProductVariantColorsAsync(int MaxColor);
 }

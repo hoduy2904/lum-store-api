@@ -29,6 +29,11 @@ internal class ProductVariantRepository : IProductVariantRepository
         return _lumStoreContext.ProductVariants.FirstOrDefaultAsync(x => x.SKU.Equals(sku));
     }
 
+    public IQueryable<ProductVariant> GetProductVariants()
+    {
+        return _lumStoreContext.ProductVariants;
+    }
+
     public async Task<IEnumerable<ProductVariant>> GetProductVariantsAsync(Expression<Func<ProductVariant, bool>>? where = null)
     {
         where ??= x => true;
