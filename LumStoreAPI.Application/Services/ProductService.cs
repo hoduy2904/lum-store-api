@@ -7,6 +7,7 @@ using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Infrastructure;
+using LumStoreAPI.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -318,6 +319,170 @@ IProductVariantRepository productVariantRepository)
                 CategoryName = p.ParentNodeID.HasValue ? categoryMap.GetValueOrDefault(p.ParentNodeID.Value) : null
             }
         });
+    }
+
+    public async Task<IPagedEnumerable<ProductByColorItemDTO>> GetProductsByColorAsync(string color, int page, int pageSize)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var colorLower = color.ToLower();
+
+        // Step 1: fetch all variants whose Color contains the search string (case-insensitive)
+        var matchingVariants = await _lumStoreContext.ProductVariants
+            .Where(v => v.VariantName != null && v.VariantName.ToLower().Contains(colorLower))
+            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.Color, v.SKU })
+            .ToListAsync();
+
+        if (matchingVariants.Count == 0)
+            return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(0);
+
+        // Step 2: per product keep only the variant with highest stock (stable tiebreaker: ItemID ASC)
+        var bestVariantByProduct = matchingVariants
+            .GroupBy(v => v.ProductID)
+            .Select(g => g.OrderByDescending(v => v.Stock).ThenBy(v => v.ItemID).First())
+            .ToDictionary(v => v.ProductID);
+
+        var productIds = bestVariantByProduct.Keys.ToList();
+
+        // Step 3: fetch published products for those IDs
+        var products = await _lumStoreContext.Products
+            .Where(p =>
+                productIds.Contains(p.NodeID) &&
+                !p.IsDeleted &&
+                (p.PublishedFrom == null || p.PublishedFrom <= now) &&
+                (p.PublishedTo == null || p.PublishedTo > now))
+            .Select(p => new
+            {
+                p.NodeID,
+                p.Node.NodeAlias,
+                p.ProductName,
+                p.Price,
+                p.PriceDiscount,
+                p.IsBestSeller,
+                p.Images,
+            })
+            .ToListAsync();
+
+        if (products.Count == 0)
+            return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(0);
+
+        // Step 4: join + sort (stable order: isBestSeller DESC, stock DESC, nodeId ASC)
+        var joined = products
+            .Where(p => bestVariantByProduct.ContainsKey(p.NodeID))
+            .Select(p => (product: p, variant: bestVariantByProduct[p.NodeID]))
+            .OrderByDescending(x => x.product.IsBestSeller)
+            .ThenByDescending(x => x.variant.Stock)
+            .ThenBy(x => x.product.NodeID)
+            .ToList();
+
+        var totalRecords = joined.Count;
+
+        // Step 5: paginate
+        var pageItems = joined
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        if (pageItems.Count == 0)
+            return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(totalRecords);
+
+        // Step 6: resolve first image per product in one batch call
+        var imageGuids = pageItems
+            .Where(x => x.product.Images.Length > 0)
+            .Select(x => x.product.Images[0])
+            .Distinct()
+            .ToArray();
+
+        var mediaMap = imageGuids.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(imageGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : new Dictionary<Guid, string>();
+
+        var result = pageItems.Select(x =>
+        {
+            string? imageUrl = x.product.Images.Length > 0 && mediaMap.TryGetValue(x.product.Images[0], out var url)
+                ? url
+                : null;
+
+            return new ProductByColorItemDTO
+            {
+                NodeID = x.product.NodeID,
+                NodeAlias = x.product.NodeAlias,
+                ProductName = x.product.ProductName,
+                Price = x.product.Price,
+                PriceDiscount = x.product.PriceDiscount,
+                Image = imageUrl,
+                MatchedVariant = new MatchedVariantDTO
+                {
+                    VariantId = x.variant.ItemID,
+                    VariantName = x.variant.VariantName,
+                    Color = x.variant.Color,
+                    SKU = x.variant.SKU,
+                    Stock = x.variant.Stock,
+                }
+            };
+        });
+
+        return result.AsPagedEnumerable(totalRecords);
+    }
+
+    public async Task<ProductByColorDTO?> GetProductByColorAsync(string color)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        // Find product NodeIDs that have a variant with the given color
+        var variantProductIds = await _lumStoreContext.ProductVariants
+            .Where(v => v.VariantName != null && v.VariantName.ToLower() == color.ToLower())
+            .Select(v => v.ProductID)
+            .Distinct()
+            .ToListAsync();
+
+        if (variantProductIds.Count == 0)
+            return null;
+
+        var product = await _lumStoreContext.Products
+            .Where(p =>
+                variantProductIds.Contains(p.NodeID) &&
+                !p.IsDeleted &&
+                (p.PublishedFrom == null || p.PublishedFrom <= now) &&
+                (p.PublishedTo == null || p.PublishedTo > now))
+            .OrderByDescending(p => p.IsBestSeller)
+            .Select(p => new
+            {
+                p.NodeID,
+                p.Node.NodeAlias,
+                p.ProductName,
+                p.Images,
+                ParentNodeID = p.Node.ParentNodeID,
+            })
+            .FirstOrDefaultAsync();
+
+        if (product == null)
+            return null;
+
+        // Resolve first image
+        string? imageUrl = null;
+        if (product.Images.Length > 0)
+        {
+            var media = await _mediaService.GetMediaItemsAsync([product.Images[0]]);
+            imageUrl = media.FirstOrDefault()?.FileURL;
+        }
+
+        // Resolve parent category name as availableIn
+        string? availableIn = null;
+        if (product.ParentNodeID.HasValue)
+        {
+            availableIn = await _lumStoreContext.ProductCategories
+                .Where(c => c.NodeID == product.ParentNodeID.Value)
+                .Select(c => c.CategoryName)
+                .FirstOrDefaultAsync();
+        }
+
+        return new ProductByColorDTO
+        {
+            NodeAlias = product.NodeAlias,
+            ProductName = product.ProductName,
+            AvailableIn = availableIn,
+            Image = imageUrl,
+        };
     }
 
     public async Task<IEnumerable<string>> GetSearchRecommendationsAsync(int limit)

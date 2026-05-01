@@ -20,7 +20,8 @@ namespace LumStoreAPI.Infrastructure.Configurations
                 {
                     x.Properties = jsonElement.Deserialize(widgetQuery, new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true
+                        PropertyNameCaseInsensitive = true,
+                        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
                     });
                 }
                 return x;
