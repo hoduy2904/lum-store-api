@@ -2,31 +2,30 @@ using System.Net.Http.Json;
 using LumStoreAPI.SDK.Shiprelay.Interfaces;
 using LumStoreAPI.SDK.Shiprelay.Models;
 using LumStoreAPI.SDK.Shiprelay.Models.Requests;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LumStoreAPI.SDK.Shiprelay.Handlers;
 
 internal class ShiprelayAuthService
 (
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    IServiceProvider serviceProvider
 
 ) : IShiprelayAuthService
 {
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    public async Task<AuthResponse?> LoginAsync(string email, string password)
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    public async Task<AuthResponse?> LoginAsync(ShiprelayCredentials shiprelayCredentials)
     {
+        using var scope = _serviceProvider.CreateScope();
         var client = _httpClientFactory.CreateClient();
-        client.BaseAddress = new Uri(ShiprelayConfig.ShiprelayUrl ?? "");
+        client.BaseAddress = new Uri((shiprelayCredentials.BaseAddress.TrimEnd('/') ?? "") + "/");
         var response = await client.PostAsJsonAsync("login", new AuthRequest
         {
-            Email = email,
-            Password = password
+            Email = shiprelayCredentials.Username,
+            Password = shiprelayCredentials.Password
         });
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<AuthResponse>();
-    }
-
-    public Task<AuthResponse?> LoginAsync()
-    {
-        return LoginAsync(ShiprelayConfig.Email ?? "", ShiprelayConfig.Password ?? "");
     }
 }

@@ -1,7 +1,9 @@
 using System;
 using System.Net;
 using System.Net.Http.Headers;
+using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.SDK.Shiprelay.Interfaces;
+using LumStoreAPI.SDK.Shiprelay.Models.Requests;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,8 +22,17 @@ public class ShiprelayClientHandler : DelegatingHandler
     }
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        using var scope = _serviceProvider.CreateScope();
+
+        var shiprelayConfiguration = await scope.ServiceProvider.GetRequiredService<IIntegrationConfigRepository>()
+                                    .GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Shiprelay);
+
         var token = _cache.Get<string>(SHIPRELAY_TOKEN_CACHE);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        if (request.RequestUri?.IsAbsoluteUri is false)
+        {
+            request.RequestUri = new Uri(new Uri(shiprelayConfiguration?.BaseUrl ?? ""), request.RequestUri);
+        }
         var response = await base.SendAsync(request, cancellationToken);
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
@@ -32,10 +43,9 @@ public class ShiprelayClientHandler : DelegatingHandler
                 retryCount = int.Parse(values.First());
             }
             if (retryCount >= 3) return response;
-
-            var scope = _serviceProvider.CreateScope();
             var authService = scope.ServiceProvider.GetRequiredService<IShiprelayAuthService>();
-            var tokenResponse = await authService.LoginAsync();
+            var shiprelayCredentials = new ShiprelayCredentials(shiprelayConfiguration?.BaseUrl ?? "", shiprelayConfiguration?.ApiKey ?? "", shiprelayConfiguration?.ApiSecret ?? "");
+            var tokenResponse = await authService.LoginAsync(shiprelayCredentials);
             if (tokenResponse != null)
             {
                 _cache.Set<string>(SHIPRELAY_TOKEN_CACHE, tokenResponse.AccessToken);

@@ -1,9 +1,9 @@
 using LumStoreAPI.Application.DTOs.IntegrationDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Integrations;
+using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
-using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 
 namespace LumStoreAPI.Application.Services;
 
@@ -101,7 +101,9 @@ public class IntegrationConfigService : IIntegrationConfigService
         HasApiKey = !string.IsNullOrEmpty(c.ApiKey),
         HasWebhookSecret = !string.IsNullOrEmpty(c.WebhookSecret),
         IsEnabled = c.IsEnabled,
-        LastSyncAt = c.LastSyncAt
+        LastSyncAt = c.LastSyncAt,
+        ApiKey = c.ApiKey,
+        SecretKey = c.ApiSecret
     };
 
     private static SyncLogGetDTO MapSyncLogToDTO(SyncLog s) => new()

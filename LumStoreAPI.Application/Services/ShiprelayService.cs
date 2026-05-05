@@ -4,10 +4,9 @@ using System.Text;
 using System.Text.Json;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Core.Entities.Integrations;
+using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
-using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace LumStoreAPI.Application.Services;
