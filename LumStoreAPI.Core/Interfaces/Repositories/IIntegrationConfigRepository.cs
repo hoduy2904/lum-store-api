@@ -1,7 +1,7 @@
 using LumStoreAPI.Core.Entities.Integrations;
 using LumStoreAPI.Core.Models.Enums;
 
-namespace LumStoreAPI.Infrastructure.Repositories.Interfaces;
+namespace LumStoreAPI.Core.Interfaces.Repositories;
 
 public interface IIntegrationConfigRepository
 {

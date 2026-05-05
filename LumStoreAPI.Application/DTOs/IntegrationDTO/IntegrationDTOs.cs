@@ -10,6 +10,8 @@ public class IntegrationConfigGetDTO
     public string TypeName => IntegrationType.ToString();
     public string Name { get; set; } = default!;
     public string BaseUrl { get; set; } = default!;
+    public string? ApiKey { get; set; }
+    public string? SecretKey { get; set; }
     public bool HasApiKey { get; set; }         // mask actual key
     public bool HasWebhookSecret { get; set; }
     public bool IsEnabled { get; set; }

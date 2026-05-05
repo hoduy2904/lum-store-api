@@ -2,6 +2,7 @@ using LumStoreAPI.Application.DTOs.DocumentPageDTO;
 using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LumStoreAPI.ClientControllers
@@ -38,6 +39,44 @@ namespace LumStoreAPI.ClientControllers
         {
             var recommendations = await _productService.GetSearchRecommendationsAsync(limit);
             return Ok(APIResponse<IEnumerable<string>>.Success(recommendations, ["Success"]));
+        }
+
+        [HttpGet("by-color")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductByColor([FromQuery] string? color)
+        {
+            if (string.IsNullOrWhiteSpace(color))
+                return Ok(APIResponse<ProductByColorDTO>.Failure("color param is required"));
+
+            var product = await _productService.GetProductByColorAsync(color);
+
+            if (product == null)
+                return Ok(APIResponse<ProductByColorDTO>.Success(null, [$"No product found for color: {color}"]));
+
+            return Ok(APIResponse<ProductByColorDTO>.Success(product));
+        }
+
+        [HttpGet("by-color/products")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductsByColor(
+            [FromQuery] string? color,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            if (string.IsNullOrWhiteSpace(color))
+                return BadRequest(APIResponse<object>.Failure("color param is required"));
+
+            pageSize = Math.Clamp(pageSize, 1, 50);
+            page = Math.Max(page, 1);
+
+            var products = await _productService.GetProductsByColorAsync(color, page, pageSize);
+
+            if (!products.Any())
+                return Ok(PagedResponse<ProductByColorItemDTO>.Success(
+                    products, page, pageSize,
+                    [$"No products found for color: {color}"]));
+
+            return Ok(PagedResponse<ProductByColorItemDTO>.Success(products, page, pageSize));
         }
     }
 }

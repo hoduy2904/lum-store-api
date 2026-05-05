@@ -1,6 +1,8 @@
 using LumStoreAPI.Core.Entities.Integrations;
+using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
-using LumStoreAPI.Infrastructure.Repositories.Interfaces;
+using LumStoreAPI.Core.Models.Riches;
 using Microsoft.EntityFrameworkCore;
 
 namespace LumStoreAPI.Infrastructure.Repositories.Presentations;
@@ -8,13 +10,26 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations;
 internal class IntegrationConfigRepository : IIntegrationConfigRepository
 {
     private readonly LumStoreContext _ctx;
-    public IntegrationConfigRepository(LumStoreContext ctx) => _ctx = ctx;
+    private readonly ICacheService _cacheService;
+    public IntegrationConfigRepository(LumStoreContext ctx, ICacheService cacheService)
+    {
+        _ctx = ctx;
+        _cacheService = cacheService;
+    }
 
     public Task<IntegrationConfig?> GetConfigAsync(int configId)
         => _ctx.IntegrationConfigs.FirstOrDefaultAsync(c => c.ItemID == configId);
 
     public Task<IntegrationConfig?> GetConfigByTypeAsync(IntegrationType type)
-        => _ctx.IntegrationConfigs.FirstOrDefaultAsync(c => c.IntegrationType == type && c.IsEnabled);
+    {
+        string typeName = Enum.GetName(type) ?? "";
+        return _cacheService
+        .GetCacheAsync(
+            () => _ctx.IntegrationConfigs
+            .FirstOrDefaultAsync(c => c.IntegrationType == type && c.IsEnabled),
+            cache => cache.Dependencies(d => d.SettingKey(typeName)).Key($"setting|intergration|{typeName}")
+            .Expiration(0));
+    }
 
     public async Task<IEnumerable<IntegrationConfig>> GetConfigsAsync()
         => await _ctx.IntegrationConfigs.OrderBy(c => c.IntegrationType).ToListAsync();
@@ -39,6 +54,9 @@ internal class IntegrationConfigRepository : IIntegrationConfigRepository
         existing.AdditionalConfig = config.AdditionalConfig;
         existing.IsEnabled = config.IsEnabled;
         await _ctx.SaveChangesAsync();
+
+        var cacheDependency = new CacheDependency().SettingKey(Enum.GetName(config.IntegrationType) ?? "");
+        _cacheService.TouchKey(cacheDependency.GetDependencies().ToArray());
         return existing;
     }
 
@@ -48,6 +66,8 @@ internal class IntegrationConfigRepository : IIntegrationConfigRepository
         if (config == null) return false;
         _ctx.IntegrationConfigs.Remove(config);
         await _ctx.SaveChangesAsync();
+        var cacheDependency = new CacheDependency().SettingKey(Enum.GetName(config.IntegrationType) ?? "");
+        _cacheService.TouchKey(cacheDependency.GetDependencies().ToArray());
         return true;
     }
 

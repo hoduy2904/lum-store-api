@@ -9,6 +9,10 @@ namespace LumStoreAPI.Libraries.Helpers
         {
             {SystemSettingKeyConstants.SYSTEM_STORE_HOURS, typeof(IEnumerable<StoreHoursSetting>) },
             {SystemSettingKeyConstants.CONTACT_INFORMATION, typeof(IEnumerable<ContactInformationSetting>) },
+            {SystemSettingKeyConstants.GENERAL_SETTINGS, typeof(GeneralSettings) },
+            {SystemSettingKeyConstants.EMAIL_SETTINGS, typeof(EmailSettings) },
+            {SystemSettingKeyConstants.NOTIFICATION_SETTINGS, typeof(NotificationSettings) },
+            {SystemSettingKeyConstants.SYNC_CONFIG, typeof(SyncConfig) },
         };
 
 

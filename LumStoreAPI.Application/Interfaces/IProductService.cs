@@ -26,4 +26,13 @@ public interface IProductService
 
     /// <summary>Product names from best-seller / new products for search recommendation chips.</summary>
     Task<IEnumerable<string>> GetSearchRecommendationsAsync(int limit);
+
+    /// <summary>Find a single product that has a variant matching the given color (case-insensitive).</summary>
+    Task<ProductByColorDTO?> GetProductByColorAsync(string color);
+
+    /// <summary>
+    /// Paginated list of products that have at least one variant matching the given color.
+    /// Each item carries the best-matching variant (highest stock). Stable order: isBestSeller DESC, stock DESC, nodeId ASC.
+    /// </summary>
+    Task<IPagedEnumerable<ProductByColorItemDTO>> GetProductsByColorAsync(string color, int page, int pageSize);
 }

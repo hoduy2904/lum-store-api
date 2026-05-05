@@ -1,14 +1,10 @@
 using System;
 using LumStoreAPI.SDK.Shiprelay.Models;
+using LumStoreAPI.SDK.Shiprelay.Models.Requests;
 
 namespace LumStoreAPI.SDK.Shiprelay.Interfaces;
 
 internal interface IShiprelayAuthService
 {
-    Task<AuthResponse?> LoginAsync(string email, string password);
-    /// <summary>
-    /// Use current config
-    /// </summary>
-    /// <returns></returns>
-    Task<AuthResponse?> LoginAsync();
+    Task<AuthResponse?> LoginAsync(ShiprelayCredentials shiprelayCredentials);
 }
