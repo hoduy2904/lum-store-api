@@ -1,3 +1,4 @@
+using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.SDK.Shiprelay;
 using LumStoreAPI.SDK.Shiprelay.Handlers;
 using LumStoreAPI.SDK.Shiprelay.Interfaces;
@@ -13,7 +14,12 @@ public static class SDKConfiguration
         public IServiceCollection AddLumStoreSDK()
         {
             services.AddTransient<ShiprelayClientHandler>();
-            services.AddHttpClient(nameof(ShiprelayClientHandler)).AddHttpMessageHandler<ShiprelayClientHandler>();
+            services.AddHttpClient(nameof(ShiprelayClientHandler), (sp, client) =>
+            {
+                var scope = sp.CreateScope();
+                var config = scope.ServiceProvider.GetRequiredService<IIntegrationConfigRepository>().GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Shiprelay).GetAwaiter().GetResult();
+                client.BaseAddress = new Uri(config?.BaseUrl ?? "");
+            }).AddHttpMessageHandler<ShiprelayClientHandler>();
 
             services.AddSingleton<IShiprelayAuthService, ShiprelayAuthService>();
             services.AddSingleton<IShiprelayProductService, ShiprelayProductService>();
