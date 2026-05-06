@@ -41,6 +41,15 @@ namespace LumStoreAPI.ClientControllers
             return Ok(APIResponse<IEnumerable<string>>.Success(recommendations, ["Success"]));
         }
 
+        [HttpGet("{nodeAlias}/related")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetRelatedProducts([FromRoute] string nodeAlias, [FromQuery] int limit = 8)
+        {
+            limit = Math.Clamp(limit, 1, 15);
+            var products = await _productService.GetRelatedProductsAsync(nodeAlias, limit);
+            return Ok(APIResponse<IEnumerable<DocumentClientGetDTO>>.Success(products));
+        }
+
         [HttpGet("by-color")]
         [AllowAnonymous]
         public async Task<IActionResult> GetProductByColor([FromQuery] string? color)
@@ -58,10 +67,7 @@ namespace LumStoreAPI.ClientControllers
 
         [HttpGet("by-color/products")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetProductsByColor(
-            [FromQuery] string? color,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetProductsByColor([FromQuery] string? color, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (string.IsNullOrWhiteSpace(color))
                 return BadRequest(APIResponse<object>.Failure("color param is required"));

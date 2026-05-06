@@ -485,6 +485,67 @@ IProductVariantRepository productVariantRepository)
         };
     }
 
+    public async Task<IEnumerable<DocumentClientGetDTO>> GetRelatedProductsAsync(string nodeAlias, int limit)
+    {
+        limit = Math.Clamp(limit, 1, 15);
+        var now = DateTimeOffset.UtcNow;
+
+        var current = await _lumStoreContext.Products
+            .Where(p => p.Node.NodeAlias == nodeAlias && !p.IsDeleted)
+            .Select(p => new { p.NodeID, ParentNodeID = p.Node.ParentNodeID })
+            .FirstOrDefaultAsync();
+
+        if (current == null || !current.ParentNodeID.HasValue)
+            return [];
+
+        var related = await _lumStoreContext.Products
+            .Where(p =>
+                p.Node.ParentNodeID == current.ParentNodeID.Value &&
+                p.NodeID != current.NodeID &&
+                !p.IsDeleted &&
+                (p.PublishedFrom == null || p.PublishedFrom <= now) &&
+                (p.PublishedTo == null || p.PublishedTo > now))
+            .OrderByDescending(p => p.IsBestSeller)
+            .ThenBy(p => p.Node.NodeOrder)
+            .Take(limit)
+            .Select(p => new Product
+            {
+                NodeID = p.NodeID,
+                PageID = p.PageID,
+                ProductName = p.ProductName,
+                Price = p.Price,
+                PriceDiscount = p.PriceDiscount,
+                IsBestSeller = p.IsBestSeller,
+                Images = p.Images,
+                ShortDescription = p.ShortDescription,
+                PublishedFrom = p.PublishedFrom,
+                PublishedTo = p.PublishedTo,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
+                Node = p.Node,
+            })
+            .ToListAsync();
+
+        if (related.Count == 0) return [];
+
+        var imageGuids = related.SelectMany(x => x.Images).Distinct().ToArray();
+        var images = imageGuids.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(imageGuids)).ToList()
+            : [];
+
+        var variantsByProduct = await LoadVariantsAsync(related.Select(x => x.NodeID));
+
+        return related.Select(x =>
+        {
+            var productItem = new ProductClientDTO(x)
+            {
+                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
+            };
+            return new DocumentClientGetDTO(productItem, x);
+        });
+    }
+
     public async Task<IEnumerable<string>> GetSearchRecommendationsAsync(int limit)
     {
         limit = Math.Min(limit, 20);
