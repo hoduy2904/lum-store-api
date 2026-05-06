@@ -9,6 +9,8 @@ public class StorePlaceOrderRequest
 
     [MaxLength(1000)]
     public string? Note { get; set; }
+    public string SuccessUrl { get; set; } = default!;
+    public string? CancelUrl { get; set; }
 }
 
 public class StoreCheckoutPreviewRequest
