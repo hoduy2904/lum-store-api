@@ -43,6 +43,7 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<ProductVariant> ProductVariants { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
         public DbSet<ContactUs> ContactUs { get; set; }
+        public DbSet<GeneralContent> GeneralContents { get; set; }
 
         // ── Orders ────────────────────────────────────────────────────────────
         public DbSet<Order> Orders { get; set; }
