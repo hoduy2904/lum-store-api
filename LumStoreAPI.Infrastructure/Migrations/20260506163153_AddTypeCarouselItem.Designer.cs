@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260506162333_AddTypeCarouselItem")]
+    [Migration("20260506163153_AddTypeCarouselItem")]
     partial class AddTypeCarouselItem
     {
         /// <inheritdoc />
@@ -1217,7 +1217,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.ToTable("CTAImages");
                 });

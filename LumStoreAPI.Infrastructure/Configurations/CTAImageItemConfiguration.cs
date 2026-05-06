@@ -10,6 +10,9 @@ namespace LumStoreAPI.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<CTAImageItem> builder)
         {
+            builder.Property(x => x.Type)
+                .HasMaxLength(20);
+
             builder.Property(x => x.Title)
                 .HasMaxLength(100);
 

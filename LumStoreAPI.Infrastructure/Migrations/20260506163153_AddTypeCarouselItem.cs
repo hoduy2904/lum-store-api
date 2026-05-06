@@ -13,7 +13,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "Type",
                 table: "CTAImages",
-                type: "nvarchar(max)",
+                type: "nvarchar(20)",
+                maxLength: 20,
                 nullable: false,
                 defaultValue: "");
         }
