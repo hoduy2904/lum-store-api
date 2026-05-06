@@ -28,7 +28,7 @@ namespace LumStoreAPI.Controllers
             try
             {
                 var stripeEvent = EventUtility.ParseEvent(json);
-                if (stripeEvent.Type == EventTypes.CheckoutSessionAsyncPaymentSucceeded)
+                if (stripeEvent.Type == EventTypes.CheckoutSessionCompleted)
                 {
                     var sessionData = stripeEvent.Data.Object as Session;
                     if (sessionData is null || !int.TryParse(sessionData.ClientReferenceId, out int orderId))
