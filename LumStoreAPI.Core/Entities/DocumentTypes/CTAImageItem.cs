@@ -6,6 +6,7 @@ namespace LumStoreAPI.Core.Entities.DocumentTypes
 {
     public class CTAImageItem : DocumentPage
     {
+        public string Type { get; set; } = "full";
         public const string CLASS_NAME = "Item.CTAImage";
         public string? Pretitle { get; set; }
         [DocumentName]

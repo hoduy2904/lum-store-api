@@ -4,6 +4,7 @@ using LumStoreAPI.SDK.Shiprelay.Handlers;
 using LumStoreAPI.SDK.Shiprelay.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Stripe;
 
 namespace LumStoreAPI.SDK;
 
@@ -23,6 +24,7 @@ public static class SDKConfiguration
 
             services.AddSingleton<IShiprelayAuthService, ShiprelayAuthService>();
             services.AddSingleton<IShiprelayProductService, ShiprelayProductService>();
+            services.AddSingleton<IStripeClient>(s => new StripeClient("apikey"));
             return services;
         }
     }

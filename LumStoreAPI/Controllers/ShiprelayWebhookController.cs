@@ -11,6 +11,7 @@ namespace LumStoreAPI.Controllers;
 /// <summary>Receives inbound webhook events from Shiprelay.</summary>
 [Route("api/webhooks/shiprelay")]
 [ApiController]
+[ApiExplorerSettings(GroupName = "Webhook")]
 [AllowAnonymous]
 public class ShiprelayWebhookController(
     IShiprelayService shiprelayService,

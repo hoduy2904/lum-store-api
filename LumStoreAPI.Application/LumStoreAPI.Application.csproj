@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LumStoreAPI.Infrastructure\LumStoreAPI.Infrastructure.csproj" />
+    <ProjectReference Include="..\LumStoreAPI.SDK\LumStoreAPI.SDK.csproj" />
   </ItemGroup>
 
   <ItemGroup>
