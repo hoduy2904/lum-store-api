@@ -34,7 +34,7 @@ public class ShiprelayProduct
     [JsonPropertyName("settings")]
     public ShiprelayProductSetting Settings { get; set; } = default!;
     [JsonPropertyName("warehouse_counts")]
-    public ShiprelayProductWarehouse WareHouseCount { get; set; } = default!;
+    public IEnumerable<ShiprelayProductWarehouse> WareHouseCounts { get; set; } = default!;
     [JsonPropertyName("updated_at")]
     public DateTime UpdatedAt { get; set; }
     [JsonPropertyName("archived_at")]

@@ -21,6 +21,7 @@ public class MediaItemDTO
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string FileURL { get; internal set; }
+    public string RelativeURL { get; internal set; }
 
     public MediaItemDTO(MediaLibrary mediaLibrary)
     {
@@ -36,6 +37,7 @@ public class MediaItemDTO
         this.CreatedAt = mediaLibrary.CreatedAt;
         this.UpdatedAt = mediaLibrary.UpdatedAt;
         this.FullDirectPath = MediaLibraryHelper.GetDirectMediaFilePath(mediaLibrary);
-        this.FileURL = MediaLibraryHelper.GetFileURL(mediaLibrary);
+        this.FileURL = MediaLibraryHelper.GetAbsoluteFileURL(mediaLibrary);
+        this.RelativeURL = MediaLibraryHelper.GetFileURL(mediaLibrary);
     }
 }

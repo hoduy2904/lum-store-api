@@ -11,6 +11,7 @@ public interface IShiprelayProductService
 
     Task<ShiprelayPagedResponse<ShiprelayProduct>?> GetShiprelayProductsAsync(ShiprelayProductGetRequest request);
     Task<bool> IsExistsProductAsync(int id);
+    Task<bool> IsExistsProductAsync(string sku); 
     Task<ShiprelayProduct?> UpdateProductAsync(int id, ShiprelayProductUpdateRequest request, ProductType productType, bool ensureSuccess = true);
     Task<ShiprelayProduct?> PostProductAsync(ShiprelayProductUpdateRequest request, ProductType productType);
     Task<ShiprelayProduct?> RestoreProductAsync(int id);

@@ -14,9 +14,9 @@ public sealed record class ShiprelayProductGetRequest
     [JsonPropertyName("sku")]
     public string? SKU { get; set; }
     [JsonPropertyName("source_id")]
-    public int SourceId { get; set; }
+    public int? SourceId { get; set; }
     [JsonPropertyName("updated_at_from")]
-    public DateTime UpdatedAtFrom { get; set; }
+    public DateTime? UpdatedAtFrom { get; set; }
     [JsonPropertyName("updated_at_to")]
-    public DateTime UpdatedAtTo { get; set; }
+    public DateTime? UpdatedAtTo { get; set; }
 }

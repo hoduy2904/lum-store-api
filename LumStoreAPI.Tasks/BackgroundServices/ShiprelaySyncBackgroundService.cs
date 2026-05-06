@@ -1,3 +1,4 @@
+using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
@@ -16,7 +17,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ShiprelaySyncBackgroundService> _logger;
 
-    private static readonly TimeSpan PollInterval  = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan StockSyncEvery = TimeSpan.FromMinutes(30);
 
     private DateTimeOffset _lastStockSync = DateTimeOffset.MinValue;
@@ -65,9 +66,9 @@ public class ShiprelaySyncBackgroundService : BackgroundService
     private async Task ProcessQueueAsync(CancellationToken ct)
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
-        var ctx            = scope.ServiceProvider.GetRequiredService<LumStoreContext>();
+        var ctx = scope.ServiceProvider.GetRequiredService<LumStoreContext>();
         var productService = scope.ServiceProvider.GetRequiredService<IShiprelayProductService>();
-        var eventLog       = scope.ServiceProvider.GetRequiredService<IEventLogService>();
+        var eventLog = scope.ServiceProvider.GetRequiredService<IEventLogService>();
 
         // Take up to 20 pending items per cycle
         var pending = await ctx.ShiprelayDataSyncs
@@ -108,8 +109,9 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                     case EntryActionStatus.INSERT:
                         if (variant is null) { MarkFailed(syncEntry, "Variant not found"); break; }
 
+                        var buildRequest = await BuildRequest(variant);
                         var created = await productService.PostProductAsync(
-                            BuildRequest(variant), variant.Product?.ProductType ?? ProductType.SIMPLE);
+                            buildRequest, variant.Product?.ProductType ?? ProductType.SIMPLE);
 
                         if (created is not null)
                         {
@@ -129,10 +131,11 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                     case EntryActionStatus.UPDATE:
                         if (variant is null) { MarkFailed(syncEntry, "Variant not found"); break; }
 
+                        buildRequest = await BuildRequest(variant);
                         if (variant.ShiprelayId == 0)
                         {
                             var upserted = await productService.PostProductAsync(
-                                BuildRequest(variant), variant.Product?.ProductType ?? ProductType.SIMPLE);
+                                buildRequest, variant.Product?.ProductType ?? ProductType.SIMPLE);
                             if (upserted is not null)
                             {
                                 variant.ShiprelayId = upserted.Id;
@@ -143,7 +146,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                         else
                         {
                             await productService.UpdateProductAsync(
-                                variant.ShiprelayId, BuildRequest(variant),
+                                variant.ShiprelayId, buildRequest,
                                 variant.Product?.ProductType ?? ProductType.SIMPLE,
                                 ensureSuccess: false);
                             await eventLog.LogInformation("ShiprelaySyncService", "SHIPRELAY_PRODUCT_UPDATED",
@@ -163,6 +166,8 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                         MarkSuccess(syncEntry);
                         break;
                 }
+
+                ctx.ShiprelayDataSyncs.Remove(syncEntry);
             }
             catch (Exception ex)
             {
@@ -175,7 +180,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
         await ctx.SaveChangesAsync(ct);
 
-        var failed  = pending.Count(s => s.Status == EmailStatus.Failed);
+        var failed = pending.Count(s => s.Status == EmailStatus.Failed);
         var success = pending.Count(s => s.Status == EmailStatus.Success);
         _logger.LogInformation("ShipRelay queue processed: {Success} ok, {Failed} failed", success, failed);
 
@@ -189,7 +194,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
     private async Task SyncStockFromShiprelayAsync(CancellationToken ct)
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
-        var ctx            = scope.ServiceProvider.GetRequiredService<LumStoreContext>();
+        var ctx = scope.ServiceProvider.GetRequiredService<LumStoreContext>();
         var productService = scope.ServiceProvider.GetRequiredService<IShiprelayProductService>();
 
         var variants = await ctx.ProductVariants
@@ -224,39 +229,46 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
-    private static ShiprelayProductUpdateRequest BuildRequest(Core.Entities.DocumentTypes.ProductVariant variant)
+    private async Task<ShiprelayProductUpdateRequest> BuildRequest(Core.Entities.DocumentTypes.ProductVariant variant)
     {
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var mediaService = scope.ServiceProvider.GetRequiredService<IMediaService>();
         var product = variant.Product;
+
+        var imageGuids = variant.Images.Union(product?.Images ?? []).FirstOrDefault();
+
+        var media = await mediaService.GetMediaItemsAsync([imageGuids]);
         return new ShiprelayProductUpdateRequest
         {
             SourceId = variant.ItemID.ToString(),
-            SKU      = variant.SKU,
-            Barcode  = variant.UPC,
-            Name     = product is not null
+            SKU = variant.SKU,
+            Barcode = variant.UPC,
+            Name = product is not null
                 ? $"{product.ProductName} - {variant.VariantName}"
                 : variant.VariantName,
-            Category = "hard-goods",
+            Category = Enum.GetName(product?.ProductGroup ?? ProductGroup.HARD_GOODS)?.ToLowerInvariant().Replace('_', '-')!,
             Settings = new ShiprelayProductSetting
             {
-                ShipWeight  = product?.Weight  ?? 0,
-                ShipLength  = product?.Length  ?? 0,
-                ShipWidth   = product?.Width   ?? 0,
-                ShipHeight  = product?.Height  ?? 0,
-                IsFragile   = product?.IsFragile  ?? false,
-                IsFoldable  = product?.IsFoldable ?? false,
+                ShipWeight = product?.Weight ?? 0,
+                ShipLength = product?.Length ?? 0,
+                ShipWidth = product?.Width ?? 0,
+                ShipHeight = product?.Height ?? 0,
+                IsFragile = product?.IsFragile ?? false,
+                IsFoldable = product?.IsFoldable ?? false,
                 IsAlcoholic = product?.IsAlcoholic ?? false,
-                IsHazmat    = product?.IsHazmat   ?? false,
-                NeedsBox    = product?.IsNeedBox  ?? false,
-            }
+                IsHazmat = product?.IsHazmat ?? false,
+                NeedsBox = product?.IsNeedBox ?? false,
+            },
+            Thumb = media.FirstOrDefault()?.FileURL ?? string.Empty,
         };
     }
 
-    private static void MarkSuccess(Core.Entities.Integrations.ShiprelayDataSync entry)
+    private void MarkSuccess(Core.Entities.Integrations.ShiprelayDataSync entry)
         => entry.Status = EmailStatus.Success;
 
-    private static void MarkFailed(Core.Entities.Integrations.ShiprelayDataSync entry, string message)
+    private void MarkFailed(Core.Entities.Integrations.ShiprelayDataSync entry, string message)
     {
-        entry.Status  = EmailStatus.Failed;
+        entry.Status = EmailStatus.Failed;
         entry.Message = message;
     }
 }

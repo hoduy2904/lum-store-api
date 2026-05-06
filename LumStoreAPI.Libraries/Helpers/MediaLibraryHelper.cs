@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Models.Systems;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 
@@ -37,6 +38,17 @@ namespace LumStoreAPI.Libraries.Helpers
         public static string GetFileURL(MediaLibrary mediaLibrary)
         {
             return $"/api/media/getFile/{mediaLibrary.FileID}?format={mediaLibrary.Extension}";
+        }
+        public static string GetAbsoluteFileURL(MediaLibrary mediaLibrary)
+        {
+            try
+            {
+                return new Uri(new Uri(AppConfiguration.AdminConfiguration.AdminDomain), GetFileURL(mediaLibrary)).AbsoluteUri;
+            }
+            catch
+            {
+                return GetFileURL(mediaLibrary);
+            }
         }
 
         public static string GetAbsoluteFileURL(MediaLibrary mediaLibrary, HttpContext httpContext)

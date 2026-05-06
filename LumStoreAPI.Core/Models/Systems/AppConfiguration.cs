@@ -2,6 +2,6 @@
 {
     public class AppConfiguration
     {
-        public static JwtSettings JwtSettings { get; private set; } = new();
+        public static AdminConfiguration AdminConfiguration { get; private set; } = new();
     }
 }
