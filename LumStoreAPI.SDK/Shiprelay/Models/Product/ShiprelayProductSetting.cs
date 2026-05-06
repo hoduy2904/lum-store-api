@@ -35,7 +35,7 @@ public class ShiprelayProductSetting
     [JsonPropertyName("is_meshable")]
     public bool IsMeshable { get; set; }
     [JsonPropertyName("source_id")]
-    public int SourceId { get; set; }
+    public int? SourceId { get; set; }
     [JsonPropertyName("source_unit_cost")]
     public decimal SourceUnitCost { get; set; }
     [JsonPropertyName("min_product_stock_threshold")]

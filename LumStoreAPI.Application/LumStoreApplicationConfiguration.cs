@@ -67,7 +67,7 @@ namespace LumStoreAPI.Application
                             ValidateLifetime = true,
                             ClockSkew = TimeSpan.Zero,
                             ValidateIssuerSigningKey = true,
-                            IssuerSigningKey = new SymmetricSecurityKey(AppConfiguration.JwtSettings.EncodingKey)
+                            IssuerSigningKey = new SymmetricSecurityKey(AppConfiguration.AdminConfiguration.EncodingKey)
                         };
 
                         opt.Events = new JwtBearerEvents
@@ -139,7 +139,7 @@ namespace LumStoreAPI.Application
 
             public IServiceCollection AddCustomSettings(IConfiguration configuration)
             {
-                configuration.GetSection("Configuration").Bind(AppConfiguration.JwtSettings);
+                configuration.GetSection("Configuration").Bind(AppConfiguration.AdminConfiguration);
                 return services;
             }
         }

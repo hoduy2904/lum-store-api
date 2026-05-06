@@ -13,7 +13,7 @@ namespace LumStoreAPI.Infrastructure.Identity
     {
         public string GenerateAccessToken(User user, bool isRemember)
         {
-            var key = AppConfiguration.JwtSettings.Key;
+            var key = AppConfiguration.AdminConfiguration.Key;
 
             var claims = new[]
             {
@@ -24,7 +24,7 @@ namespace LumStoreAPI.Infrastructure.Identity
                 new Claim(ClaimTypes.Role, (user.IsLocked || !user.IsVerified) ? "pre" : user.IsAdmin ? nameof(UserRole.ADMIN) : nameof(UserRole.USER))
             };
 
-            var symmetricSecurityKey = new SymmetricSecurityKey(AppConfiguration.JwtSettings.EncodingKey);
+            var symmetricSecurityKey = new SymmetricSecurityKey(AppConfiguration.AdminConfiguration.EncodingKey);
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
@@ -57,7 +57,7 @@ namespace LumStoreAPI.Infrastructure.Identity
                 var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
                 {
                     ValidateLifetime = false,
-                    IssuerSigningKey = new SymmetricSecurityKey(AppConfiguration.JwtSettings.EncodingKey),
+                    IssuerSigningKey = new SymmetricSecurityKey(AppConfiguration.AdminConfiguration.EncodingKey),
                     ValidateIssuerSigningKey = true,
 
                 }, out _);

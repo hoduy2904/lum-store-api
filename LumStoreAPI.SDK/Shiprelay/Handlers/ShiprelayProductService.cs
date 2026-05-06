@@ -33,21 +33,38 @@ internal class ShiprelayProductService(
     {
         var client = _httpClientFactory.CreateShiprelayClient();
         var response = await client.PutAsJsonAsync($"{PRODUCT_URLS}/{Enum.GetName(productType)?.ToLower() ?? "simple"}/{id}", request);
+        ShiprelayProduct? shiprelayProduct = null;
         if (ensureSuccess)
         {
-            return await response.EnsureSuccessStatusCode().Content.ReadFromJsonAsync<ShiprelayProduct>();
+            shiprelayProduct = await response.EnsureSuccessStatusCode().Content.ReadFromJsonAsync<ShiprelayProduct>();
         }
         else
         {
-            if (response.IsSuccessStatusCode) return await response.Content.ReadFromJsonAsync<ShiprelayProduct>();
-            return null;
+            if (response.IsSuccessStatusCode) shiprelayProduct = await response.Content.ReadFromJsonAsync<ShiprelayProduct>();
+            else return null;
         }
+        if (shiprelayProduct is not null && shiprelayProduct.ArchivedAt == null)
+        {
+            return await this.RestoreProductAsync(shiprelayProduct.Id);
+        }
+        return shiprelayProduct;
     }
 
     public async Task<ShiprelayProduct?> PostProductAsync(ShiprelayProductUpdateRequest request, ProductType productType)
     {
         var client = _httpClientFactory.CreateShiprelayClient();
         var response = await client.PostAsJsonAsync($"{PRODUCT_URLS}/{Enum.GetName(productType)?.ToLower() ?? "simple"}", request);
+        if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableContent)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            if (ShiprelayErrorConstants.ExistsProduct.Any(x => error.Contains(x, StringComparison.OrdinalIgnoreCase)))
+            {
+                var product = await this.GetShiprelayProductsAsync(new ShiprelayProductGetRequest { Page = 1, PerPage = 1, SKU = request.SKU });
+                if (product is null || !product.Data.Any()) throw new Exception(error);
+                var id = product.Data.First().Id;
+                return await this.UpdateProductAsync(id, request, productType, true);
+            }
+        }
         var data = await response.EnsureSuccessStatusCode().Content.ReadFromJsonAsync<ShiprelayProduct>();
         return data;
     }
@@ -63,5 +80,11 @@ internal class ShiprelayProductService(
         var client = _httpClientFactory.CreateShiprelayClient();
         var response = await client.PatchAsync($"{PRODUCT_URLS}/{id}/restore", null);
         return await response.EnsureSuccessStatusCode().Content.ReadFromJsonAsync<ShiprelayProduct>();
+    }
+
+    public async Task<bool> IsExistsProductAsync(string sku)
+    {
+        var data = await this.GetShiprelayProductsAsync(new ShiprelayProductGetRequest { Page = 1, PerPage = 1, SKU = sku });
+        return data is not null && data.Meta.Total > 0;
     }
 }
