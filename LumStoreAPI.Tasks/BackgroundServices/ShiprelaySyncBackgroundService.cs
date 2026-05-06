@@ -16,7 +16,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ShiprelaySyncBackgroundService> _logger;
 
-    private static readonly TimeSpan PollInterval  = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PollInterval  = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan StockSyncEvery = TimeSpan.FromMinutes(30);
 
     private DateTimeOffset _lastStockSync = DateTimeOffset.MinValue;
