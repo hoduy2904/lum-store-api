@@ -24,7 +24,12 @@ public static class SDKConfiguration
 
             services.AddSingleton<IShiprelayAuthService, ShiprelayAuthService>();
             services.AddSingleton<IShiprelayProductService, ShiprelayProductService>();
-            services.AddSingleton<IStripeClient>(s => new StripeClient("apikey"));
+            services.AddSingleton<IStripeClient>(s =>
+            {
+                using var scope = s.CreateScope();
+                var config = scope.ServiceProvider.GetRequiredService<IIntegrationConfigRepository>().GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Payment).GetAwaiter().GetResult();
+                return new StripeClient(config?.ApiSecret ?? "");
+            });
             return services;
         }
     }
