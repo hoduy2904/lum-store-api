@@ -19,6 +19,7 @@ internal class StoreOrderService : IStoreOrderService
     private readonly IShiprelayService _shiprelayService;
     private readonly IOrderService _orderService;
     private readonly LumStoreContext _ctx;
+    private readonly IPaymentService _paymentService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public StoreOrderService(
@@ -26,13 +27,15 @@ internal class StoreOrderService : IStoreOrderService
         IShiprelayService shiprelayService,
         IOrderService orderService,
         LumStoreContext ctx,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IPaymentService paymentService)
     {
         _customerService = customerService;
         _shiprelayService = shiprelayService;
         _orderService = orderService;
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
+        _paymentService = paymentService;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -164,26 +167,26 @@ internal class StoreOrderService : IStoreOrderService
         // Call ShipRelay BEFORE saving — if it fails we do not create the order
         var shipmentDto = new ShiprelayCreateShipmentDTO
         {
-            OrderId           = 0,              // no DB ID yet
-            OrderRef          = orderCode,
+            OrderId = 0,              // no DB ID yet
+            OrderRef = orderCode,
             ShipmentTotalCost = total,
-            PackageRef        = 1,
+            PackageRef = 1,
             ShipmentCreatedAt = DateTimeOffset.UtcNow,
-            RecipientName     = user.FullName,
-            Email             = user.Email,
-            Phone             = address.Phone,
-            Address1          = address.Address,
-            Address2          = address.Details,
-            City              = address.City,
-            State             = address.State,
-            Zip               = string.Empty,
-            Country           = "US",
-            Notes             = request.Note,
-            Items             = orderItems.Select(i => new ShiprelayItemDTO
+            RecipientName = user.FullName,
+            Email = user.Email,
+            Phone = address.Phone,
+            Address1 = address.Address,
+            Address2 = address.Details,
+            City = address.City,
+            State = address.State,
+            Zip = string.Empty,
+            Country = "US",
+            Notes = request.Note,
+            Items = orderItems.Select(i => new ShiprelayItemDTO
             {
                 ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
-                Quantity  = i.Quantity,
-                Price     = i.UnitPrice
+                Quantity = i.Quantity,
+                Price = i.UnitPrice
             }).ToList()
         };
 
@@ -223,6 +226,8 @@ internal class StoreOrderService : IStoreOrderService
         _ctx.Orders.Add(order);
         await _ctx.SaveChangesAsync(ct);
 
+        var paymentUrl = await _paymentService.PaymentCheckoutAsync(new() { Order = order, SuccessUrl = request.SuccessUrl, CancelUrl = request.CancelUrl });
+
         // Log initial history
         _ctx.OrderHistories.Add(new OrderHistory
         {
@@ -251,7 +256,8 @@ internal class StoreOrderService : IStoreOrderService
             PaymentStatus = order.PaymentStatus.ToString().ToLower(),
             Total = order.Total,
             ItemCount = orderItems.Sum(i => i.Quantity),
-            CreatedAt = order.CreatedAt
+            CreatedAt = order.CreatedAt,
+            PaymentURL = paymentUrl
         }, ["Order placed and confirmed"]);
 
     }
