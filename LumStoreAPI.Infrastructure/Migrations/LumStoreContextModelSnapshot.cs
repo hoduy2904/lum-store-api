@@ -408,11 +408,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("ZipCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.HasIndex("UserId");
 
                     b.ToTable("CustomerAddresses");

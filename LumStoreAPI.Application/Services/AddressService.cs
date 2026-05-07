@@ -55,7 +55,6 @@ internal class AddressService : IAddressService
             Address = request.Address,
             City = request.City,
             State = request.State,
-            ZipCode = request.ZipCode,
             Details = request.Details,
             IsDefault = request.IsDefault,
         };
@@ -81,7 +80,6 @@ internal class AddressService : IAddressService
             a.Address = request.Address;
             a.City = request.City;
             a.State = request.State;
-            a.ZipCode = request.ZipCode;
             a.Details = request.Details;
             a.IsDefault = request.IsDefault;
         }, ct);
