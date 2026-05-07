@@ -20,6 +20,10 @@ public class AddressRequest
     [MaxLength(100)]
     public string State { get; set; } = default!;
 
+    [Required(ErrorMessage = "ZipCode is required.")]
+    [MaxLength(20)]
+    public string ZipCode { get; set; } = default!;
+
     [MaxLength(500)]
     public string? Details { get; set; }
 

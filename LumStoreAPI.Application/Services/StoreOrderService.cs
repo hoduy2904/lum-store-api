@@ -151,12 +151,43 @@ internal class StoreOrderService : IStoreOrderService
         if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
             taxRate = parsedRate;
 
-        // Get shipping threshold
-        decimal shippingFee = 9.99m;
-        var shippingSetting = await _ctx.SettingKeyValues
-            .FirstOrDefaultAsync(s => s.SettingCode == "Site.FreeShippingThreshold", ct);
-        if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var threshold))
-            if (subTotal >= threshold) shippingFee = 0;
+        // Tính shipping fee: ưu tiên giá từ ShipRelay rates, fallback về threshold setting
+        decimal shippingFee;
+        if (!string.IsNullOrEmpty(address.ZipCode))
+        {
+            var rateRequest = new ShiprelayRateRequestDTO
+            {
+                OrderId = 0,
+                RecipientName = user.FullName,
+                Address1 = address.Address,
+                Address2 = address.Details,
+                City = address.City,
+                Region = address.State,
+                Country = "US",
+                Zip = address.ZipCode,
+                Phone = address.Phone,
+                Email = user.Email,
+                Items = orderItems.Select(i => new ShiprelayItemDTO
+                {
+                    ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
+                    Quantity = i.Quantity,
+                    Price = i.UnitPrice
+                }).Where(i => i.ProductId > 0).ToList()
+            };
+
+            var rates = (await _shiprelayService.GetRatesAsync(rateRequest))?.ToList();
+            var selectedRate = rates?.FirstOrDefault(r => r.ServiceCode == request.ShippingServiceCode)
+                            ?? rates?.FirstOrDefault();
+            shippingFee = selectedRate?.TotalPrice ?? 9.99m;
+        }
+        else
+        {
+            shippingFee = 9.99m;
+            var shippingSetting = await _ctx.SettingKeyValues
+                .FirstOrDefaultAsync(s => s.SettingCode == "Site.FreeShippingThreshold", ct);
+            if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var threshold))
+                if (subTotal >= threshold) shippingFee = 0;
+        }
 
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
@@ -172,6 +203,7 @@ internal class StoreOrderService : IStoreOrderService
             ShipmentTotalCost = total,
             PackageRef = 1,
             ShipmentCreatedAt = DateTimeOffset.UtcNow,
+            ShippingSelectedRef = request.ShippingServiceCode,
             RecipientName = user.FullName,
             Email = user.Email,
             Phone = address.Phone,
@@ -179,7 +211,7 @@ internal class StoreOrderService : IStoreOrderService
             Address2 = address.Details,
             City = address.City,
             State = address.State,
-            Zip = string.Empty,
+            Zip = address.ZipCode ?? string.Empty,
             Country = "US",
             Notes = request.Note,
             Items = orderItems.Select(i => new ShiprelayItemDTO
@@ -207,7 +239,7 @@ internal class StoreOrderService : IStoreOrderService
             ShippingDetails = address.Details,
             ShippingCity = address.City,
             ShippingState = address.State,
-            ShippingZip = string.Empty,
+            ShippingZip = address.ZipCode ?? string.Empty,
             ShippingCountry = "US",
             CustomerNote = request.Note,
             SubTotal = subTotal,
@@ -438,22 +470,85 @@ internal class StoreOrderService : IStoreOrderService
         if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
             taxRate = parsedRate;
 
-        decimal shippingFee = 9.99m;
-        var shippingSetting = await _ctx.SettingKeyValues
-            .FirstOrDefaultAsync(s => s.SettingCode == "Site.FreeShippingThreshold", ct);
-        if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var threshold))
-            if (subTotal >= threshold) shippingFee = 0;
-
         var tax = Math.Round(subTotal * taxRate, 2);
+
+        // Gọi ShipRelay rates/calculate để lấy tùy chọn vận chuyển thực tế
+        IEnumerable<ShippingOptionDTO>? shippingOptions = null;
+        ShippingOptionDTO? selectedShipping = null;
+
+        var shiprelayItems = cartItems
+            .Select(c => new ShiprelayItemDTO
+            {
+                ProductId = variants.FirstOrDefault(v => v.ItemID == c.VariantId)?.ShiprelayId ?? 0,
+                Quantity = c.Quantity,
+                Price = (products.FirstOrDefault(p => p.NodeID == c.NodeId) is { } prod
+                    ? (prod.PriceDiscount > 0 ? prod.PriceDiscount : prod.Price)
+                    : 0m)
+            })
+            .Where(i => i.ProductId > 0)
+            .ToList();
+
+        if (shiprelayItems.Count > 0 && !string.IsNullOrEmpty(address.ZipCode))
+        {
+            var rateRequest = new ShiprelayRateRequestDTO
+            {
+                OrderId = 0,
+                RecipientName = address.Phone, // placeholder — name không cần thiết cho rates
+                Address1 = address.Address,
+                Address2 = address.Details,
+                City = address.City,
+                Region = address.State,
+                Country = "US",
+                Zip = address.ZipCode,
+                Phone = address.Phone,
+                Items = shiprelayItems
+            };
+
+            var rates = (await _shiprelayService.GetRatesAsync(rateRequest))?.ToList();
+            if (rates is { Count: > 0 })
+            {
+                shippingOptions = rates.Select(r => new ShippingOptionDTO
+                {
+                    ServiceCode = r.ServiceCode,
+                    ServiceName = r.ServiceName,
+                    Price = r.TotalPrice,
+                    Description = r.Description,
+                    Currency = r.Currency,
+                    MinDeliveryDate = r.MinDeliveryDate,
+                    MaxDeliveryDate = r.MaxDeliveryDate,
+                }).ToList();
+
+                selectedShipping = shippingOptions
+                    .FirstOrDefault(o => o.ServiceCode == request.ShippingServiceCode)
+                    ?? shippingOptions.First();
+            }
+        }
+
+        // Fallback nếu không lấy được rates từ ShipRelay
+        decimal shippingFee;
+        if (selectedShipping is not null)
+        {
+            shippingFee = selectedShipping.Price;
+        }
+        else
+        {
+            shippingFee = 9.99m;
+            var shippingSetting = await _ctx.SettingKeyValues
+                .FirstOrDefaultAsync(s => s.SettingCode == "Site.FreeShippingThreshold", ct);
+            if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var threshold))
+                if (subTotal >= threshold) shippingFee = 0;
+        }
+
         var total = subTotal + shippingFee + tax;
 
         return APIResponse<StoreCheckoutPreviewDTO>.Success(new StoreCheckoutPreviewDTO
         {
             Subtotal = subTotal,
-            ShippingFee = shippingFee,
             Tax = tax,
             Total = total,
             ItemCount = previewItems.Sum(i => i.Quantity),
+            SelectedShipping = selectedShipping,
+            ShippingOptions = shippingOptions,
             Items = previewItems
         });
     }

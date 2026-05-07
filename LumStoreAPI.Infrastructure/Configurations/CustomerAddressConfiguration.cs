@@ -12,6 +12,7 @@ public class CustomerAddressConfiguration : IEntityTypeConfiguration<CustomerAdd
         builder.Property(x => x.Address).HasMaxLength(300);
         builder.Property(x => x.City).HasMaxLength(100);
         builder.Property(x => x.State).HasMaxLength(100);
+        builder.Property(x => x.ZipCode).HasMaxLength(20);
         builder.Property(x => x.Phone).HasMaxLength(30);
     }
 }
