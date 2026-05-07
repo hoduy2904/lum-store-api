@@ -57,6 +57,8 @@ internal class AddressService : IAddressService
             State = request.State,
             Details = request.Details,
             IsDefault = request.IsDefault,
+            Country = request.Country,
+            ZipCode = request.ZipCode
         };
 
         var created = await _repo.InsertAsync(address, ct);
@@ -82,6 +84,8 @@ internal class AddressService : IAddressService
             a.State = request.State;
             a.Details = request.Details;
             a.IsDefault = request.IsDefault;
+            a.Country = request.Country;
+            a.ZipCode = request.ZipCode;
         }, ct);
 
         // If promoted to default, demote all others.

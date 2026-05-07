@@ -10,6 +10,8 @@ public class AddressDTO
     public string City { get; set; } = default!;
     public string State { get; set; } = default!;
     public string Details { get; set; } = string.Empty;
+    public string Country { get; set; } = default!;
+    public string ZipCode { get; set; } = default!;
     public bool IsDefault { get; set; }
 
     public AddressDTO(CustomerAddress a)
@@ -21,5 +23,7 @@ public class AddressDTO
         State = a.State;
         Details = a.Details ?? string.Empty;
         IsDefault = a.IsDefault;
+        Country = a.Country;
+        ZipCode = a.ZipCode;
     }
 }

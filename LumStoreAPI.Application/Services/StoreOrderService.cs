@@ -8,6 +8,8 @@ using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Extensions;
 using LumStoreAPI.Libraries.Helpers;
+using LumStoreAPI.SDK.Shiprelay.Interfaces;
+using LumStoreAPI.SDK.Shiprelay.Models.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +23,7 @@ internal class StoreOrderService : IStoreOrderService
     private readonly LumStoreContext _ctx;
     private readonly IPaymentService _paymentService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IShiprelayRateService _shiprelayRateService;
 
     public StoreOrderService(
         ICustomerService customerService,
@@ -28,7 +31,8 @@ internal class StoreOrderService : IStoreOrderService
         IOrderService orderService,
         LumStoreContext ctx,
         IHttpContextAccessor httpContextAccessor,
-        IPaymentService paymentService)
+        IPaymentService paymentService,
+        IShiprelayRateService shiprelayRateService)
     {
         _customerService = customerService;
         _shiprelayService = shiprelayService;
@@ -36,6 +40,7 @@ internal class StoreOrderService : IStoreOrderService
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
         _paymentService = paymentService;
+        _shiprelayRateService = shiprelayRateService;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -226,7 +231,31 @@ internal class StoreOrderService : IStoreOrderService
         _ctx.Orders.Add(order);
         await _ctx.SaveChangesAsync(ct);
 
-        var paymentUrl = await _paymentService.PaymentCheckoutAsync(new() { Order = order, SuccessUrl = request.SuccessUrl, CancelUrl = request.CancelUrl });
+        var rateRequest = new RateRequest()
+        {
+            Destination = new RateDestination
+            {
+                Address1 = address.Address,
+                City = address.City,
+                Region = address.State,
+                Country = "US",
+                Name = address.User.FullName,
+                Phone = address.Phone,
+                Zip = address.ZipCode,
+                Email = address.User.Email
+            },
+            Items = orderItems.Select(x => new RateOrderItem()
+            {
+                Price = x.UnitPrice,
+                Quantity = x.Quantity,
+                ProductId = x.ProductId,
+            })
+        };
+        var rate = await _shiprelayRateService.GetRates(rateRequest);
+
+        shippingFee = rate.Data.FirstOrDefault(x => x.ServiceCode.Equals(request.ShippingServiceCode))?.TotalPrice ?? 0;
+
+        var paymentUrl = await _paymentService.PaymentCheckoutAsync(new() { Order = order, SuccessUrl = request.SuccessUrl, CancelUrl = request.CancelUrl, ShippingFee = shippingFee });
 
         // Log initial history
         _ctx.OrderHistories.Add(new OrderHistory
@@ -374,6 +403,8 @@ internal class StoreOrderService : IStoreOrderService
             return APIResponse<StoreCheckoutPreviewDTO>.Failure("Cart is empty");
 
         var address = await _ctx.CustomerAddresses
+            .Include(x => x.User)
+            .AsNoTrackingWithIdentityResolution()
             .FirstOrDefaultAsync(a => a.ItemID == request.AddressId && a.UserId == userId, ct);
 
         if (address is null)
@@ -408,6 +439,8 @@ internal class StoreOrderService : IStoreOrderService
                 ? variants.FirstOrDefault(v => v.ItemID == cartItem.VariantId)
                 : null;
 
+            if (variant == null) continue;
+
             var unitPrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
             var lineTotal = unitPrice * cartItem.Quantity;
             subTotal += lineTotal;
@@ -425,7 +458,8 @@ internal class StoreOrderService : IStoreOrderService
                 Image = imageUrl,
                 UnitPrice = unitPrice,
                 Quantity = cartItem.Quantity,
-                LineTotal = lineTotal
+                LineTotal = lineTotal,
+                ProductId = variant!.ShiprelayId
             });
         }
 
@@ -438,12 +472,29 @@ internal class StoreOrderService : IStoreOrderService
         if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
             taxRate = parsedRate;
 
-        decimal shippingFee = 9.99m;
-        var shippingSetting = await _ctx.SettingKeyValues
-            .FirstOrDefaultAsync(s => s.SettingCode == "Site.FreeShippingThreshold", ct);
-        if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var threshold))
-            if (subTotal >= threshold) shippingFee = 0;
+        var rateRequest = new RateRequest()
+        {
+            Destination = new RateDestination
+            {
+                Address1 = address.Address,
+                City = address.City,
+                Region = address.State,
+                Country = "US",
+                Name = address.User.FullName,
+                Phone = address.Phone,
+                Zip = address.ZipCode,
+                Email = address.User.Email
+            },
+            Items = previewItems.Select(x => new RateOrderItem()
+            {
+                Price = x.UnitPrice,
+                Quantity = x.Quantity,
+                ProductId = x.ProductId,
+            })
+        };
 
+        decimal shippingFee = 0;
+        var rates = (await _shiprelayRateService.GetRates(rateRequest)).Data;
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
 
@@ -454,7 +505,8 @@ internal class StoreOrderService : IStoreOrderService
             Tax = tax,
             Total = total,
             ItemCount = previewItems.Sum(i => i.Quantity),
-            Items = previewItems
+            Items = previewItems,
+            Rates = rates
         });
     }
 

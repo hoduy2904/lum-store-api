@@ -24,6 +24,7 @@ public static class SDKConfiguration
 
             services.AddSingleton<IShiprelayAuthService, ShiprelayAuthService>();
             services.AddSingleton<IShiprelayProductService, ShiprelayProductService>();
+            services.AddSingleton<IShiprelayRateService, ShiprelayRateService>();
             services.AddSingleton<IStripeClient>(s =>
             {
                 using var scope = s.CreateScope();
