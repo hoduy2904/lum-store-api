@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.CustomerDTO;
+using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -18,7 +19,7 @@ public class CustomerController : ControllerBase
 
     // ── Profiles ──────────────────────────────────────────────────────────
 
-    /// <summary>GET /api/customers — Paginated customer list.</summary>
+    /// <summary>GET /api/customers — Paginated customer list. Supports ?limit= and ?tier= (string, "all" = no filter).</summary>
     [HttpGet]
     public async Task<IActionResult> GetCustomers([FromQuery] CustomerListRequest request)
     {
@@ -26,13 +27,20 @@ public class CustomerController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>GET /api/customers/{profileId}</summary>
-    [HttpGet("{profileId:int}")]
-    public async Task<IActionResult> GetCustomer(int profileId)
+    /// <summary>GET /api/customers/stats — must be declared before /{profileId:int} to avoid route conflict.</summary>
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats()
     {
-        var customer = await _customerService.GetCustomerAsync(profileId);
-        if (customer == null) return NotFound(APIResponseBase.Failure("NOT_FOUND", ["Customer not found"]));
-        return Ok(APIResponse<CustomerGetDTO>.Success(customer));
+        var stats = await _customerService.GetStatsAsync();
+        return Ok(APIResponse<CustomerStatsDTO>.Success(stats));
+    }
+
+    /// <summary>GET /api/customers/tiers — must be declared before /{profileId:int}.</summary>
+    [HttpGet("tiers")]
+    public async Task<IActionResult> GetTiers()
+    {
+        var tiers = await _customerService.GetTiersAsync();
+        return Ok(APIResponse<IEnumerable<CustomerTierGetDTO>>.Success(tiers));
     }
 
     /// <summary>GET /api/customers/by-user/{userId}</summary>
@@ -44,22 +52,21 @@ public class CustomerController : ControllerBase
         return Ok(APIResponse<CustomerGetDTO>.Success(customer));
     }
 
-    /// <summary>PUT /api/customers/{profileId} — Update customer profile.</summary>
+    /// <summary>GET /api/customers/{profileId}</summary>
+    [HttpGet("{profileId:int}")]
+    public async Task<IActionResult> GetCustomer(int profileId)
+    {
+        var customer = await _customerService.GetCustomerAsync(profileId);
+        if (customer == null) return NotFound(APIResponseBase.Failure("NOT_FOUND", ["Customer not found"]));
+        return Ok(APIResponse<CustomerGetDTO>.Success(customer));
+    }
+
+    /// <summary>PUT /api/customers/{profileId} — Update name, phone, birthday, or manually override tier.</summary>
     [HttpPut("{profileId:int}")]
     public async Task<IActionResult> UpdateProfile(int profileId, [FromBody] CustomerUpdateDTO dto)
     {
         var updated = await _customerService.UpdateProfileAsync(profileId, dto);
         return Ok(APIResponse<CustomerGetDTO>.Success(updated, ["Profile updated"]));
-    }
-
-    // ── Stats ─────────────────────────────────────────────────────────────
-
-    /// <summary>GET /api/customers/stats</summary>
-    [HttpGet("stats")]
-    public async Task<IActionResult> GetStats()
-    {
-        var stats = await _customerService.GetStatsAsync();
-        return Ok(APIResponse<CustomerStatsDTO>.Success(stats));
     }
 
     // ── Notes ─────────────────────────────────────────────────────────────
@@ -72,7 +79,7 @@ public class CustomerController : ControllerBase
         return Ok(APIResponse<IEnumerable<CustomerNoteGetDTO>>.Success(notes));
     }
 
-    /// <summary>POST /api/customers/{profileId}/notes</summary>
+    /// <summary>POST /api/customers/{profileId}/notes — body: { "content": string }</summary>
     [HttpPost("{profileId:int}/notes")]
     public async Task<IActionResult> AddNote(int profileId, [FromBody] CustomerNoteCreateDTO dto)
     {
@@ -100,38 +107,68 @@ public class CustomerController : ControllerBase
         return Ok(APIResponse<IEnumerable<LoyaltyPointGetDTO>>.Success(points));
     }
 
-    /// <summary>POST /api/customers/{profileId}/points/award</summary>
+    /// <summary>POST /api/customers/{profileId}/points/award — body: { "points": int, "reason": string }</summary>
     [HttpPost("{profileId:int}/points/award")]
     public async Task<IActionResult> AwardPoints(int profileId, [FromBody] AwardPointsDTO dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(APIResponseBase.Failure("VALIDATION_ERROR", ModelState.Values
+                .SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray()));
+
         await _customerService.AwardPointsAsync(profileId, dto.Points, dto.Description);
         return Ok(APIResponseBase.Success([$"{dto.Points} points awarded"]));
     }
 
-    /// <summary>POST /api/customers/{profileId}/points/redeem</summary>
+    /// <summary>POST /api/customers/{profileId}/points/redeem — body: { "points": int, "description": string }</summary>
     [HttpPost("{profileId:int}/points/redeem")]
-    public async Task<IActionResult> RedeemPoints(int profileId, [FromBody] AwardPointsDTO dto)
+    public async Task<IActionResult> RedeemPoints(int profileId, [FromBody] RedeemPointsDTO dto)
     {
-        await _customerService.RedeemPointsAsync(profileId, dto.Points, dto.Description);
-        return Ok(APIResponseBase.Success([$"{dto.Points} points redeemed"]));
+        if (!ModelState.IsValid)
+            return BadRequest(APIResponseBase.Failure("VALIDATION_ERROR", ModelState.Values
+                .SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray()));
+
+        try
+        {
+            await _customerService.RedeemPointsAsync(profileId, dto.Points, dto.Description);
+            return Ok(APIResponseBase.Success([$"{dto.Points} points redeemed"]));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(APIResponseBase.Failure("INSUFFICIENT_POINTS", [ex.Message]));
+        }
     }
 
     // ── Tiers ─────────────────────────────────────────────────────────────
 
-    /// <summary>GET /api/customers/tiers</summary>
-    [HttpGet("tiers")]
-    public async Task<IActionResult> GetTiers()
+    /// <summary>
+    /// PUT /api/customers/tiers — Upsert all tier configurations at once.
+    /// Accepts an array of TierConfig (4 items: Standard, Silver, Gold, VIP).
+    /// Validation: Standard.minPoints must be 0; minPoints must be strictly ascending.
+    /// </summary>
+    [HttpPut("tiers")]
+    public async Task<IActionResult> UpsertTiers([FromBody] List<CustomerTierUpsertDTO> dtos)
     {
-        var tiers = await _customerService.GetTiersAsync();
-        return Ok(APIResponse<IEnumerable<CustomerTierGetDTO>>.Success(tiers));
+        // Enforce ascending minPoints
+        var ordered = dtos.OrderBy(d => d.TierLevel).ToList();
+        for (int i = 1; i < ordered.Count; i++)
+        {
+            if (ordered[i].MinPoints <= ordered[i - 1].MinPoints)
+                return BadRequest(APIResponseBase.Failure("VALIDATION_ERROR",
+                    [$"MinPoints must be strictly ascending: {ordered[i].TierName} ({ordered[i].MinPoints}) must be greater than {ordered[i - 1].TierName} ({ordered[i - 1].MinPoints})"]));
+        }
+
+        var tiers = await _customerService.UpsertTiersAsync(dtos);
+        return Ok(APIResponse<IEnumerable<CustomerTierGetDTO>>.Success(tiers, ["Tiers saved"]));
     }
 
-    /// <summary>PUT /api/customers/tiers — Upsert a tier configuration.</summary>
-    [HttpPut("tiers")]
-    public async Task<IActionResult> UpsertTier([FromBody] CustomerTierUpsertDTO dto)
+    // ── Orders ────────────────────────────────────────────────────────────
+
+    /// <summary>GET /api/customers/{profileId}/orders — Orders for a specific customer.</summary>
+    [HttpGet("{profileId:int}/orders")]
+    public async Task<IActionResult> GetCustomerOrders(int profileId, [FromQuery] int page = 1, [FromQuery] int limit = 5)
     {
-        var tier = await _customerService.UpsertTierAsync(dto);
-        return Ok(APIResponse<CustomerTierGetDTO>.Success(tier, ["Tier saved"]));
+        var result = await _customerService.GetCustomerOrdersAsync(profileId, page, limit);
+        return Ok(result);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

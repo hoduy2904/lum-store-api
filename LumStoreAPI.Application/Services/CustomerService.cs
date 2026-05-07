@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.CustomerDTO;
+using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Customers;
@@ -12,11 +13,13 @@ namespace LumStoreAPI.Application.Services;
 public class CustomerService : ICustomerService
 {
     private readonly ICustomerRepository _customerRepo;
+    private readonly IOrderService _orderService;
     private readonly IEventLogService _eventLog;
 
-    public CustomerService(ICustomerRepository customerRepo, IEventLogService eventLog)
+    public CustomerService(ICustomerRepository customerRepo, IOrderService orderService, IEventLogService eventLog)
     {
         _customerRepo = customerRepo;
+        _orderService = orderService;
         _eventLog = eventLog;
     }
 
@@ -58,10 +61,18 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerGetDTO> UpdateProfileAsync(int profileId, CustomerUpdateDTO dto)
     {
+        // Update User's display name if provided
+        var profile = await _customerRepo.GetProfileAsync(profileId)
+            ?? throw new KeyNotFoundException($"CustomerProfile {profileId} not found");
+
+        if (dto.Name != null)
+            await _customerRepo.UpdateUserNameAsync(profile.UserId, dto.Name);
+
         var updated = await _customerRepo.UpdateProfileAsync(profileId, p =>
         {
             if (dto.Phone != null) p.Phone = dto.Phone;
             if (dto.Birthday.HasValue) p.Birthday = dto.Birthday;
+            if (dto.TierLevel.HasValue) p.TierLevel = dto.TierLevel.Value;
         });
         return MapToDTO(updated);
     }
@@ -180,10 +191,26 @@ public class CustomerService : ICustomerService
 
     // ── Tiers ─────────────────────────────────────────────────────────────
 
+    private static readonly CustomerTierGetDTO[] _defaultTiers =
+    [
+        new() { TierLevel = CustomerTierLevel.Standard, TierName = "Standard", MinPoints = 0,     IsActive = true },
+        new() { TierLevel = CustomerTierLevel.Silver,   TierName = "Silver",   MinPoints = 1000,  IsActive = true },
+        new() { TierLevel = CustomerTierLevel.Gold,     TierName = "Gold",     MinPoints = 5000,  IsActive = true },
+        new() { TierLevel = CustomerTierLevel.VIP,      TierName = "VIP",      MinPoints = 20000, IsActive = true },
+    ];
+
     public async Task<IEnumerable<CustomerTierGetDTO>> GetTiersAsync()
     {
-        var tiers = await _customerRepo.GetTiersAsync();
-        return tiers.Select(MapTierToDTO);
+        var tiers = (await _customerRepo.GetTiersAsync()).ToList();
+        return tiers.Count == 0 ? _defaultTiers : tiers.Select(MapTierToDTO);
+    }
+
+    public async Task<IEnumerable<CustomerTierGetDTO>> UpsertTiersAsync(IEnumerable<CustomerTierUpsertDTO> dtos)
+    {
+        var result = new List<CustomerTierGetDTO>();
+        foreach (var dto in dtos)
+            result.Add(await UpsertTierAsync(dto));
+        return result;
     }
 
     public async Task<CustomerTierGetDTO> UpsertTierAsync(CustomerTierUpsertDTO dto)
@@ -209,17 +236,32 @@ public class CustomerService : ICustomerService
     public async Task<CustomerStatsDTO> GetStatsAsync()
     {
         var total = await _customerRepo.CountCustomersAsync();
+        var newCount = await _customerRepo.CountNewCustomersAsync(30);
+        var activeCount = await _customerRepo.CountActiveCustomersAsync(90);
         var dist = await _customerRepo.GetTierDistributionAsync();
 
         return new CustomerStatsDTO
         {
             TotalCustomers = total,
-            StandardCustomers = dist.GetValueOrDefault(CustomerTierLevel.Standard),
-            SilverCustomers = dist.GetValueOrDefault(CustomerTierLevel.Silver),
-            GoldCustomers = dist.GetValueOrDefault(CustomerTierLevel.Gold),
-            VipCustomers = dist.GetValueOrDefault(CustomerTierLevel.VIP)
+            NewCustomers = newCount,
+            ActiveCustomers = activeCount,
+            TierBreakdown = new TierBreakdownDTO
+            {
+                Standard = dist.GetValueOrDefault(CustomerTierLevel.Standard),
+                Silver   = dist.GetValueOrDefault(CustomerTierLevel.Silver),
+                Gold     = dist.GetValueOrDefault(CustomerTierLevel.Gold),
+                VIP      = dist.GetValueOrDefault(CustomerTierLevel.VIP)
+            }
         };
     }
+
+    public Task<PagedResponse<OrderGetDTO>> GetCustomerOrdersAsync(int profileId, int page, int pageSize)
+        => _orderService.GetOrdersAsync(new OrderListRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            CustomerId = profileId
+        });
 
     // ── Mappers ───────────────────────────────────────────────────────────
 

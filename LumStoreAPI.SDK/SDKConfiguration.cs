@@ -28,7 +28,7 @@ public static class SDKConfiguration
             {
                 using var scope = s.CreateScope();
                 var config = scope.ServiceProvider.GetRequiredService<IIntegrationConfigRepository>().GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Payment).GetAwaiter().GetResult();
-                return new StripeClient(config?.ApiSecret ?? "");
+                return new StripeClient(config?.ApiSecret ?? "sk_not_configured");
             });
             return services;
         }
