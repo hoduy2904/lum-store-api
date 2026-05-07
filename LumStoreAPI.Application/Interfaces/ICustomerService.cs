@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.CustomerDTO;
+using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Core.Models.Enums;
 
@@ -26,6 +27,10 @@ public interface ICustomerService
     // ── Tiers ─────────────────────────────────────────────────────────────
     Task<IEnumerable<CustomerTierGetDTO>> GetTiersAsync();
     Task<CustomerTierGetDTO> UpsertTierAsync(CustomerTierUpsertDTO dto);
+    Task<IEnumerable<CustomerTierGetDTO>> UpsertTiersAsync(IEnumerable<CustomerTierUpsertDTO> dtos);
+
+    // ── Orders ────────────────────────────────────────────────────────────
+    Task<PagedResponse<OrderGetDTO>> GetCustomerOrdersAsync(int profileId, int page, int pageSize);
 
     // ── Stats ─────────────────────────────────────────────────────────────
     Task<CustomerStatsDTO> GetStatsAsync();

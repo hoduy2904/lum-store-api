@@ -1,4 +1,5 @@
 using LumStoreAPI.Core.Entities.Customers;
+using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
@@ -64,7 +65,9 @@ internal class CustomerRepository : ICustomerRepository
 
     public async Task<CustomerProfile> UpdateProfileAsync(int profileId, Action<CustomerProfile> update)
     {
-        var profile = await _ctx.CustomerProfiles.FindAsync(profileId)
+        var profile = await _ctx.CustomerProfiles
+            .Include(p => p.User)
+            .FirstOrDefaultAsync(p => p.ItemID == profileId)
             ?? throw new KeyNotFoundException($"CustomerProfile {profileId} not found");
         update(profile);
         await _ctx.SaveChangesAsync();
@@ -150,6 +153,22 @@ internal class CustomerRepository : ICustomerRepository
     public Task<int> CountCustomersAsync()
         => _ctx.CustomerProfiles.CountAsync();
 
+    public Task<int> CountNewCustomersAsync(int days)
+    {
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-days);
+        return _ctx.CustomerProfiles.CountAsync(p => p.CreatedAt >= cutoff);
+    }
+
+    public async Task<int> CountActiveCustomersAsync(int days)
+    {
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-days);
+        return await _ctx.Orders
+            .Where(o => o.CreatedAt >= cutoff && o.CustomerId.HasValue)
+            .Select(o => o.CustomerId!.Value)
+            .Distinct()
+            .CountAsync();
+    }
+
     public async Task<Dictionary<CustomerTierLevel, int>> GetTierDistributionAsync()
     {
         var rows = await _ctx.CustomerProfiles
@@ -157,5 +176,20 @@ internal class CustomerRepository : ICustomerRepository
             .Select(g => new { Level = g.Key, Count = g.Count() })
             .ToListAsync();
         return rows.ToDictionary(r => r.Level, r => r.Count);
+    }
+
+    // ── User helpers ───────────────────────────────────────────────────────
+
+    public async Task UpdateUserNameAsync(int userId, string fullName)
+    {
+        var user = await _ctx.Users.FindAsync(userId);
+        if (user == null) return;
+
+        var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        user.FirstName = parts.Length >= 1 ? parts[0] : user.FirstName;
+        user.LastName   = parts.Length >= 2 ? parts[^1] : string.Empty;
+        user.MiddleName = parts.Length >= 3 ? string.Join(" ", parts[1..^1]) : null;
+
+        await _ctx.SaveChangesAsync();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Core.Entities.Base;
+using LumStoreAPI.Core.Entities.Contact;
 using LumStoreAPI.Core.Entities.Customers;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Entities.DocumentTypes;
@@ -69,6 +70,9 @@ namespace LumStoreAPI.Infrastructure
 
         // ── Cart ───────────────────────────────────────────────────────────────
         public DbSet<UserCart> UserCarts { get; set; }
+
+        // ── Contact ────────────────────────────────────────────────────────────
+        public DbSet<ContactMessage> ContactMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

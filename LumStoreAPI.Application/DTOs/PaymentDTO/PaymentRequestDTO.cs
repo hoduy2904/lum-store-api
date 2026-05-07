@@ -7,5 +7,6 @@ namespace LumStoreAPI.Application.DTOs.PaymentDTO
         public required Order Order { get; set; }
         public string SuccessUrl { get; set; } = default!;
         public string? CancelUrl { get; set; }
+        public decimal ShippingFee { get; set; }
     }
 }

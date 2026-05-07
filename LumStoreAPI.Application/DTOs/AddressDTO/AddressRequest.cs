@@ -19,6 +19,12 @@ public class AddressRequest
     [Required(ErrorMessage = "State is required.")]
     [MaxLength(100)]
     public string State { get; set; } = default!;
+    [MinLength(2)]
+    [MaxLength(4)]
+    public string Country { get; set; } = default!;
+    [MinLength(3)]
+    [MaxLength(10)]
+    public string ZipCode { get; set; } = default!;
 
     [MaxLength(500)]
     public string? Details { get; set; }

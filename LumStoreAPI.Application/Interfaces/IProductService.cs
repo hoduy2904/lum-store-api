@@ -35,4 +35,10 @@ public interface IProductService
     /// Each item carries the best-matching variant (highest stock). Stable order: isBestSeller DESC, stock DESC, nodeId ASC.
     /// </summary>
     Task<IPagedEnumerable<ProductByColorItemDTO>> GetProductsByColorAsync(string color, int page, int pageSize);
+
+    /// <summary>
+    /// Up to <paramref name="limit"/> published products in the same category as the given product alias,
+    /// excluding the product itself. Order: isBestSeller DESC, NodeOrder ASC.
+    /// </summary>
+    Task<IEnumerable<DocumentClientGetDTO>> GetRelatedProductsAsync(string nodeAlias, int limit);
 }

@@ -34,5 +34,10 @@ public interface ICustomerRepository
 
     // ── Stats ─────────────────────────────────────────────────────────────
     Task<int> CountCustomersAsync();
+    Task<int> CountNewCustomersAsync(int days);
+    Task<int> CountActiveCustomersAsync(int days);
     Task<Dictionary<CustomerTierLevel, int>> GetTierDistributionAsync();
+
+    // ── User helpers ───────────────────────────────────────────────────────
+    Task UpdateUserNameAsync(int userId, string fullName);
 }
