@@ -34,6 +34,7 @@ public interface IOrderRepository
     // ── Returns ───────────────────────────────────────────────────────────
     Task<IEnumerable<OrderReturn>> GetOrderReturnsAsync(int orderId);
     Task<OrderReturn?> GetOrderReturnAsync(int returnId);
+    Task<IPagedEnumerable<OrderReturn>> GetAllReturnsAsync(int page, int pageSize, ReturnStatus? status, string? search);
     Task<OrderReturn> InsertOrderReturnAsync(OrderReturn orderReturn);
     Task<OrderReturn> UpdateOrderReturnAsync(int returnId, Action<OrderReturn> update);
 

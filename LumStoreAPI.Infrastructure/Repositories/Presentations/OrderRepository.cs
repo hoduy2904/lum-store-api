@@ -133,14 +133,45 @@ internal class OrderRepository : IOrderRepository
     public Task<IEnumerable<OrderReturn>> GetOrderReturnsAsync(int orderId)
         => Task.FromResult<IEnumerable<OrderReturn>>(
             _ctx.OrderReturns
+                .Include(r => r.Order)
+                .Include(r => r.ReviewedBy)
                 .Include(r => r.ReturnItems)
+                    .ThenInclude(ri => ri.OrderItem)
                 .Where(r => r.OrderId == orderId)
                 .AsEnumerable());
 
     public Task<OrderReturn?> GetOrderReturnAsync(int returnId)
         => _ctx.OrderReturns
+               .Include(r => r.Order)
+               .Include(r => r.ReviewedBy)
                .Include(r => r.ReturnItems)
+                   .ThenInclude(ri => ri.OrderItem)
                .FirstOrDefaultAsync(r => r.ItemID == returnId);
+
+    public async Task<IPagedEnumerable<OrderReturn>> GetAllReturnsAsync(int page, int pageSize, ReturnStatus? status, string? search)
+    {
+        IQueryable<OrderReturn> query = _ctx.OrderReturns
+            .Include(r => r.Order)
+            .Include(r => r.ReviewedBy)
+            .Include(r => r.ReturnItems)
+                .ThenInclude(ri => ri.OrderItem);
+
+        if (status.HasValue) query = query.Where(r => r.Status == status.Value);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim().ToLower();
+            query = query.Where(r =>
+                r.Order.OrderCode.ToLower().Contains(search) ||
+                r.Order.CustomerName.ToLower().Contains(search) ||
+                r.Order.CustomerEmail.ToLower().Contains(search));
+        }
+
+        query = query.OrderByDescending(r => r.CreatedAt);
+
+        int total = await query.CountAsync();
+        var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync();
+        return new PagedEnumerable<OrderReturn>(data, total);
+    }
 
     public async Task<OrderReturn> InsertOrderReturnAsync(OrderReturn orderReturn)
     {

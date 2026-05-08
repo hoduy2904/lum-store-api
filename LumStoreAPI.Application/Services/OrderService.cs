@@ -212,6 +212,13 @@ public class OrderService : IOrderService
         return ret == null ? null : MapReturnToDTO(ret);
     }
 
+    public async Task<PagedResponse<OrderReturnGetDTO>> GetAllReturnsAsync(int page, int pageSize, ReturnStatus? status, string? search)
+    {
+        var paged = await _orderRepo.GetAllReturnsAsync(page, pageSize, status, search);
+        var dtos = paged.Select(MapReturnToDTO).ToList().AsPagedEnumerable(paged.TotalRecords);
+        return PagedResponse<OrderReturnGetDTO>.Success(dtos, page, pageSize);
+    }
+
     public async Task<OrderReturnGetDTO> CreateReturnAsync(int orderId, OrderReturnCreateDTO dto)
     {
         var order = await _orderRepo.GetOrderAsync(orderId)
