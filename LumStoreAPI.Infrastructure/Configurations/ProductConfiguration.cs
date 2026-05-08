@@ -41,9 +41,9 @@ namespace LumStoreAPI.Infrastructure.Configurations
                 .HasMaxLength(500)
                 .Metadata.SetValueComparer(stringArrayComparer);
 
-            // ProductVariant.ProductID stores DocumentNode.NodeID (not PageID).
-            // No EF FK constraint — integrity is enforced at the application layer.
-            builder.Ignore(x => x.ProductVariants);
+            builder.HasMany(x => x.ProductVariants)
+                .WithOne(x => x.Product)
+                .HasForeignKey(x => x.ProductID);
         }
     }
 }

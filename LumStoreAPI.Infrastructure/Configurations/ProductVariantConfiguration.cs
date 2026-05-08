@@ -15,10 +15,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
             builder.HasIndex(x => x.SKU).IsUnique();
 
-            // ProductVariant.ProductID stores DocumentNode.NodeID (not Product.PageID).
-            // No EF FK constraint — integrity is enforced at the application layer.
-            builder.Ignore(x => x.Product);
-
             builder.Property(x => x.SKU)
                 .HasMaxLength(30);
 
@@ -34,6 +30,10 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.Property(x => x.Images)
                 .HasConversion(ConverterHelper.ArrayGuidConverter(','))
                 .Metadata.SetValueComparer(ValueCompareHelper.GUIDArrayCompare);
+
+            builder.HasOne(x => x.Product)
+                .WithMany(x => x.ProductVariants)
+                .HasForeignKey(x => x.ProductID);
         }
     }
 }
