@@ -100,14 +100,24 @@ namespace LumStoreAPI.ClientControllers
         public async Task<IActionResult> Index(string? alias)
         {
             alias = HttpUtility.UrlDecode(alias);
-            var node = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
+            var node = (await Task.WhenAll((await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
                 query
                     .Where(x => string.IsNullOrEmpty(alias) ? x.Node.NodeAlias.Equals(string.Empty) : x.Node.NodeAlias.Equals(alias))
                         .Published(Core.Models.Enums.TreeNodePublished.Published)
                         .OnlyPages()
                         .IncludeQueryable(q => q.Take(1));
-            })).Select(x => new DocumentClientGetDTO(x)).FirstOrDefault();
+            })).Select(async x =>
+            {
+                var nodeClient = new DocumentClientGetDTO(x);
+                if (x.OgImage.Any())
+                {
+                    var images = await _mediaService.GetMediaItemsAsync(x.OgImage);
+                    nodeClient.Navigation.OgImage = images.Select(img => img.FileURL).ToArray();
+                }
+                return nodeClient;
+
+            }))).FirstOrDefault();
 
             if (node is null || !node.IsPublished)
             {

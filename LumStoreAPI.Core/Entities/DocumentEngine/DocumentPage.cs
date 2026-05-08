@@ -25,6 +25,10 @@ namespace LumStoreAPI.Core.Entities.DocumentEngine
         [NotMapped]
         public bool IsPublished => (this.PublishedFrom == null || this.PublishedFrom <= DateTime.UtcNow) && (this.PublishedTo == null || this.PublishedTo > DateTime.UtcNow);
         public WidgetData<object>[] DocumentPageWidgets { get; set; } = [];
+        public bool IsEnableNavigation { get; set; }
+        public string? OgTitle { get; set; }
+        public string? OgDescription { get; set; }
+        public Guid[] OgImage { get; set; } = [];
 
         public virtual DocumentNode Node { get; set; } = default!;
 

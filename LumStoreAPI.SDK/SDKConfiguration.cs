@@ -34,12 +34,4 @@ public static class SDKConfiguration
             return services;
         }
     }
-
-    extension(IConfiguration configuration)
-    {
-        public void SDKConfigure()
-        {
-            ShiprelayConfig.Configure(configuration.GetSection("Shiprelay"));
-        }
-    }
 }
