@@ -10,6 +10,8 @@ public class CustomerAddress : BaseClassItem
     public string Address { get; set; } = default!;
     public string City { get; set; } = default!;
     public string State { get; set; } = default!;
+    public string Country { get; set; } = default!;
+    public string ZipCode { get; set; } = default!;
     public string? Details { get; set; }
     public bool IsDefault { get; set; }
     public virtual User User { get; set; } = default!;

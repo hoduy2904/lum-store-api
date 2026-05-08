@@ -1,3 +1,5 @@
+using LumStoreAPI.SDK.Shiprelay.Models.Requests;
+
 namespace LumStoreAPI.Application.DTOs.StoreOrderDTO;
 
 public class StoreCheckoutPreviewDTO
@@ -8,10 +10,12 @@ public class StoreCheckoutPreviewDTO
     public decimal Total { get; set; }
     public int ItemCount { get; set; }
     public IEnumerable<StoreCheckoutPreviewItemDTO> Items { get; set; } = [];
+    public IEnumerable<RateOption> Rates { get; set; } = [];
 }
 
 public class StoreCheckoutPreviewItemDTO
 {
+    public int ProductId { get; set; }
     public int NodeId { get; set; }
     public string ProductName { get; set; } = default!;
     public string? VariantName { get; set; }

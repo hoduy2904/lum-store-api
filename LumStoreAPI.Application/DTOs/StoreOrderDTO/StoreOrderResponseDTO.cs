@@ -1,3 +1,5 @@
+using LumStoreAPI.SDK.Shiprelay.Models.Requests;
+
 namespace LumStoreAPI.Application.DTOs.StoreOrderDTO;
 
 public class StoreOrderSummaryDTO

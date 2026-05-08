@@ -11,6 +11,7 @@ public class StorePlaceOrderRequest
     public string? Note { get; set; }
     public string SuccessUrl { get; set; } = default!;
     public string? CancelUrl { get; set; }
+    public string ShippingServiceCode { get; set; } = default!;
 }
 
 public class StoreCheckoutPreviewRequest

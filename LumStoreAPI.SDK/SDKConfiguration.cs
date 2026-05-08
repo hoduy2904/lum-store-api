@@ -24,6 +24,7 @@ public static class SDKConfiguration
 
             services.AddSingleton<IShiprelayAuthService, ShiprelayAuthService>();
             services.AddSingleton<IShiprelayProductService, ShiprelayProductService>();
+            services.AddSingleton<IShiprelayRateService, ShiprelayRateService>();
             services.AddSingleton<IStripeClient>(s =>
             {
                 using var scope = s.CreateScope();
@@ -31,14 +32,6 @@ public static class SDKConfiguration
                 return new StripeClient(config?.ApiSecret ?? "sk_not_configured");
             });
             return services;
-        }
-    }
-
-    extension(IConfiguration configuration)
-    {
-        public void SDKConfigure()
-        {
-            ShiprelayConfig.Configure(configuration.GetSection("Shiprelay"));
         }
     }
 }
