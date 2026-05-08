@@ -19,6 +19,7 @@ public class DocumentClientBaseDTO
     public string NodeAlias { get; set; } = default!;
     public bool IsPublished { get; internal set; }
     public bool RequireAuthentication { get; set; }
+    public DocumentClientNavigationDTO Navigation { get; set; }
 
     [JsonIgnore]
     public IGenericFeatureQuery? FeatureQuery { get; set; }
@@ -41,6 +42,12 @@ public class DocumentClientBaseDTO
         this.NodeName = documentPage.Node?.NodeName ?? string.Empty;
         this.IsPublished = documentPage.IsPublished;
         this.RequireAuthentication = documentPage.RequireAuthentication;
+        this.Navigation = new DocumentClientNavigationDTO
+        {
+            IsEnable = documentPage.IsEnableNavigation,
+            OgDescription = documentPage.OgDescription,
+            OgTitle = documentPage.OgTitle,
+        };
 
     }
 }

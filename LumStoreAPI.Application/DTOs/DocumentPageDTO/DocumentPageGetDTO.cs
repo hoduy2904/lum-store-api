@@ -18,6 +18,7 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
         public int NodeOrder { get; set; }
         public string NodeAlias { get; set; } = default!;
         public bool RequireAuthentication { get; set; }
+        public DocumentPageNavigationDTO Navigation { get; set; }
         public DateTimeOffset? PublishedFrom { get; set; }
         public DateTimeOffset? PublishedTo { get; set; }
         public bool IsPublished => (PublishedFrom == null || PublishedFrom <= DateTime.UtcNow) && (PublishedTo == null || PublishedTo > DateTime.UtcNow);
@@ -38,6 +39,14 @@ namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
             this.PublishedTo = documentPage.PublishedTo;
             this.NodeName = documentPage.Node?.NodeName ?? string.Empty;
             this.DocumentPageWidgets = documentPage.DocumentPageWidgets;
+            this.Navigation = new DocumentPageNavigationDTO
+            {
+                IsEnable = documentPage.IsEnableNavigation,
+                OgDescription = documentPage.OgDescription,
+                OgImage = documentPage.OgImage,
+                OgTitle = documentPage.OgTitle
+
+            };
             var type = documentPage.GetType();
             foreach (var property in type.GetProperties(
                 System.Reflection.BindingFlags.Public |

@@ -1,5 +1,6 @@
 ﻿using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Models.Systems;
+using LumStoreAPI.Infrastructure.Helpers;
 using LumStoreAPI.Libraries.Extensions;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,14 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
             builder.Property(x => x.DocumentName)
                 .HasMaxLength(100);
+
+            builder.Property(x => x.OgTitle).HasMaxLength(100);
+            builder.Property(x => x.OgDescription).HasMaxLength(250);
+
+            builder.Property(x => x.OgImage)
+                .HasMaxLength(20)
+                .HasConversion(ConverterHelper.ArrayGuidConverter(','))
+                .Metadata.SetValueComparer(ValueCompareHelper.GUIDArrayCompare);
 
             builder.Property(x => x.DocumentPageWidgets)
             .HasConversion(converter);
