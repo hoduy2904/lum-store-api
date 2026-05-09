@@ -8,8 +8,6 @@ using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Extensions;
 using LumStoreAPI.Libraries.Helpers;
-using LumStoreAPI.SDK.Shiprelay.Interfaces;
-using LumStoreAPI.SDK.Shiprelay.Models.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +21,6 @@ internal class StoreOrderService : IStoreOrderService
     private readonly LumStoreContext _ctx;
     private readonly IPaymentService _paymentService;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IShiprelayRateService _shiprelayRateService;
 
     public StoreOrderService(
         ICustomerService customerService,
@@ -31,8 +28,7 @@ internal class StoreOrderService : IStoreOrderService
         IOrderService orderService,
         LumStoreContext ctx,
         IHttpContextAccessor httpContextAccessor,
-        IPaymentService paymentService,
-        IShiprelayRateService shiprelayRateService)
+        IPaymentService paymentService)
     {
         _customerService = customerService;
         _shiprelayService = shiprelayService;
@@ -40,7 +36,6 @@ internal class StoreOrderService : IStoreOrderService
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
         _paymentService = paymentService;
-        _shiprelayRateService = shiprelayRateService;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -184,7 +179,7 @@ internal class StoreOrderService : IStoreOrderService
             Address2 = address.Details,
             City = address.City,
             State = address.State,
-            Zip = string.Empty,
+            Zip = address.ZipCode,
             Country = "US",
             Notes = request.Note,
             Items = orderItems.Select(i => new ShiprelayItemDTO
@@ -212,7 +207,7 @@ internal class StoreOrderService : IStoreOrderService
             ShippingDetails = address.Details,
             ShippingCity = address.City,
             ShippingState = address.State,
-            ShippingZip = string.Empty,
+            ShippingZip = address.ZipCode,
             ShippingCountry = "US",
             CustomerNote = request.Note,
             SubTotal = subTotal,
@@ -231,29 +226,30 @@ internal class StoreOrderService : IStoreOrderService
         _ctx.Orders.Add(order);
         await _ctx.SaveChangesAsync(ct);
 
-        var rateRequest = new RateRequest()
+        var rateResults = await _shiprelayService.GetRatesAsync(new ShiprelayRateRequestDTO
         {
-            Destination = new RateDestination
+            OrderId = 0,
+            RecipientName = user.FullName,
+            Address1 = address.Address,
+            City = address.City,
+            Region = address.State ?? string.Empty,
+            Country = "US",
+            Zip = address.ZipCode,
+            Phone = address.Phone,
+            Email = user.Email,
+            Items = orderItems.Select(x => new ShiprelayItemDTO
             {
-                Address1 = address.Address,
-                City = address.City,
-                Region = address.State,
-                Country = "US",
-                Name = address.User.FullName,
-                Phone = address.Phone,
-                Zip = address.ZipCode,
-                Email = address.User.Email
-            },
-            Items = orderItems.Select(x => new RateOrderItem()
-            {
-                Price = x.UnitPrice,
+                ProductId = variants.FirstOrDefault(v => v.ItemID == x.VariantId)?.ShiprelayId ?? 0,
                 Quantity = x.Quantity,
-                ProductId = x.ProductId,
-            })
-        };
-        var rate = await _shiprelayRateService.GetRates(rateRequest);
+                Price = x.UnitPrice
+            }).ToList()
+        });
 
-        shippingFee = rate.Data.FirstOrDefault(x => x.ServiceCode.Equals(request.ShippingServiceCode))?.TotalPrice ?? 0;
+        shippingFee = rateResults.FirstOrDefault(r => r.ServiceCode == request.ShippingServiceCode)?.TotalPrice ?? 0;
+
+        // Sync ShippingFee + Total in DB with the actual ShipRelay rate
+        order.ShippingFee = shippingFee;
+        order.Total = order.SubTotal + shippingFee + order.Tax;
 
         var paymentUrl = await _paymentService.PaymentCheckoutAsync(new() { Order = order, SuccessUrl = request.SuccessUrl, CancelUrl = request.CancelUrl, ShippingFee = shippingFee });
 
@@ -472,29 +468,25 @@ internal class StoreOrderService : IStoreOrderService
         if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
             taxRate = parsedRate;
 
-        var rateRequest = new RateRequest()
-        {
-            Destination = new RateDestination
-            {
-                Address1 = address.Address,
-                City = address.City,
-                Region = address.State,
-                Country = "US",
-                Name = address.User.FullName,
-                Phone = address.Phone,
-                Zip = address.ZipCode,
-                Email = address.User.Email
-            },
-            Items = previewItems.Select(x => new RateOrderItem()
-            {
-                Price = x.UnitPrice,
-                Quantity = x.Quantity,
-                ProductId = x.ProductId,
-            })
-        };
-
         decimal shippingFee = 0;
-        var rates = (await _shiprelayRateService.GetRates(rateRequest)).Data;
+        var rates = await _shiprelayService.GetRatesAsync(new ShiprelayRateRequestDTO
+        {
+            OrderId = 0,
+            RecipientName = address.User.FullName,
+            Address1 = address.Address,
+            City = address.City,
+            Region = address.State ?? string.Empty,
+            Country = "US",
+            Zip = address.ZipCode,
+            Phone = address.Phone,
+            Email = address.User.Email,
+            Items = previewItems.Select(x => new ShiprelayItemDTO
+            {
+                ProductId = x.ProductId,
+                Quantity = x.Quantity,
+                Price = x.UnitPrice
+            }).ToList()
+        });
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
 

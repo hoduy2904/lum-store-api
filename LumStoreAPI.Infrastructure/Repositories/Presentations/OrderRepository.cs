@@ -191,6 +191,16 @@ internal class OrderRepository : IOrderRepository
 
     // ── Stats ─────────────────────────────────────────────────────────────
 
+    public async Task<Dictionary<OrderStatus, int>> CountOrdersByStatusAsync()
+    {
+        var rows = await _ctx.Orders
+            .GroupBy(o => o.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        return rows.ToDictionary(r => r.Status, r => r.Count);
+    }
+
     public Task<int> CountOrdersAsync(OrderStatus? status = null, DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null)
     {
         IQueryable<Order> q = _ctx.Orders;

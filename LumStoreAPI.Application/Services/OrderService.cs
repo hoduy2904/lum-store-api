@@ -143,6 +143,45 @@ public class OrderService : IOrderService
         return MapToDTO(updated);
     }
 
+    public async Task<OrderGetDTO> UpdateOrderTrackingAsync(int orderId, OrderUpdateTrackingDTO dto, int? operatorUserId = null)
+    {
+        var order = await _orderRepo.GetOrderAsync(orderId)
+            ?? throw new KeyNotFoundException($"Order {orderId} not found");
+
+        var updated = await _orderRepo.UpdateOrderAsync(orderId, o =>
+        {
+            if (dto.TrackingNumber is not null) o.TrackingNumber = dto.TrackingNumber;
+            if (dto.TrackingUrl is not null) o.TrackingUrl = dto.TrackingUrl;
+            if (dto.ShippingCarrier is not null) o.ShippingCarrier = dto.ShippingCarrier;
+            if (dto.ShiprelayShipmentId is not null) o.ShiprelayShipmentId = dto.ShiprelayShipmentId;
+        });
+
+        await _orderRepo.InsertOrderHistoryAsync(new OrderHistory
+        {
+            OrderId = orderId,
+            ToStatus = order.Status,
+            Comment = $"Tracking updated: {dto.TrackingNumber ?? "—"} ({dto.ShippingCarrier ?? "—"})",
+            ChangedByUserId = operatorUserId,
+            IsSystemAction = false
+        });
+
+        await _eventLog.LogInformation("OrderService", "ORDER_TRACKING_UPDATED",
+            $"Order {order.OrderCode}: tracking updated by userId={operatorUserId}");
+
+        return MapToDTO(updated);
+    }
+
+    public async Task<ShiprelayTrackingResult?> GetOrderTrackingAsync(int orderId)
+    {
+        var order = await _orderRepo.GetOrderAsync(orderId)
+            ?? throw new KeyNotFoundException($"Order {orderId} not found");
+
+        if (string.IsNullOrEmpty(order.ShiprelayShipmentId))
+            return null;
+
+        return await _shiprelayService.GetTrackingAsync(order.ShiprelayShipmentId);
+    }
+
     public async Task<bool> DeleteOrderAsync(int orderId)
         => await _orderRepo.DeleteOrderAsync(orderId);
 

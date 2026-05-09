@@ -40,6 +40,7 @@ public interface IOrderRepository
 
     // ── Stats ─────────────────────────────────────────────────────────────
     Task<int> CountOrdersAsync(OrderStatus? status = null, DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null);
+    Task<Dictionary<OrderStatus, int>> CountOrdersByStatusAsync();
     Task<decimal> SumRevenueAsync(DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null);
     Task<IEnumerable<(DateTimeOffset Date, int Count, decimal Revenue)>> GetDailyStatsAsync(DateTimeOffset fromDate, DateTimeOffset toDate);
 }

@@ -181,7 +181,10 @@ public class ShiprelayService : IShiprelayService
                 TrackingNumber = GetString(result, "tracking_number"),
                 TrackingUrl = GetString(result, "tracking_url"),
                 Carrier = ExtractCarrierName(result),
-                Status = GetString(result, "status") ?? "unknown"
+                Status = GetString(result, "status") ?? "unknown",
+                StatusDescription = GetString(result, "status_description"),
+                EstimatedDelivery = result.TryGetProperty("estimated_delivery_date", out var edd) && edd.TryGetDateTimeOffset(out var ed) ? ed : null,
+                DeliveredAt = result.TryGetProperty("delivered_at", out var da) && da.TryGetDateTimeOffset(out var dat) ? dat : null
             };
         }
         catch (Exception ex)
@@ -454,6 +457,7 @@ public class ShiprelayService : IShiprelayService
             $"per_page={r.PerPage}"
         };
         if (!string.IsNullOrEmpty(r.SourceOrderId)) parts.Add($"source_order_id={Uri.EscapeDataString(r.SourceOrderId)}");
+        if (!string.IsNullOrEmpty(r.SourceShipmentId)) parts.Add($"source_shipment_id={Uri.EscapeDataString(r.SourceShipmentId)}");
         if (!string.IsNullOrEmpty(r.OrderRef)) parts.Add($"order_ref={Uri.EscapeDataString(r.OrderRef)}");
         if (!string.IsNullOrEmpty(r.Status)) parts.Add($"status={Uri.EscapeDataString(r.Status)}");
         if (!string.IsNullOrEmpty(r.TrackingNumber)) parts.Add($"tracking_number={Uri.EscapeDataString(r.TrackingNumber)}");
