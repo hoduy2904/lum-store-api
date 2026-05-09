@@ -6,6 +6,7 @@ using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Models.Constants.Systems;
+using LumStoreAPI.Core.Models.Controls;
 using LumStoreAPI.Libraries.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -128,6 +129,37 @@ namespace LumStoreAPI.ClientControllers
             {
                 node.Fields = await _mediator.Send(node.FeatureQuery);
             }
+
+            var breadcrumbs = await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
+            {
+                query.GetAncestors(node.NodeID)
+                .Where(x => !x.Node.ClassName.Equals(HomePage.CLASS_NAME))
+                .Select(x => new DocumentPage
+                {
+                    DocumentName = x.DocumentName,
+                    Node = new DocumentNode
+                    {
+                        RelativeUrl = x.Node.RelativeUrl
+                    }
+                });
+            });
+
+            node.Breadcrumbs = breadcrumbs.Select(x => new LinkControl
+            {
+                Name = x.DocumentName,
+                Url = x.Node.RelativeUrl,
+                Target = "_self"
+            }).Prepend(new LinkControl
+            {
+                Name = "Home",
+                Url = "/",
+                Target = "_self"
+            }).Append(new LinkControl
+            {
+                Name = node.DocumentName,
+                Url = "#",
+                Target = "_self"
+            });
 
             foreach (var x in node.DocumentPageWidgets)
             {
