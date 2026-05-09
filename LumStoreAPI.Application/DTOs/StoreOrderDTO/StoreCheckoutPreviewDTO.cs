@@ -1,4 +1,4 @@
-using LumStoreAPI.SDK.Shiprelay.Models.Requests;
+using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 
 namespace LumStoreAPI.Application.DTOs.StoreOrderDTO;
 
@@ -10,7 +10,7 @@ public class StoreCheckoutPreviewDTO
     public decimal Total { get; set; }
     public int ItemCount { get; set; }
     public IEnumerable<StoreCheckoutPreviewItemDTO> Items { get; set; } = [];
-    public IEnumerable<RateOption> Rates { get; set; } = [];
+    public IEnumerable<ShiprelayRateResult> Rates { get; set; } = [];
 }
 
 public class StoreCheckoutPreviewItemDTO

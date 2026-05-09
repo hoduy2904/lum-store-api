@@ -153,6 +153,7 @@ public class OrderService : IOrderService
             if (dto.TrackingNumber is not null) o.TrackingNumber = dto.TrackingNumber;
             if (dto.TrackingUrl is not null) o.TrackingUrl = dto.TrackingUrl;
             if (dto.ShippingCarrier is not null) o.ShippingCarrier = dto.ShippingCarrier;
+            if (dto.ShiprelayShipmentId is not null) o.ShiprelayShipmentId = dto.ShiprelayShipmentId;
         });
 
         await _orderRepo.InsertOrderHistoryAsync(new OrderHistory

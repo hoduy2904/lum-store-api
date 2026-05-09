@@ -85,6 +85,7 @@ public class ShiprelayGetShipmentsRequest
     public int Page { get; set; } = 1;
     public int PerPage { get; set; } = 20;
     public string? SourceOrderId { get; set; }
+    public string? SourceShipmentId { get; set; }
     public string? OrderRef { get; set; }
     public string? Status { get; set; }
     public string? TrackingNumber { get; set; }
@@ -154,6 +155,13 @@ public class ShiprelayWebhookPayload
     [JsonPropertyName("tracking_url")]       public string? TrackingUrl { get; set; }
     [JsonPropertyName("carrier")]            public string? Carrier { get; set; }
     [JsonPropertyName("service")]            public string? Service { get; set; }
+    [JsonPropertyName("warehouse")]          public ShiprelayWebhookWarehouse? Warehouse { get; set; }
+}
+
+public class ShiprelayWebhookWarehouse
+{
+    [JsonPropertyName("id")]   public int Id { get; set; }
+    [JsonPropertyName("name")] public string? Name { get; set; }
 }
 
 // ── Product / Inventory ───────────────────────────────────────────────────
