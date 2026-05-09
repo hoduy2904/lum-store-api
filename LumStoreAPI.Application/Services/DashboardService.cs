@@ -25,38 +25,31 @@ public class DashboardService : IDashboardService
         var today = DateTimeOffset.UtcNow.Date;
         var todayStart = new DateTimeOffset(today, TimeSpan.Zero);
 
-        var totalOrders = await _orderRepo.CountOrdersAsync();
-        var pendingOrders = await _orderRepo.CountOrdersAsync(OrderStatus.Pending);
-        var processingOrders = await _orderRepo.CountOrdersAsync(OrderStatus.Processing);
-        var totalRevenue = await _orderRepo.SumRevenueAsync();
-        var revenueToday = await _orderRepo.SumRevenueAsync(todayStart, todayStart.AddDays(1));
-        var totalProducts = await _ctx.Products.CountAsync();
-        var customerStats = await _customerRepo.GetTierDistributionAsync();
-        var totalCustomers = await _customerRepo.CountCustomersAsync();
-        var vipCustomers = customerStats.GetValueOrDefault(CustomerTierLevel.VIP);
+        var ordersByStatusTask = _orderRepo.CountOrdersByStatusAsync();
+        var totalRevenueTask = _orderRepo.SumRevenueAsync();
+        var revenueTodayTask = _orderRepo.SumRevenueAsync(todayStart, todayStart.AddDays(1));
+        var totalProductsTask = _ctx.Products.CountAsync();
+        var customerStatsTask = _customerRepo.GetTierDistributionAsync();
+        var totalCustomersTask = _customerRepo.CountCustomersAsync();
 
-        // Order breakdown by status
-        var ordersByStatus = new Dictionary<string, int>();
-        foreach (OrderStatus status in Enum.GetValues<OrderStatus>())
-        {
-            var count = await _orderRepo.CountOrdersAsync(status);
-            ordersByStatus[status.ToString()] = count;
-        }
+        await Task.WhenAll(ordersByStatusTask, totalRevenueTask, revenueTodayTask,
+            totalProductsTask, customerStatsTask, totalCustomersTask);
+
+        var ordersByStatus = ordersByStatusTask.Result;
+        var customerStats = customerStatsTask.Result;
 
         return new DashboardStatsDTO
         {
-            TotalOrders = totalOrders,
-            PendingOrders = pendingOrders,
-            ProcessingOrders = processingOrders,
-            TotalRevenue = totalRevenue,
-            RevenueToday = revenueToday,
-            TotalProducts = totalProducts,
-            TotalCustomers = totalCustomers,
-            VipCustomers = vipCustomers,
-            OrdersByStatus = ordersByStatus,
-            CustomersByTier = customerStats.ToDictionary(
-                k => k.Key.ToString(),
-                v => v.Value)
+            TotalOrders = ordersByStatus.Values.Sum(),
+            PendingOrders = ordersByStatus.GetValueOrDefault(OrderStatus.Pending),
+            ProcessingOrders = ordersByStatus.GetValueOrDefault(OrderStatus.Processing),
+            TotalRevenue = totalRevenueTask.Result,
+            RevenueToday = revenueTodayTask.Result,
+            TotalProducts = totalProductsTask.Result,
+            TotalCustomers = totalCustomersTask.Result,
+            VipCustomers = customerStats.GetValueOrDefault(CustomerTierLevel.VIP),
+            OrdersByStatus = ordersByStatus.ToDictionary(k => k.Key.ToString(), v => v.Value),
+            CustomersByTier = customerStats.ToDictionary(k => k.Key.ToString(), v => v.Value)
         };
     }
 
@@ -84,10 +77,10 @@ public class DashboardService : IDashboardService
                 new DateTimeOffset(now.Date, TimeSpan.Zero)
             ),
             "week" => (
-                new DateTimeOffset(now.Date.AddDays(-(int)now.DayOfWeek), TimeSpan.Zero),
-                new DateTimeOffset(now.Date.AddDays(7 - (int)now.DayOfWeek), TimeSpan.Zero),
-                new DateTimeOffset(now.Date.AddDays(-7 - (int)now.DayOfWeek), TimeSpan.Zero),
-                new DateTimeOffset(now.Date.AddDays(-(int)now.DayOfWeek), TimeSpan.Zero)
+                new DateTimeOffset(now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7)), TimeSpan.Zero),
+                new DateTimeOffset(now.Date.AddDays(7 - ((int)now.DayOfWeek + 6) % 7), TimeSpan.Zero),
+                new DateTimeOffset(now.Date.AddDays(-7 - ((int)now.DayOfWeek + 6) % 7), TimeSpan.Zero),
+                new DateTimeOffset(now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7)), TimeSpan.Zero)
             ),
             _ => (  // month
                 new DateTimeOffset(new DateTime(now.Year, now.Month, 1), TimeSpan.Zero),

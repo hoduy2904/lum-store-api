@@ -1,5 +1,6 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -62,6 +63,25 @@ public class OrderController : ControllerBase
         var operatorId = GetCurrentUserId();
         var updated = await _orderService.UpdateOrderStatusAsync(orderId, dto, operatorId);
         return Ok(APIResponse<OrderGetDTO>.Success(updated, ["Status updated"]));
+    }
+
+    /// <summary>GET /api/orders/{orderId}/tracking — Pull live tracking from ShipRelay.</summary>
+    [HttpGet("{orderId:int}/tracking")]
+    public async Task<IActionResult> GetTracking(int orderId)
+    {
+        var tracking = await _orderService.GetOrderTrackingAsync(orderId);
+        if (tracking == null)
+            return NotFound(APIResponseBase.Failure("NO_SHIPMENT", [$"Order {orderId} has no ShipRelay shipment linked"]));
+        return Ok(APIResponse<ShiprelayTrackingResult>.Success(tracking));
+    }
+
+    /// <summary>PATCH /api/orders/{orderId}/tracking — Manually update tracking fields.</summary>
+    [HttpPatch("{orderId:int}/tracking")]
+    public async Task<IActionResult> UpdateTracking(int orderId, [FromBody] OrderUpdateTrackingDTO dto)
+    {
+        var operatorId = GetCurrentUserId();
+        var updated = await _orderService.UpdateOrderTrackingAsync(orderId, dto, operatorId);
+        return Ok(APIResponse<OrderGetDTO>.Success(updated, ["Tracking updated"]));
     }
 
     /// <summary>DELETE /api/orders/{orderId}</summary>

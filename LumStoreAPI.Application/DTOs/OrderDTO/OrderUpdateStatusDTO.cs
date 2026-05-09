@@ -11,3 +11,15 @@ public class OrderUpdateStatusDTO
     [MaxLength(500)]
     public string? Comment { get; set; }
 }
+
+public class OrderUpdateTrackingDTO
+{
+    [MaxLength(200)]
+    public string? TrackingNumber { get; set; }
+
+    [MaxLength(500)]
+    public string? TrackingUrl { get; set; }
+
+    [MaxLength(100)]
+    public string? ShippingCarrier { get; set; }
+}

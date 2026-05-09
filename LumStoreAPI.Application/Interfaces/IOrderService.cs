@@ -1,5 +1,6 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
+using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Models.Enums;
 
@@ -12,6 +13,8 @@ public interface IOrderService
     Task<OrderGetDTO?> GetOrderByCodeAsync(string orderCode);
     Task<OrderGetDTO> CreateOrderAsync(OrderCreateDTO dto, int? operatorUserId = null);
     Task<OrderGetDTO> UpdateOrderStatusAsync(int orderId, OrderUpdateStatusDTO dto, int? operatorUserId = null);
+    Task<OrderGetDTO> UpdateOrderTrackingAsync(int orderId, OrderUpdateTrackingDTO dto, int? operatorUserId = null);
+    Task<ShiprelayTrackingResult?> GetOrderTrackingAsync(int orderId);
     Task<bool> DeleteOrderAsync(int orderId);
 
     // ── History ───────────────────────────────────────────────────────────
