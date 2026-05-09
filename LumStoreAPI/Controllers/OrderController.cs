@@ -1,6 +1,7 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -118,6 +119,18 @@ public class OrderController : ControllerBase
     {
         var returns = await _orderService.GetOrderReturnsAsync(orderId);
         return Ok(APIResponse<IEnumerable<OrderReturnGetDTO>>.Success(returns));
+    }
+
+    /// <summary>GET /api/orders/returns — Paginated list of all returns (admin).</summary>
+    [HttpGet("returns")]
+    public async Task<IActionResult> GetAllReturns(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] ReturnStatus? status = null,
+        [FromQuery] string? search = null)
+    {
+        var result = await _orderService.GetAllReturnsAsync(page, pageSize, status, search);
+        return Ok(result);
     }
 
     /// <summary>GET /api/orders/returns/{returnId}</summary>

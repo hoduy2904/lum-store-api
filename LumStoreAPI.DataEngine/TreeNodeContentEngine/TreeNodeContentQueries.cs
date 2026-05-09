@@ -13,7 +13,7 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             _query = _query
            .Join(_context.DocumentLinkedNodes,
            n => n.NodeID,
-           ln => ln.Descendant,
+           ln => ln.Ancestor,
            (n, ln) => new { n, ln }
            )
               .Where(x => x.ln.Descendant == nodeId && x.ln.Depth == level)
@@ -37,7 +37,7 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
             _query = _query
            .Join(_context.DocumentLinkedNodes,
            n => n.NodeID,
-           ln => ln.Descendant,
+           ln => ln.Ancestor,
            (n, ln) => new { n, ln }
            )
               .Where(x => x.ln.Descendant == nodeId && x.ln.Depth > 0)

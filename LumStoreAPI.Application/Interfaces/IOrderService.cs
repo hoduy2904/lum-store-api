@@ -25,6 +25,7 @@ public interface IOrderService
     // ── Returns ───────────────────────────────────────────────────────────
     Task<IEnumerable<OrderReturnGetDTO>> GetOrderReturnsAsync(int orderId);
     Task<OrderReturnGetDTO?> GetOrderReturnAsync(int returnId);
+    Task<PagedResponse<OrderReturnGetDTO>> GetAllReturnsAsync(int page, int pageSize, ReturnStatus? status, string? search);
     Task<OrderReturnGetDTO> CreateReturnAsync(int orderId, OrderReturnCreateDTO dto);
     Task<OrderReturnGetDTO> ReviewReturnAsync(int returnId, OrderReturnReviewDTO dto, int reviewerId, string reviewerName);
 }
