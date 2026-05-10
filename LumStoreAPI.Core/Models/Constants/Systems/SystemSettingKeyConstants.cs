@@ -8,4 +8,6 @@ public class SystemSettingKeyConstants
     public const string EMAIL_SETTINGS = "System.EmailSettings";
     public const string NOTIFICATION_SETTINGS = "System.NotificationSettings";
     public const string SYNC_CONFIG = "System.SyncConfig";
+    public const string MARQUEE_LIST = "System.MarqueeList";
+    public const string FOOTER_NAVIGATIONS = "System.FooterNavigations";
 }

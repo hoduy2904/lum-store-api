@@ -1,4 +1,5 @@
 ﻿using LumStoreAPI.Core.Models.Constants.Systems;
+using LumStoreAPI.Core.Models.Controls;
 using LumStoreAPI.Core.Models.Systems.SettingKeys;
 
 namespace LumStoreAPI.Libraries.Helpers
@@ -13,6 +14,8 @@ namespace LumStoreAPI.Libraries.Helpers
             {SystemSettingKeyConstants.EMAIL_SETTINGS, typeof(EmailSettings) },
             {SystemSettingKeyConstants.NOTIFICATION_SETTINGS, typeof(NotificationSettings) },
             {SystemSettingKeyConstants.SYNC_CONFIG, typeof(SyncConfig) },
+            {SystemSettingKeyConstants.MARQUEE_LIST, typeof(IEnumerable<LinkControl>)},
+            {SystemSettingKeyConstants.FOOTER_NAVIGATIONS, typeof(IEnumerable<LinkControl>)}
         };
 
 
