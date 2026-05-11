@@ -49,7 +49,7 @@ namespace LumStoreAPI.ClientControllers
                 .Where(x => classNameFilters.Contains(x.Node.ClassName));
             }, cache => cache.Dependencies(d => d.Children(generalSettings.FooterColumn).NodeOrder()).Key("footercolumns")))
             .MappingTree()
-            .Select(NavItem.From) : Enumerable.Empty<NavItem>();
+            .Select(x => NavItem.From(x, [])) : Enumerable.Empty<NavItem>();
 
             return Ok(APIResponse<SiteConfigViewModel>.Success(new SiteConfigViewModel(layoutSettings, keySettings, footerColumns, navigations)));
         }

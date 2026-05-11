@@ -27,8 +27,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "OgImage",
                 table: "DocumentPages",
-                type: "nvarchar(20)",
-                maxLength: 20,
+                type: "nvarchar(50)",
+                maxLength: 50,
                 nullable: false,
                 defaultValue: "");
 

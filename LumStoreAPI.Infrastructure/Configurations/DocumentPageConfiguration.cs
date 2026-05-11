@@ -44,7 +44,7 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.Property(x => x.OgDescription).HasMaxLength(250);
 
             builder.Property(x => x.OgImage)
-                .HasMaxLength(20)
+                .HasMaxLength(50)
                 .HasConversion(ConverterHelper.ArrayGuidConverter(','))
                 .Metadata.SetValueComparer(ValueCompareHelper.GUIDArrayCompare);
 
