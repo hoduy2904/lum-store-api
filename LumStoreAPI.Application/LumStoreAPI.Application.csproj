@@ -18,6 +18,7 @@
   <ItemGroup>
     <Folder Include="Converters/" />
     <Folder Include="DTOs/ProductDTO/" />
+    <Folder Include="Helpers/" />
     <Folder Include="Helpers\" />
   </ItemGroup>
 

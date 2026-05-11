@@ -2,6 +2,7 @@
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.DocumentPages;
 using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Systems;
 
 namespace LumStoreAPI.Core.Interfaces.Repositories
 {
