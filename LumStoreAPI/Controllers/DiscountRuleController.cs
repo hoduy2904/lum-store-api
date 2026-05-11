@@ -60,16 +60,15 @@ public class DiscountRuleController : ControllerBase
         return Ok(APIResponseBase.Success(["Rule deleted"]));
     }
 
-    /// <summary>GET /api/discount-rules/calculate?productId=&amp;variantId=&amp;unitPrice=&amp;quantity= — Preview discounted price.</summary>
+    /// <summary>GET /api/discount-rules/calculate?productId=&amp;unitPrice=&amp;quantity= — Preview discounted price.</summary>
     [HttpGet("calculate")]
     [AllowAnonymous]
     public async Task<IActionResult> Calculate(
         [FromQuery] int productId,
-        [FromQuery] int? variantId,
         [FromQuery] decimal unitPrice,
         [FromQuery] int quantity)
     {
-        var discounted = await _discountRuleService.CalculateDiscountedPriceAsync(productId, variantId, unitPrice, quantity);
+        var discounted = await _discountRuleService.CalculateDiscountedPriceAsync(productId, unitPrice, quantity);
         return Ok(APIResponse<object>.Success(new
         {
             UnitPrice = unitPrice,

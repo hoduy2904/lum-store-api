@@ -11,5 +11,5 @@ public interface IDiscountRuleService
     Task<bool> DeleteRuleAsync(int ruleId);
 
     /// <summary>Calculate the best discount price for a product + quantity combo.</summary>
-    Task<decimal> CalculateDiscountedPriceAsync(int productId, int? variantId, decimal unitPrice, int quantity);
+    Task<decimal> CalculateDiscountedPriceAsync(int productId, decimal unitPrice, int quantity);
 }

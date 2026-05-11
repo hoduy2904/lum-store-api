@@ -51,7 +51,7 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
         return true;
     }
 
-    public async Task<DiscountRule?> GetBestRuleAsync(int productId, int? variantId, int quantity)
+    public async Task<DiscountRule?> GetBestRuleAsync(int productId, int quantity)
     {
         var now = DateTimeOffset.UtcNow;
         return await _ctx.DiscountRules
@@ -59,10 +59,9 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
                         (r.StartDate == null || r.StartDate <= now) &&
                         (r.EndDate == null || r.EndDate >= now) &&
                         (r.ProductId == null || r.ProductId == productId) &&
-                        (r.VariantId == null || r.VariantId == variantId) &&
                         r.MinQuantity <= quantity &&
                         (r.MaxQuantity == null || r.MaxQuantity >= quantity))
-            .OrderByDescending(r => r.DiscountPercent + r.DiscountAmount)
+            .OrderByDescending(r => r.DiscountAmount)
             .FirstOrDefaultAsync();
     }
 }
