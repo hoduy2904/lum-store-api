@@ -38,13 +38,10 @@ public class SiteService(
               }, cache => cache.Dependencies(d => d.Nodes().NodeOrder()).Key("navigations"));
 
         var imageGuids = navigations.SelectMany(x => x.OgImage).ToArray();
-        var images = await _mediaService.GetMediaItemsAsync(imageGuids);
+        var images = (await _mediaService.GetMediaItemsAsync(imageGuids)).ToDictionary(x => x.FileID, x => x.FileURL);
 
         var navItems = navigations.MappingTree()
-        .Select(x => new NavItem(x)
-        {
-            Image = images.FirstOrDefault(i => x.OgImage.Contains(i.FileID))?.FileURL
-        });
+        .Select(x => new NavItem(x, images));
 
         return navItems;
     }

@@ -215,8 +215,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("OgImage")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("OgTitle")
                         .HasMaxLength(100)
