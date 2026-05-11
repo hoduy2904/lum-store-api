@@ -1,8 +1,6 @@
 ﻿using LumStoreAPI.Core.Entities.DocumentEngine;
-using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Controls;
 using LumStoreAPI.Libraries.Extensions;
-using LumStoreAPI.Libraries.Helpers;
 
 namespace LumStoreAPI.Application.DTOs.DocumentPageDTO
 {

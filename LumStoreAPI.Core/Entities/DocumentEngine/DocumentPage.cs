@@ -29,6 +29,9 @@ namespace LumStoreAPI.Core.Entities.DocumentEngine
         public string? OgTitle { get; set; }
         public string? OgDescription { get; set; }
         public Guid[] OgImage { get; set; } = [];
+        [NotMapped]
+        [JsonIgnore]
+        public IEnumerable<DocumentPage> Children { get; set; } = [];
 
         public virtual DocumentNode Node { get; set; } = default!;
 

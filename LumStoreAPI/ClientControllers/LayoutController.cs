@@ -1,11 +1,12 @@
-using LumStoreAPI.Application.DTOs.DocumentPageDTO;
 using LumStoreAPI.Application.DTOs.Responses;
-using LumStoreAPI.Application.Helpers;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Models.Constants.Systems;
+using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Core.Models.Systems.SettingKeys;
+using LumStoreAPI.Libraries.Extensions;
 using LumStoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,11 +16,13 @@ namespace LumStoreAPI.ClientControllers
     [ApiController]
     public class LayoutController(
         ISettingKeyValueService settingKeyValueService,
-        IPageRetrieveContext pageRetrieveContext
+        IPageRetrieveContext pageRetrieveContext,
+        ISiteService siteService
     ) : ControllerBase
     {
         private readonly ISettingKeyValueService _settingKeyValueService = settingKeyValueService;
         private readonly IPageRetrieveContext _pageRetrieveContext = pageRetrieveContext;
+        private readonly ISiteService _siteService = siteService;
         [HttpGet("site-config")]
         public async Task<IActionResult> GetSiteConfig()
         {
@@ -37,53 +40,16 @@ namespace LumStoreAPI.ClientControllers
                 "INSTAGRAM_URL", "TIKTOK_URL"
             );
 
-            var navigations = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
-            {
-                query.Where(x => x.IsEnableNavigation)
-                .Select(x => new DocumentPage
-                {
-                    DocumentName = x.DocumentName,
-                    NodeID = x.NodeID,
-                    Node = new DocumentNode
-                    {
-                        NodeID = x.NodeID,
-                        RelativeUrl = x.Node.RelativeUrl,
-                        ParentNodeID = x.Node.ParentNodeID,
-                        ClassName = x.Node.ClassName
-                    },
-                    IsEnableNavigation = x.IsEnableNavigation,
-                    OgImage = x.OgImage,
-                    OgTitle = x.OgTitle,
-                    OgDescription = x.OgDescription
-                });
-            }, cache => cache.Dependencies(d => d.Nodes().NodeOrder()).Key("navigations")))
-            .DocumentClientGetLinkeds();
+            var navigations = await _siteService.GetNavigationsAsync();
 
             var footerColumns = generalSettings?.FooterColumn > 0 ? (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
+                var classNameFilters = new string[] { LinkListItem.CLASS_NAME, "CMS.Folder" };
                 query.GetDescendants(generalSettings.FooterColumn)
-                .Select(x => new DocumentPage
-                {
-                    DocumentName = x.DocumentName,
-                    NodeID = x.NodeID,
-                    Node = new DocumentNode
-                    {
-                        NodeID = x.Node.NodeID,
-                        ParentNodeID = x.Node.ParentNodeID,
-                        RelativeUrl = x.Node.RelativeUrl,
-                        ClassName = x.Node.ClassName,
-                        NodeOrder = x.Node.NodeOrder,
-                        NodeName = x.Node.NodeName,
-                        NodeAlias = x.Node.NodeAlias
-                    }
-                });
+                .Where(x => classNameFilters.Contains(x.Node.ClassName));
             }, cache => cache.Dependencies(d => d.Children(generalSettings.FooterColumn).NodeOrder()).Key("footercolumns")))
-            .DocumentClientGetLinkeds()
-            .Select(node =>
-            {
-                node.Children = node.Children;
-                return node;
-            }) : Enumerable.Empty<DocumentClientGetLinkedDTO>();
+            .MappingTree()
+            .Select(NavItem.From) : Enumerable.Empty<NavItem>();
 
             return Ok(APIResponse<SiteConfigViewModel>.Success(new SiteConfigViewModel(layoutSettings, keySettings, footerColumns, navigations)));
         }

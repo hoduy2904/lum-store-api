@@ -48,6 +48,7 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IShiprelayWebhookService, ShiprelayWebhookService>();
                 services.AddScoped<IPaymentService, PaymentService>();
                 services.AddScoped<IContactService, ContactService>();
+                services.AddScoped<ISiteService, SiteService>();
                 services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizeHandler>();
                 return services;
             }

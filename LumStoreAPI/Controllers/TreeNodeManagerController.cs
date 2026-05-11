@@ -20,12 +20,10 @@ namespace LumStoreAPI.Controllers
     {
         private readonly IPageRetrieveContext _pageRetrieveContext;
         private readonly ITreeNodeRepository _treeNodeRepository;
-        private readonly IMediator _mediator;
-        public TreeNodeManagerController(IPageRetrieveContext pageRetrieveContext, ITreeNodeRepository treeNodeRepository, IMediator mediator)
+        public TreeNodeManagerController(IPageRetrieveContext pageRetrieveContext, ITreeNodeRepository treeNodeRepository)
         {
             _pageRetrieveContext = pageRetrieveContext;
             _treeNodeRepository = treeNodeRepository;
-            _mediator = mediator;
         }
 
         [HttpGet]
