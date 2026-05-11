@@ -28,8 +28,12 @@ public class ContactUsFeatureHandle(
                 .SettingKey(SystemSettingKeyConstants.CONTACT_INFORMATION)
                 ).Key("contactus-information").Expiration(0)) ?? [];
 
-        var storeHours = contactUsInformations.OfType<IEnumerable<StoreHoursSetting>>().FirstOrDefault();
-        var contactInformation = contactUsInformations.OfType<IEnumerable<ContactInformationSetting>>().FirstOrDefault();
+        var storeHours = contactUsInformations
+            .FirstOrDefault(x => x.Key == SystemSettingKeyConstants.SYSTEM_STORE_HOURS)
+            ?.Value as IEnumerable<StoreHoursSetting>;
+        var contactInformation = contactUsInformations
+            .FirstOrDefault(x => x.Key == SystemSettingKeyConstants.CONTACT_INFORMATION)
+            ?.Value as IEnumerable<ContactInformationSetting>;
 
         return new ContactUsFeatureDTO(
             request.ContactUs.Title,

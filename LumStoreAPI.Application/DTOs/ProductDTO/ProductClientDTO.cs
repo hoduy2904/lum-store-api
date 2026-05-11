@@ -22,6 +22,7 @@ public class ProductClientDTO
     public bool IsNeedBox { get; set; }
     public bool IsFragile { get; set; }
     public IEnumerable<ProductVariantGetDTO> ProductVariants { get; set; } = [];
+    public IEnumerable<ProductDiscountTierDTO> DiscountRules { get; set; } = [];
 
     public ProductClientDTO(Product product)
     {

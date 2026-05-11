@@ -6,12 +6,10 @@ public class DiscountRuleGetDTO
 {
     public int RuleId { get; set; }
     public int? ProductId { get; set; }
-    public int? VariantId { get; set; }
     public string RuleName { get; set; } = default!;
     public int MinQuantity { get; set; }
     public int? MaxQuantity { get; set; }
-    public decimal DiscountPercent { get; set; }
-    public decimal? DiscountAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
     public DateTimeOffset? StartDate { get; set; }
     public DateTimeOffset? EndDate { get; set; }
     public bool IsActive { get; set; }
@@ -20,7 +18,6 @@ public class DiscountRuleGetDTO
 public class DiscountRuleUpsertDTO
 {
     public int? ProductId { get; set; }
-    public int? VariantId { get; set; }
 
     [Required, MaxLength(200)]
     public string RuleName { get; set; } = default!;
@@ -30,11 +27,8 @@ public class DiscountRuleUpsertDTO
 
     public int? MaxQuantity { get; set; }
 
-    [Range(0, 100)]
-    public decimal DiscountPercent { get; set; }
-
-    [Range(0, double.MaxValue)]
-    public decimal? DiscountAmount { get; set; }
+    [Range(0.01, double.MaxValue, ErrorMessage = "DiscountAmount must be greater than 0.")]
+    public decimal DiscountAmount { get; set; }
 
     public DateTimeOffset? StartDate { get; set; }
     public DateTimeOffset? EndDate { get; set; }

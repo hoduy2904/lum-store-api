@@ -1,4 +1,3 @@
-using System;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 
 namespace LumStoreAPI.Application.DTOs.DocumentPageDTO;

@@ -233,8 +233,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.HasKey("PageID");
 
-                    b.HasIndex("NodeID");
-
                     b.ToTable("DocumentPages");
 
                     b.UseTptMappingStrategy();
@@ -551,13 +549,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
 
-                    b.Property<decimal?>("DiscountAmount")
+                    b.Property<decimal>("DiscountAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("DiscountPercent")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTimeOffset?>("EndDate")
                         .HasColumnType("datetimeoffset");
@@ -581,9 +575,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("StartDate")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<int?>("VariantId")
-                        .HasColumnType("int");
 
                     b.HasIndex("IsActive");
 
@@ -1597,6 +1588,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
                         .WithMany("ProductVariants")
                         .HasForeignKey("ProductID")
+                        .HasPrincipalKey("NodeID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

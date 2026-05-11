@@ -11,5 +11,5 @@ public interface IDiscountRuleRepository
     Task<bool> DeleteRuleAsync(int ruleId);
 
     /// <summary>Get the best applicable discount for a product + quantity combo.</summary>
-    Task<DiscountRule?> GetBestRuleAsync(int productId, int? variantId, int quantity);
+    Task<DiscountRule?> GetBestRuleAsync(int productId, int quantity);
 }

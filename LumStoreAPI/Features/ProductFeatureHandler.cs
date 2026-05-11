@@ -3,13 +3,15 @@ using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Application.FeatureQueries;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using MediatR;
 
 namespace LumStoreAPI.Features;
 
 public class ProductFeatureHandler(
     IMediaService mediaService,
-    IProductVariantRepository productVariantRepository
+    IProductVariantRepository productVariantRepository,
+    IDiscountRuleRepository discountRuleRepository
 ) : IRequestHandler<ProductFeatureQuery, ProductClientDTO>
 {
     public async Task<ProductClientDTO> Handle(ProductFeatureQuery request, CancellationToken cancellationToken)
@@ -37,10 +39,20 @@ public class ProductFeatureHandler(
             ));
         }
 
+        var discountRules = await discountRuleRepository.GetRulesAsync(product.NodeID, activeOnly: true);
+        var discountTiers = discountRules.Select(r => new ProductDiscountTierDTO
+        {
+            RuleName = r.RuleName,
+            MinQuantity = r.MinQuantity,
+            MaxQuantity = r.MaxQuantity,
+            DiscountAmount = r.DiscountAmount
+        });
+
         return new ProductClientDTO(product)
         {
             Images = images.Select(i => i.FileURL).ToArray(),
-            ProductVariants = variantDTOs
+            ProductVariants = variantDTOs,
+            DiscountRules = discountTiers
         };
     }
 }
