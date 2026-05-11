@@ -43,7 +43,8 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
             builder.HasMany(x => x.ProductVariants)
                 .WithOne(x => x.Product)
-                .HasForeignKey(x => x.ProductID);
+                .HasForeignKey(x => x.ProductID)
+                .HasPrincipalKey(x => x.NodeID);
         }
     }
 }

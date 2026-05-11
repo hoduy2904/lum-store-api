@@ -3,7 +3,6 @@ using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Helpers;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.DocumentEngine;
-using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Systems.SettingKeys;
@@ -62,9 +61,7 @@ namespace LumStoreAPI.ClientControllers
 
             var footerColumns = generalSettings?.FooterColumn > 0 ? (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
-                var classNameFilters = new string[] { LinkListItem.CLASS_NAME, "CMS.Folder" };
                 query.GetDescendants(generalSettings.FooterColumn)
-                .Where(x => classNameFilters.Contains(x.Node.ClassName))
                 .Select(x => new DocumentPage
                 {
                     DocumentName = x.DocumentName,
@@ -74,11 +71,19 @@ namespace LumStoreAPI.ClientControllers
                         NodeID = x.Node.NodeID,
                         ParentNodeID = x.Node.ParentNodeID,
                         RelativeUrl = x.Node.RelativeUrl,
-                        ClassName = x.Node.ClassName
+                        ClassName = x.Node.ClassName,
+                        NodeOrder = x.Node.NodeOrder,
+                        NodeName = x.Node.NodeName,
+                        NodeAlias = x.Node.NodeAlias
                     }
                 });
             }, cache => cache.Dependencies(d => d.Children(generalSettings.FooterColumn).NodeOrder()).Key("footercolumns")))
-            .DocumentClientGetLinkeds() : Enumerable.Empty<DocumentClientGetLinkedDTO>();
+            .DocumentClientGetLinkeds()
+            .Select(node =>
+            {
+                node.Children = node.Children;
+                return node;
+            }) : Enumerable.Empty<DocumentClientGetLinkedDTO>();
 
             return Ok(APIResponse<SiteConfigViewModel>.Success(new SiteConfigViewModel(layoutSettings, keySettings, footerColumns, navigations)));
         }

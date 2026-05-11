@@ -233,7 +233,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.HasKey("PageID");
 
-                    b.HasIndex("NodeID");
+                    b.HasAlternateKey("NodeID");
 
                     b.ToTable("DocumentPages");
 
@@ -1597,6 +1597,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
                         .WithMany("ProductVariants")
                         .HasForeignKey("ProductID")
+                        .HasPrincipalKey("NodeID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
