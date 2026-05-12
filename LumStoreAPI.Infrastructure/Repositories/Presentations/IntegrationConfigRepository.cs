@@ -48,10 +48,11 @@ internal class IntegrationConfigRepository : IIntegrationConfigRepository
 
         existing.Name = config.Name;
         existing.BaseUrl = config.BaseUrl;
-        existing.ApiKey = config.ApiKey;
-        existing.ApiSecret = config.ApiSecret;
-        existing.WebhookSecret = config.WebhookSecret;
-        existing.AdditionalConfig = config.AdditionalConfig;
+        existing.ApiKey = config.ApiKey ?? existing.ApiKey;
+        existing.ApiSecret = config.ApiSecret ?? existing.ApiSecret;
+        existing.ResellerId = config.ResellerId ?? existing.ResellerId;
+        existing.WebhookSecret = config.WebhookSecret ?? existing.WebhookSecret;
+        existing.AdditionalConfig = config.AdditionalConfig ?? existing.AdditionalConfig;
         existing.IsEnabled = config.IsEnabled;
         await _ctx.SaveChangesAsync();
 

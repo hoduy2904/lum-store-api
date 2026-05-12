@@ -10,9 +10,9 @@ public class IntegrationConfigGetDTO
     public string TypeName => IntegrationType.ToString();
     public string Name { get; set; } = default!;
     public string BaseUrl { get; set; } = default!;
-    public string? ApiKey { get; set; }
-    public string? SecretKey { get; set; }
-    public bool HasApiKey { get; set; }         // mask actual key
+    public bool HasApiKey { get; set; }
+    public bool HasApiSecret { get; set; }
+    public bool HasResellerId { get; set; }
     public bool HasWebhookSecret { get; set; }
     public bool IsEnabled { get; set; }
     public DateTimeOffset? LastSyncAt { get; set; }
@@ -34,6 +34,9 @@ public class IntegrationConfigUpsertDTO
 
     [MaxLength(500)]
     public string? ApiSecret { get; set; }
+
+    [MaxLength(500)]
+    public string? ResellerId { get; set; }
 
     [MaxLength(500)]
     public string? WebhookSecret { get; set; }

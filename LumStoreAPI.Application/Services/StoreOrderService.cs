@@ -476,7 +476,7 @@ internal class StoreOrderService : IStoreOrderService
             Address1 = address.Address,
             City = address.City,
             Region = address.State ?? string.Empty,
-            Country = "US",
+            Country = address.Country,
             Zip = address.ZipCode,
             Phone = address.Phone,
             Email = address.User.Email,
