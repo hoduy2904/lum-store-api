@@ -382,6 +382,11 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 }
             }
 
+            var documentPage = page.GetType().GetProperties()
+                .FirstOrDefault(p => Attribute.IsDefined(p, typeof(DocumentNameAttribute)))?.GetValue(page)?.ToString();
+
+            page.DocumentName = ValidationHelper.GetStringValue(documentPage, page.DocumentName);
+
             await _lumStoreContext.SaveChangesAsync();
             _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(nodeID).ClassName(className).GetDependencies().ToArray());
             return page;
