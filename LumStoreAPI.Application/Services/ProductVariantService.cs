@@ -91,7 +91,7 @@ internal class ProductVariantService : IProductVariantService
     {
 
         var count = await _productVariantRepository.UpdateProductVariantsAsync(x => x.ItemID == variantId,
-        x => x.Set(p => p.Color, request.Color)
+        x => x.Set(p => p.ColorId, request.ColorId)
         .Set(p => p.Images, request.Images)
         .Set(p => p.SKU, request.SKU)
         .Set(p => p.UPC, request.UPC)

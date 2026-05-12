@@ -1,6 +1,7 @@
 ﻿using LumStoreAPI.Core.Entities.Customers;
 using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Entities.Integrations;
+using LumStoreAPI.Core.Entities.Systems;
 using Microsoft.EntityFrameworkCore;
 
 namespace LumStoreAPI.Infrastructure
@@ -14,5 +15,7 @@ namespace LumStoreAPI.Infrastructure
 
         public DbSet<ShiprelayDataSync> ShiprelayDataSyncs { get; set; }
         public DbSet<CustomerAddress> CustomerAddresses { get; set; }
+        public DbSet<ColorCategory> ColorCategories { get; set; }
+        public DbSet<ColorItem> ColorItems { get; set; }
     }
 }

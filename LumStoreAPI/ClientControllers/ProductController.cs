@@ -52,35 +52,35 @@ namespace LumStoreAPI.ClientControllers
 
         [HttpGet("by-color")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetProductByColor([FromQuery] string? color)
+        public async Task<IActionResult> GetProductByColor([FromQuery] int colorId)
         {
-            if (string.IsNullOrWhiteSpace(color))
+            if (colorId == 0)
                 return Ok(APIResponse<ProductByColorDTO>.Failure("color param is required"));
 
-            var product = await _productService.GetProductByColorAsync(color);
+            var product = await _productService.GetProductByColorAsync(colorId);
 
             if (product == null)
-                return Ok(APIResponse<ProductByColorDTO>.Success(null, [$"No product found for color: {color}"]));
+                return Ok(APIResponse<ProductByColorDTO>.Failure("Not found", [$"No product found for color: {colorId}"]));
 
             return Ok(APIResponse<ProductByColorDTO>.Success(product));
         }
 
         [HttpGet("by-color/products")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetProductsByColor([FromQuery] string? color, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetProductsByColor([FromQuery] int colorId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            if (string.IsNullOrWhiteSpace(color))
+            if (colorId == 0)
                 return BadRequest(APIResponse<object>.Failure("color param is required"));
 
             pageSize = Math.Clamp(pageSize, 1, 50);
             page = Math.Max(page, 1);
 
-            var products = await _productService.GetProductsByColorAsync(color, page, pageSize);
+            var products = await _productService.GetProductsByColorAsync(colorId, page, pageSize);
 
             if (!products.Any())
                 return Ok(PagedResponse<ProductByColorItemDTO>.Success(
                     products, page, pageSize,
-                    [$"No products found for color: {color}"]));
+                    [$"No products found for color: {colorId}"]));
 
             return Ok(PagedResponse<ProductByColorItemDTO>.Success(products, page, pageSize));
         }

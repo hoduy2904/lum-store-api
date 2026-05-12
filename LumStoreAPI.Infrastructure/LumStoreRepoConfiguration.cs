@@ -36,6 +36,8 @@ namespace LumStoreAPI.Infrastructure
                 services.AddScoped<IWishlistRepository, WishlistRepository>();
                 services.AddScoped<ICartRepository, CartRepository>();
                 services.AddScoped<IContactMessageRepository, ContactMessageRepository>();
+                services.AddScoped<IColorCategoryRepository, ColorCategoryRepository>();
+                services.AddScoped<IColorItemRepository, ColorItemRepository>();
                 return services;
             }
 
