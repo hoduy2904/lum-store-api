@@ -18,9 +18,9 @@ public class ProductFeatureHandler(
     {
         var product = request.Product;
 
-        var images = product.Images.Length > 0
+        var images = (product.Images.Length > 0
             ? await mediaService.GetMediaItemsAsync(product.Images)
-            : [];
+            : []).OrderBy(x => product.Images.IndexOf(x.FileID));
 
         var variants = await productVariantRepository.GetProductVariantsAsync(v => v.ProductID == product.NodeID);
         var variantList = variants.ToList();
@@ -29,9 +29,9 @@ public class ProductFeatureHandler(
         if (variantList.Count > 0)
         {
             var variantImageGuids = variantList.SelectMany(v => v.Images).Distinct().ToArray();
-            var variantImages = variantImageGuids.Length > 0
+            var variantImages = (variantImageGuids.Length > 0
                 ? (await mediaService.GetMediaItemsAsync(variantImageGuids)).ToList()
-                : [];
+                : []).OrderBy(x => variantImageGuids.IndexOf(x.FileID));
 
             variantDTOs = variantList.Select(v => new ProductVariantGetDTO(
                 v,
