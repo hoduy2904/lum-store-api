@@ -19,7 +19,7 @@ namespace LumStoreAPI.Application.Services
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
         }
-        public Task LogEvent(EventLogType type, string source, string code, string name, string description = "")
+        public async Task LogEvent(EventLogType type, string source, string code, string name, string description = "")
         {
             try
             {
@@ -37,7 +37,7 @@ namespace LumStoreAPI.Application.Services
                 };
 
                 _lumStoreContext.Add(eventLog);
-                return _lumStoreContext.SaveChangesAsync();
+                await _lumStoreContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -47,8 +47,6 @@ namespace LumStoreAPI.Application.Services
                 if (type == EventLogType.INFORMATION) logLevel = LogLevel.Information;
 
                 _logger.Log(logLevel, "Source: {source} \r\nName: {name} \r\n Description: {description}", source, name, description);
-
-                return Task.CompletedTask;
             }
         }
 

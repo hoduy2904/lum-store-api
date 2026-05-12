@@ -4,6 +4,7 @@ using LumStoreAPI.DataEngine;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.SeedData;
 using LumStoreAPI.SDK;
+using LumStoreAPI.SDK.Shiprelay;
 using LumStoreAPI.Tasks;
 using Scalar.AspNetCore;
 using Serilog;
@@ -39,7 +40,8 @@ builder.Services
 builder.Services.AddJwtAuthentication();
 
 // ── HttpClient for external integrations ──────────────────────────────────
-builder.Services.AddHttpClient("Shiprelay");
+builder.Services.AddHttpClient("Shiprelay")
+    .AddHttpMessageHandler<ShiprelayClientHandler>();
 builder.Services.AddHttpClient("WMS");
 builder.Services.AddMediatR(cfg =>
 {

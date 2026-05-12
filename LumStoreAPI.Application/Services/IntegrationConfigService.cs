@@ -39,6 +39,7 @@ public class IntegrationConfigService : IIntegrationConfigService
             BaseUrl = dto.BaseUrl,
             ApiKey = dto.ApiKey,
             ApiSecret = dto.ApiSecret,
+            ResellerId = dto.ResellerId,
             WebhookSecret = dto.WebhookSecret,
             AdditionalConfig = dto.AdditionalConfig,
             IsEnabled = dto.IsEnabled
@@ -99,11 +100,11 @@ public class IntegrationConfigService : IIntegrationConfigService
         Name = c.Name,
         BaseUrl = c.BaseUrl,
         HasApiKey = !string.IsNullOrEmpty(c.ApiKey),
+        HasApiSecret = !string.IsNullOrEmpty(c.ApiSecret),
+        HasResellerId = !string.IsNullOrEmpty(c.ResellerId),
         HasWebhookSecret = !string.IsNullOrEmpty(c.WebhookSecret),
         IsEnabled = c.IsEnabled,
         LastSyncAt = c.LastSyncAt,
-        ApiKey = c.ApiKey,
-        SecretKey = c.ApiSecret
     };
 
     private static SyncLogGetDTO MapSyncLogToDTO(SyncLog s) => new()
