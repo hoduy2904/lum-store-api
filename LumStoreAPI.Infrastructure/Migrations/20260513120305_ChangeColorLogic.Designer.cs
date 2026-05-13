@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260512182626_ChangeColorLogic")]
+    [Migration("20260513120305_ChangeColorLogic")]
     partial class ChangeColorLogic
     {
         /// <inheritdoc />
@@ -614,7 +614,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
 
-                    b.Property<int>("ColorId")
+                    b.Property<int?>("ColorId")
                         .HasColumnType("int");
 
                     b.Property<string>("Images")
@@ -1647,8 +1647,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasOne("LumStoreAPI.Core.Entities.Systems.ColorItem", "Color")
                         .WithMany("ProductVariants")
                         .HasForeignKey("ColorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
                         .WithMany("ProductVariants")

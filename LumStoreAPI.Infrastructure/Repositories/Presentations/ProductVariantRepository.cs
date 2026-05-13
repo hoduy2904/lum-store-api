@@ -74,7 +74,14 @@ internal class ProductVariantRepository : IProductVariantRepository
                  foreach (var bd in builder.GetValues())
                  {
 #pragma warning disable EF1001 // Internal EF Core API usage.
-                     x.SetProperty(bd.property, bd.value);
+                     if (bd.value.Body.NodeType == ExpressionType.Constant)
+                     {
+                         x.SetProperty(bd.property, bd.value.Body);
+                     }
+                     else
+                     {
+                         x.SetProperty(bd.property, bd.value);
+                     }
                  }
              });
     }
