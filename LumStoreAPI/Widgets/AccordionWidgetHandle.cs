@@ -1,4 +1,3 @@
-using System;
 using LumStoreAPI.Application.DTOs.DocumentContents;
 using LumStoreAPI.Application.DTOs.Widgets;
 using LumStoreAPI.Application.Widgets;
@@ -17,7 +16,7 @@ public class AccordionWidgetHandle
     private readonly IPageRetrieveContext _pageRetrieveContext = pageRetrieveContext;
     public async Task<AccordionWidgetDTO> Handle(AccordionWidget request, CancellationToken cancellationToken)
     {
-        var model = new AccordionWidgetDTO();
+        var model = new AccordionWidgetDTO(request.Title, request.Description);
         if (request.PathId == 0) return model;
 
         var items = await _pageRetrieveContext.GetPagesAsync<AccordionItem>(query =>
@@ -25,7 +24,7 @@ public class AccordionWidgetHandle
             query.GetDescendants(request.PathId);
         }, cache => cache.Dependencies(d => d.Children(request.PathId).NodeOrder()).Key($"accordion|items|{request.PathId}"));
 
-        model.Items = items.Select(x => new AccordionItemDTO(x));
+        model.Items = items.Select(x => new AccordionItemDTO(x)).ToArray();
 
         return model;
     }

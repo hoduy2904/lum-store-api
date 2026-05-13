@@ -8,5 +8,7 @@ namespace LumStoreAPI.Application.Widgets;
 [RegisterWidget("accordionWidget", typeof(AccordionWidget))]
 public class AccordionWidget : IRequest<AccordionWidgetDTO>
 {
+    public string? Title { get; set; }
+    public string? Description { get; set; }
     public int PathId { get; set; }
 }
