@@ -11,7 +11,7 @@ namespace LumStoreAPI.Core.Entities.DocumentTypes
         public string UPC { get; set; } = default!;
         public int Stock { get; set; }
         public Guid[] Images { get; set; } = [];
-        public int ColorId { get; set; }
+        public int? ColorId { get; set; }
         public string VariantName { get; set; } = default!;
         public int ShiprelayId { get; set; }
 

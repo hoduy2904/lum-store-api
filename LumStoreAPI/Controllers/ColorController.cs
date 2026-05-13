@@ -4,6 +4,7 @@ using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LumStoreAPI.Controllers
 {
@@ -19,6 +20,22 @@ namespace LumStoreAPI.Controllers
         {
             var colors = await _colorItemRepository.GetColorsAsync(page, pageSize, query =>
             string.IsNullOrWhiteSpace(q) || query.ColorName.Contains(q));
+            return Ok(PagedResponse<ColorItem>.Success(colors, page, pageSize));
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetColors()
+        {
+            var colors = await _colorItemRepository.GetColors().AsNoTracking().ToArrayAsync();
+            return Ok(APIResponse<ColorItem[]>.Success(colors ?? []));
+        }
+
+
+        [HttpGet("{parentId:int}/parent")]
+        public async Task<IActionResult> GetColors(int parentId, int page, int pageSize, string q = "")
+        {
+            var colors = await _colorItemRepository.GetColorsAsync(page, pageSize, query =>
+            query.CategoryId == parentId && (string.IsNullOrWhiteSpace(q) || query.ColorName.Contains(q)));
             return Ok(PagedResponse<ColorItem>.Success(colors, page, pageSize));
         }
 
