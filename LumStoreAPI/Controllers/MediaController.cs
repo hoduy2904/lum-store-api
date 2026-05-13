@@ -86,34 +86,41 @@ namespace LumStoreAPI.Controllers
             {
                 return NotFound();
             }
-
-            using var inputStream = MediaLibraryHelper.GetFileStream(file.FullDirectPath);
+            var inputStream = MediaLibraryHelper.GetFileStream(file.FullDirectPath);
             var newFileName = file.FileName;
-            if (!string.IsNullOrEmpty(request.Format) && request.Format.Equals(".webp", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                newFileName = Path.GetFileNameWithoutExtension(newFileName) + $".{request.Format.TrimStart('.')}";
-                var outputStream = new MemoryStream();
-                using (var image = await Image.LoadAsync(inputStream))
+                if (!string.IsNullOrEmpty(request.Format) && request.Format.Equals(".webp", StringComparison.OrdinalIgnoreCase))
                 {
-                    var encoder = new WebpEncoder
+                    newFileName = Path.GetFileNameWithoutExtension(newFileName) + $".{request.Format.TrimStart('.')}";
+                    var outputStream = new MemoryStream();
+                    using (var image = await Image.LoadAsync(inputStream))
                     {
-                        Quality = 75,
-                        FileFormat = WebpFileFormatType.Lossy
-                    };
+                        var encoder = new WebpEncoder
+                        {
+                            Quality = 75,
+                            FileFormat = WebpFileFormatType.Lossy
+                        };
 
-                    await image.SaveAsWebpAsync(outputStream, encoder);
+                        await image.SaveAsWebpAsync(outputStream, encoder);
+                    }
+                    outputStream.Position = 0;
+                    await inputStream.DisposeAsync();
+                    return File(outputStream, "image/webp", newFileName);
                 }
-                outputStream.Position = 0;
-                await inputStream.DisposeAsync();
-                return File(outputStream, "image/webp", newFileName);
-            }
-            var provider = new FileExtensionContentTypeProvider();
-            if (!provider.TryGetContentType(newFileName, out string? contentType))
-            {
-                contentType = "application/octet-stream";
-            }
+                var provider = new FileExtensionContentTypeProvider();
+                if (!provider.TryGetContentType(newFileName, out string? contentType))
+                {
+                    contentType = "application/octet-stream";
+                }
 
-            return File(inputStream, contentType, newFileName);
+                return File(inputStream, contentType, newFileName);
+            }
+            catch
+            {
+                await inputStream.DisposeAsync();
+                throw;
+            }
         }
 
         [HttpDelete("Files/{fileID}")]
