@@ -5,19 +5,22 @@ using LumStoreAPI.SDK.Extensions;
 using LumStoreAPI.SDK.Shiprelay.Interfaces;
 using LumStoreAPI.SDK.Shiprelay.Models;
 using LumStoreAPI.SDK.Shiprelay.Models.Requests;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LumStoreAPI.SDK.Shiprelay.Handlers;
 
 public class ShiprelayRateService(
     IHttpClientFactory httpClientFactory,
-    IIntegrationConfigRepository integrationConfigRepository
+    IServiceProvider serviceProvider
 ) : IShiprelayRateService
 {
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    private readonly IIntegrationConfigRepository _integrationConfigRepository = integrationConfigRepository;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
     public async Task<ShiprelayPagedResponse<RateOption>> GetRates(RateRequest rateRequest)
     {
-        var config = await _integrationConfigRepository.GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Shiprelay);
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var integrationConfigRepository = scope.ServiceProvider.GetRequiredService<IIntegrationConfigRepository>();
+        var config = await integrationConfigRepository.GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Shiprelay);
         rateRequest.ResellerId = config?.ResellerId ?? "";
 
         var shiprelayClient = _httpClientFactory.CreateShiprelayClient();

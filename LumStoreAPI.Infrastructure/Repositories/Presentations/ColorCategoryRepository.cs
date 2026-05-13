@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Query;
 
 namespace LumStoreAPI.Infrastructure.Repositories.Presentations;
 
-public class ColorCategoryRepository(
+internal class ColorCategoryRepository(
     LumStoreContext lumStoreContext
 ) : IColorCategoryRepository
 {

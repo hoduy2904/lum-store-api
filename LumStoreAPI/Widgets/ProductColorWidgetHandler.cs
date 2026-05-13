@@ -8,13 +8,13 @@ namespace LumStoreAPI.Widgets;
 
 public class ProductColorWidgetHandler
 (
-    IProductVariantService productVariantService
+    IColorService colorService
 ) : IRequestHandler<ProductColorWidget, ProductColorWidgetDTO>
 {
-    private readonly IProductVariantService _productVariantService = productVariantService;
+    private readonly IColorService _colorService = colorService;
     public async Task<ProductColorWidgetDTO> Handle(ProductColorWidget request, CancellationToken cancellationToken)
     {
-        var colors = await _productVariantService.GetProductVariantColorsAsync(request.MaxColor);
+        var colors = await _colorService.GetGroupColorsAsync();
         return new ProductColorWidgetDTO(request.Title, request.Description, colors);
     }
 }

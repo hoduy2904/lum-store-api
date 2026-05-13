@@ -49,6 +49,7 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IPaymentService, PaymentService>();
                 services.AddScoped<IContactService, ContactService>();
                 services.AddScoped<ISiteService, SiteService>();
+                services.AddScoped<IColorService, ColorService>();
                 services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizeHandler>();
                 return services;
             }
