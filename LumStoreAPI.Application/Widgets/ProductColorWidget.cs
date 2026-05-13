@@ -6,4 +6,4 @@ using MediatR;
 namespace LumStoreAPI.Application.Widgets;
 
 [RegisterWidget("productColorWidget", typeof(ProductColorWidget))]
-public record class ProductColorWidget(int MaxColor) : IRequest<ProductColorWidgetDTO>;
+public record class ProductColorWidget(string? Title, string? Description, int MaxColor) : IRequest<ProductColorWidgetDTO>;

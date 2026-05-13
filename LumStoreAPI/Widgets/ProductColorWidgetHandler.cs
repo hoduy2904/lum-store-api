@@ -15,6 +15,6 @@ public class ProductColorWidgetHandler
     public async Task<ProductColorWidgetDTO> Handle(ProductColorWidget request, CancellationToken cancellationToken)
     {
         var colors = await _productVariantService.GetProductVariantColorsAsync(request.MaxColor);
-        return new ProductColorWidgetDTO(colors);
+        return new ProductColorWidgetDTO(request.Title, request.Description, colors);
     }
 }

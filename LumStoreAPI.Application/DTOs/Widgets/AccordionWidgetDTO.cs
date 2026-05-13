@@ -3,7 +3,11 @@ using LumStoreAPI.Application.DTOs.DocumentContents;
 
 namespace LumStoreAPI.Application.DTOs.Widgets;
 
-public class AccordionWidgetDTO
+public record class AccordionWidgetDTO(
+    string? Title,
+    string? Description,
+    IEnumerable<AccordionItemDTO> Items = default!
+)
 {
-    public IEnumerable<AccordionItemDTO> Items { get; set; } = [];
+    public IEnumerable<AccordionItemDTO> Items { get; set; } = Items ?? [];
 }
