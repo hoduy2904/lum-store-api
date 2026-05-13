@@ -18,8 +18,8 @@ namespace LumStoreAPI.Core.Models.Riches
 
             var valueLambda =
                 Expression.Lambda<Func<T, TProperty>>(constant, parameter);
-
             _setters.Add((property, valueLambda));
+
             return this;
         }
 

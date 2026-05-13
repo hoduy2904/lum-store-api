@@ -19,8 +19,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "ColorId",
                 table: "ProductVariants",
                 type: "int",
-                nullable: true,
-                defaultValue: null);
+                nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "ColorCategories",
