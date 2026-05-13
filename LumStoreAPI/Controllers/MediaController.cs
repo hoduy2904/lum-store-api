@@ -92,7 +92,7 @@ namespace LumStoreAPI.Controllers
             if (!string.IsNullOrEmpty(request.Format) && request.Format.Equals(".webp", StringComparison.OrdinalIgnoreCase))
             {
                 newFileName = Path.GetFileNameWithoutExtension(newFileName) + $".{request.Format.TrimStart('.')}";
-                using var outputStream = new MemoryStream();
+                var outputStream = new MemoryStream();
                 using (var image = await Image.LoadAsync(inputStream))
                 {
                     var encoder = new WebpEncoder
@@ -101,10 +101,10 @@ namespace LumStoreAPI.Controllers
                         FileFormat = WebpFileFormatType.Lossy
                     };
 
-                    // 4. Lưu ảnh đã convert vào outputStream
                     await image.SaveAsWebpAsync(outputStream, encoder);
                 }
                 outputStream.Position = 0;
+                await inputStream.DisposeAsync();
                 return File(outputStream, "image/webp", newFileName);
             }
             var provider = new FileExtensionContentTypeProvider();
