@@ -10,7 +10,7 @@ public record class ProductVariantRequestDTO : ProductVariantUpdateDTO
     {
         return new ProductVariant
         {
-            Color = Color,
+            ColorId = ColorId,
             ProductID = ProductId,
             SKU = SKU,
             Stock = 0,

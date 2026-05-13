@@ -17,10 +17,6 @@ namespace LumStoreAPI.Infrastructure.Configurations
 
             builder.Property(x => x.SKU)
                 .HasMaxLength(30);
-
-            builder.Property(x => x.Color)
-                .HasMaxLength(50);
-
             builder.Property(x => x.UPC)
                 .HasMaxLength(32);
 
@@ -28,13 +24,17 @@ namespace LumStoreAPI.Infrastructure.Configurations
                 .HasMaxLength(100);
 
             builder.Property(x => x.Images)
-                .HasConversion(ConverterHelper.ArrayGuidConverter(','))
+                .HasConversion(ConverterHelper.ArrayGuidConverter(SPLIT_CHAR))
                 .Metadata.SetValueComparer(ValueCompareHelper.GUIDArrayCompare);
 
             builder.HasOne(x => x.Product)
                 .WithMany(x => x.ProductVariants)
                 .HasForeignKey(x => x.ProductID)
                 .HasPrincipalKey(x => x.NodeID);
+
+            builder.HasOne(x => x.Color)
+            .WithMany(x => x.ProductVariants)
+            .HasForeignKey(x => x.ColorId);
         }
     }
 }

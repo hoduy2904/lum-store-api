@@ -321,15 +321,16 @@ IProductVariantRepository productVariantRepository)
         });
     }
 
-    public async Task<IPagedEnumerable<ProductByColorItemDTO>> GetProductsByColorAsync(string color, int page, int pageSize)
+    public async Task<IPagedEnumerable<ProductByColorItemDTO>> GetProductsByColorAsync(int colorId, int page, int pageSize)
     {
         var now = DateTimeOffset.UtcNow;
-        var colorLower = color.ToLower();
 
         // Step 1: fetch all variants whose Color contains the search string (case-insensitive)
         var matchingVariants = await _lumStoreContext.ProductVariants
-            .Where(v => v.VariantName != null && v.VariantName.ToLower().Contains(colorLower))
-            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.Color, v.SKU })
+        .Include(x => x.Color)
+        .AsNoTrackingWithIdentityResolution()
+            .Where(v => v.VariantName != null && v.ColorId == colorId)
+            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.Color!.ColorValue, v.SKU })
             .ToListAsync();
 
         if (matchingVariants.Count == 0)
@@ -414,7 +415,7 @@ IProductVariantRepository productVariantRepository)
                 {
                     VariantId = x.variant.ItemID,
                     VariantName = x.variant.VariantName,
-                    Color = x.variant.Color,
+                    Color = x.variant.ColorValue,
                     SKU = x.variant.SKU,
                     Stock = x.variant.Stock,
                 }
@@ -424,13 +425,13 @@ IProductVariantRepository productVariantRepository)
         return result.AsPagedEnumerable(totalRecords);
     }
 
-    public async Task<ProductByColorDTO?> GetProductByColorAsync(string color)
+    public async Task<ProductByColorDTO?> GetProductByColorAsync(int colorId)
     {
         var now = DateTimeOffset.UtcNow;
 
         // Find product NodeIDs that have a variant with the given color
         var variantProductIds = await _lumStoreContext.ProductVariants
-            .Where(v => v.VariantName != null && v.VariantName.ToLower() == color.ToLower())
+            .Where(v => v.VariantName != null && v.ColorId == colorId)
             .Select(v => v.ProductID)
             .Distinct()
             .ToListAsync();
@@ -573,7 +574,12 @@ IProductVariantRepository productVariantRepository)
         var ids = productIds.ToList();
         if (ids.Count == 0) return [];
 
-        var variants = (await _productVariantRepository.GetProductVariantsAsync(v => ids.Contains(v.ProductID))).ToList();
+        var variants = await _productVariantRepository
+        .GetProductVariants()
+        .Include(x => x.Color)
+        .AsNoTrackingWithIdentityResolution()
+        .Where(v => ids.Contains(v.ProductID)).ToListAsync();
+
         if (variants.Count == 0) return [];
 
         var variantImageGuids = variants.SelectMany(v => v.Images).Distinct().ToArray();
@@ -589,7 +595,7 @@ IProductVariantRepository productVariantRepository)
                 {
                     VariantId = v.ItemID,
                     VariantName = v.VariantName,
-                    Color = v.Color,
+                    Color = v.Color?.ColorValue,
                     Stock = v.Stock,
                     SKU = v.SKU,
                     Images = variantImages
