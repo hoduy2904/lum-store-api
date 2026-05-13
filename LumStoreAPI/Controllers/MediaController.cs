@@ -7,6 +7,9 @@ using LumStoreAPI.Libraries.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using Org.BouncyCastle.Ocsp;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
 
 namespace LumStoreAPI.Controllers
 {
@@ -84,17 +87,33 @@ namespace LumStoreAPI.Controllers
                 return NotFound();
             }
 
+            using var inputStream = MediaLibraryHelper.GetFileStream(file.FullDirectPath);
             var newFileName = file.FileName;
-            if (!string.IsNullOrEmpty(request.Format))
+            if (!string.IsNullOrEmpty(request.Format) && request.Format.Equals(".webp", StringComparison.OrdinalIgnoreCase))
             {
-                newFileName = System.IO.Path.GetFileNameWithoutExtension(newFileName) + $".{request.Format.TrimStart('.')}";
+                newFileName = Path.GetFileNameWithoutExtension(newFileName) + $".{request.Format.TrimStart('.')}";
+                using var outputStream = new MemoryStream();
+                using (var image = await Image.LoadAsync(inputStream))
+                {
+                    var encoder = new WebpEncoder
+                    {
+                        Quality = 75,
+                        FileFormat = WebpFileFormatType.Lossy
+                    };
+
+                    // 4. Lưu ảnh đã convert vào outputStream
+                    await image.SaveAsWebpAsync(outputStream, encoder);
+                }
+                outputStream.Position = 0;
+                return File(outputStream, "image/webp", newFileName);
             }
             var provider = new FileExtensionContentTypeProvider();
             if (!provider.TryGetContentType(newFileName, out string? contentType))
             {
                 contentType = "application/octet-stream";
             }
-            return File(MediaLibraryHelper.GetFileStream(file.FullDirectPath), contentType, newFileName);
+
+            return File(inputStream, contentType, newFileName);
         }
 
         [HttpDelete("Files/{fileID}")]
