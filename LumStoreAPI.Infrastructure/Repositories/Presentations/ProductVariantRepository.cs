@@ -21,12 +21,18 @@ internal class ProductVariantRepository : IProductVariantRepository
 
     public Task<ProductVariant?> GetProductVariantAsync(int variantId)
     {
-        return _lumStoreContext.ProductVariants.FirstOrDefaultAsync(x => x.ItemID == variantId);
+        return _lumStoreContext.ProductVariants
+        .Include(x => x.Color)
+        .AsNoTrackingWithIdentityResolution()
+        .FirstOrDefaultAsync(x => x.ItemID == variantId);
     }
 
     public Task<ProductVariant?> GetProductVariantAsync(string sku)
     {
-        return _lumStoreContext.ProductVariants.FirstOrDefaultAsync(x => x.SKU.Equals(sku));
+        return _lumStoreContext.ProductVariants
+        .Include(x => x.Color)
+        .AsNoTrackingWithIdentityResolution()
+        .FirstOrDefaultAsync(x => x.SKU.Equals(sku));
     }
 
     public IQueryable<ProductVariant> GetProductVariants()
@@ -37,7 +43,9 @@ internal class ProductVariantRepository : IProductVariantRepository
     public async Task<IEnumerable<ProductVariant>> GetProductVariantsAsync(Expression<Func<ProductVariant, bool>>? where = null)
     {
         where ??= x => true;
-        return await _lumStoreContext.ProductVariants.AsNoTracking().Where(where).ToArrayAsync();
+        return await _lumStoreContext.ProductVariants
+        .Include(x => x.Color)
+        .AsNoTrackingWithIdentityResolution().Where(where).ToArrayAsync();
     }
 
     public async Task<ProductVariant> InsertProductVariantAsync(ProductVariant productVariant)

@@ -12,6 +12,7 @@ public record class ProductVariantGetDTO
     public int Stock { get; set; }
     public string[] Images { get; set; } = [];
     public string? Color { get; set; }
+    public int ColorId { get; set; }
     public string VariantName { get; set; } = default!;
 
     public ProductVariantGetDTO(ProductVariant productVariant, MediaItemDTO[]? mediaItemDTO = null)
@@ -25,7 +26,8 @@ public record class ProductVariantGetDTO
         {
             this.Images = mediaItemDTO.Select(x => x.FileURL).ToArray();
         }
-        this.Color = productVariant.Color;
+        this.Color = productVariant.Color?.ColorValue;
         this.VariantName = productVariant.VariantName;
+        this.ColorId = productVariant.ColorId;
     }
 }
