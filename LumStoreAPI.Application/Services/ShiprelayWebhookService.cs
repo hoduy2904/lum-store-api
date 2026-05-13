@@ -1,5 +1,6 @@
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Entities.Integrations;
 using LumStoreAPI.Core.Entities.Orders;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
@@ -14,6 +15,7 @@ public class ShiprelayWebhookService(
 {
     public async Task HandleEventAsync(ShiprelayWebhookPayload payload)
     {
+        var startedAt = DateTimeOffset.UtcNow;
         var order = await ctx.Orders
             .Include(o => o.OrderItems)
             .FirstOrDefaultAsync(o =>
@@ -24,58 +26,118 @@ public class ShiprelayWebhookService(
         {
             await eventLog.LogWarning("ShiprelayWebhook", "ORDER_NOT_FOUND",
                 $"No order found for ShipmentId={payload.ShipmentId}, OrderRef={payload.OrderRef}");
+            AddWebhookSyncLog(
+                startedAt,
+                SyncStatus.Failed,
+                "Shiprelay webhook order not found",
+                $"ShipmentId={payload.ShipmentId}, OrderRef={payload.OrderRef}, SourceOrderId={payload.SourceOrderId}",
+                recordsSynced: 0,
+                recordsFailed: 1);
+            await ctx.SaveChangesAsync();
             return;
         }
 
-        var newStatus = payload.Status?.ToLower() switch
-        {
-            "queued"     => OrderStatus.Confirmed,
-            "held"       => OrderStatus.Confirmed,
-            "requested"  => OrderStatus.Processing,
-            "processing" => OrderStatus.Processing,
-            "shipped"    => OrderStatus.Shipped,
-            "in_transit" => OrderStatus.Shipped,
-            "delivered"  => OrderStatus.Delivered,
-            "returned"   => OrderStatus.Returned,
-            "inactive"   => OrderStatus.Cancelled,
-            _            => (OrderStatus?)null
-        };
+        var newStatus = MapStatus(payload.Status);
 
-        if (newStatus == null || newStatus == order.Status) return;
+        if (newStatus == null)
+        {
+            await eventLog.LogWarning("ShiprelayWebhook", "UNSUPPORTED_STATUS",
+                $"Unsupported Shiprelay status '{payload.Status}' for OrderId={order.ItemID}");
+            AddWebhookSyncLog(
+                startedAt,
+                SyncStatus.Failed,
+                "Shiprelay webhook unsupported status",
+                $"OrderId={order.ItemID}, ShipmentId={payload.ShipmentId}, Status={payload.Status}",
+                recordsSynced: 0,
+                recordsFailed: 1);
+            await ctx.SaveChangesAsync();
+            return;
+        }
 
         var prevStatus = order.Status;
-        order.Status = newStatus.Value;
+        var statusChanged = newStatus.Value != order.Status;
+
+        if (statusChanged)
+            order.Status = newStatus.Value;
 
         if (newStatus == OrderStatus.Shipped)
         {
-            order.TrackingNumber  = payload.TrackingNumber ?? order.TrackingNumber;
-            order.TrackingUrl     = payload.TrackingUrl    ?? order.TrackingUrl;
-            order.ShippingCarrier = payload.Carrier        ?? order.ShippingCarrier;
-            order.ShippedAt       = DateTimeOffset.UtcNow;
+            order.TrackingNumber = payload.TrackingNumber ?? order.TrackingNumber;
+            order.TrackingUrl = payload.TrackingUrl ?? order.TrackingUrl;
+            order.ShippingCarrier = payload.Carrier ?? order.ShippingCarrier;
+            order.ShippedAt ??= DateTimeOffset.UtcNow;
         }
 
         if (newStatus == OrderStatus.Delivered)
-            order.DeliveredAt = DateTimeOffset.UtcNow;
+            order.DeliveredAt ??= DateTimeOffset.UtcNow;
 
         if (string.IsNullOrEmpty(order.ShiprelayShipmentId) && !string.IsNullOrEmpty(payload.ShipmentId))
             order.ShiprelayShipmentId = payload.ShipmentId;
 
-        ctx.OrderHistories.Add(new OrderHistory
+        if (statusChanged)
         {
-            OrderId        = order.ItemID,
-            FromStatus     = prevStatus,
-            ToStatus       = newStatus.Value,
-            Comment        = $"ShipRelay: {payload.Status}",
-            IsSystemAction = true
-        });
+            ctx.OrderHistories.Add(new OrderHistory
+            {
+                OrderId = order.ItemID,
+                FromStatus = prevStatus,
+                ToStatus = newStatus.Value,
+                Comment = $"ShipRelay: {payload.Status}",
+                IsSystemAction = true
+            });
+        }
 
-        if (newStatus == OrderStatus.Confirmed && payload.Status?.ToLower() == "held")
+        if (newStatus == OrderStatus.Confirmed && payload.Status?.ToLowerInvariant() == "held")
             await eventLog.LogWarning("ShiprelayWebhook", "SHIPMENT_HELD",
                 $"ShipRelay held shipment for OrderId={order.ItemID}, ShipmentId={payload.ShipmentId}");
+
+        AddWebhookSyncLog(
+            startedAt,
+            SyncStatus.Success,
+            "Shiprelay webhook processed",
+            $"OrderId={order.ItemID}, OrderCode={order.OrderCode}, ShipmentId={payload.ShipmentId}, Status={payload.Status}, InternalStatus={newStatus}",
+            recordsSynced: 1,
+            recordsFailed: 0);
 
         await ctx.SaveChangesAsync();
 
         await eventLog.LogInformation("ShiprelayWebhook", "WEBHOOK_PROCESSED",
-            $"Order {order.OrderCode}: {prevStatus} → {newStatus}, ShipmentId={payload.ShipmentId}");
+            $"Order {order.OrderCode}: {prevStatus} -> {newStatus}, ShipmentId={payload.ShipmentId}");
+    }
+
+    private static OrderStatus? MapStatus(string? status)
+        => status?.ToLowerInvariant() switch
+        {
+            "queued" => OrderStatus.Confirmed,
+            "held" => OrderStatus.Confirmed,
+            "requested" => OrderStatus.Processing,
+            "processing" => OrderStatus.Processing,
+            "shipped" => OrderStatus.Shipped,
+            "in_transit" => OrderStatus.Shipped,
+            "delivered" => OrderStatus.Delivered,
+            "returned" => OrderStatus.Returned,
+            "inactive" => OrderStatus.Cancelled,
+            _ => null
+        };
+
+    private void AddWebhookSyncLog(
+        DateTimeOffset startedAt,
+        SyncStatus status,
+        string summary,
+        string? errorDetail,
+        int recordsSynced,
+        int recordsFailed)
+    {
+        ctx.SyncLogs.Add(new SyncLog
+        {
+            IntegrationType = IntegrationType.Shiprelay,
+            SyncMode = SyncMode.Webhook,
+            Status = status,
+            Summary = summary,
+            ErrorDetail = errorDetail,
+            RecordsSynced = recordsSynced,
+            RecordsFailed = recordsFailed,
+            StartedAt = startedAt,
+            CompletedAt = DateTimeOffset.UtcNow
+        });
     }
 }

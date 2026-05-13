@@ -1,13 +1,13 @@
-using System.Net.Http.Json;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace LumStoreAPI.Application.Services;
 
@@ -422,16 +422,30 @@ public class ShiprelayService : IShiprelayService
 
     // ── Webhook ───────────────────────────────────────────────────────────
 
-    public bool ValidateWebhookSignature(string payload, string signature)
+    public bool ValidateWebhookSignature(byte[] payload, string signature)
     {
         var config = _configRepo.GetConfigByTypeAsync(IntegrationType.Shiprelay).GetAwaiter().GetResult();
-        if (config?.WebhookSecret == null) return false;
+        if (string.IsNullOrWhiteSpace(config?.WebhookSecret)) return false;
 
         var key = Encoding.UTF8.GetBytes(config.WebhookSecret);
         using var hmac = new HMACSHA256(key);
-        var computed = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
-        var computedHex = "sha256=" + Convert.ToHexString(computed).ToLower();
-        return string.Equals(computedHex, signature, StringComparison.OrdinalIgnoreCase);
+        var computed = hmac.ComputeHash(payload);
+
+        var normalizedSignature = NormalizeWebhookSignature(signature);
+        if (normalizedSignature == null) return false;
+
+        byte[] received;
+        try
+        {
+            received = Convert.FromHexString(normalizedSignature);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+
+        return received.Length == computed.Length
+            && CryptographicOperations.FixedTimeEquals(computed, received);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
@@ -465,6 +479,18 @@ public class ShiprelayService : IShiprelayService
         if (carrier.ValueKind == JsonValueKind.String) return carrier.GetString();
         if (carrier.ValueKind == JsonValueKind.Object) return GetString(carrier, "name");
         return null;
+    }
+
+    private static string? NormalizeWebhookSignature(string signature)
+    {
+        if (string.IsNullOrWhiteSpace(signature)) return null;
+
+        var value = signature.Trim();
+        const string legacyPrefix = "sha256=";
+        if (value.StartsWith(legacyPrefix, StringComparison.OrdinalIgnoreCase))
+            value = value[legacyPrefix.Length..];
+
+        return value;
     }
 
     private static string BuildShipmentsQueryString(ShiprelayGetShipmentsRequest r)

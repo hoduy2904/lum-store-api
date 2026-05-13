@@ -33,6 +33,11 @@
             return CustomKey($"node|{parentNodeID}|children");
         }
 
+        public CacheDependency NodeUrl(string url)
+        {
+            return CustomKey($"node|byalias|{url}");
+        }
+
         public CacheDependency SettingKey(string keyCode)
         {
             return CustomKey($"settingkey|bykeycode|{keyCode}");
