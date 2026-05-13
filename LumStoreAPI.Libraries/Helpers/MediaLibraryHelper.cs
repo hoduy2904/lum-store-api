@@ -37,7 +37,13 @@ namespace LumStoreAPI.Libraries.Helpers
 
         public static string GetFileURL(MediaLibrary mediaLibrary)
         {
-            return $"/api/media/getFile/{mediaLibrary.FileID}?format={mediaLibrary.Extension}";
+            string? extension = mediaLibrary.Extension;
+            string[] _permittedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+            if (_permittedExtensions.Contains(mediaLibrary.Extension, StringComparer.OrdinalIgnoreCase))
+            {
+                extension = ".webp";
+            }
+            return $"/api/media/getFile/{mediaLibrary.FileID}?format={extension}";
         }
         public static string GetAbsoluteFileURL(MediaLibrary mediaLibrary)
         {
