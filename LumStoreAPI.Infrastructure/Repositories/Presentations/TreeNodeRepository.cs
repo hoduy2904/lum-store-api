@@ -300,7 +300,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             {
                 string className = DocumentPageTypeHelper.GetClassName<T>();
 
-                _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(page.NodeID).ClassName(className).GetDependencies().ToArray());
+                _cacheService.TouchKey(new CacheDependency().Nodes().NodeUrl(page.Node?.RelativeUrl ?? "").NodeID(page.NodeID).ClassName(className).GetDependencies().ToArray());
             }
 
             return isSuccess;
@@ -388,7 +388,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             page.DocumentName = ValidationHelper.GetStringValue(documentPage, page.DocumentName);
 
             await _lumStoreContext.SaveChangesAsync();
-            _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(nodeID).ClassName(className).GetDependencies().ToArray());
+            _cacheService.TouchKey(new CacheDependency().Nodes().NodeUrl(page.Node.RelativeUrl).NodeID(nodeID).ClassName(className).GetDependencies().ToArray());
             return page;
         }
 

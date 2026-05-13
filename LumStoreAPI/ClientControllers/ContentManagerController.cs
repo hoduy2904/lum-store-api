@@ -108,7 +108,7 @@ namespace LumStoreAPI.ClientControllers
                         .Published(Core.Models.Enums.TreeNodePublished.Published)
                         .OnlyPages()
                         .IncludeQueryable(q => q.Take(1));
-            })).Select(async x =>
+            }, cache => cache.Dependencies(d => d.NodeUrl(alias ?? string.Empty)).Key("nodedetails|" + alias))).Select(async x =>
             {
                 var nodeClient = new DocumentClientGetDTO(x);
                 if (x.OgImage.Any())

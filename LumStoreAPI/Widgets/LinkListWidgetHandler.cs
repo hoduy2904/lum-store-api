@@ -27,7 +27,7 @@ public class LinkListWidgetHandler(
                  LinkListTitle = x.LinkListTitle,
                  IconName = x.IconName,
                  LinkUrl = x.LinkUrl
-             })
+             }), cache => cache.Dependencies(d => d.Children(request.ItemPathId).NodeOrder()).Key("linklistwidget" + request.ItemPathId)
         )).ToList();
 
         logger.LogDebug(
