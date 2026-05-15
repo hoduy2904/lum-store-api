@@ -17,5 +17,7 @@ namespace LumStoreAPI.Core.Entities.DocumentTypes
 
         public virtual Product? Product { get; set; }
         public virtual ColorItem? Color { get; set; }
+        public virtual ICollection<ProductCombo> ProductCombos { get; set; } = [];
+
     }
 }
