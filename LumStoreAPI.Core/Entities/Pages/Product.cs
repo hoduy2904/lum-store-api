@@ -11,6 +11,7 @@ namespace LumStoreAPI.Core.Entities.Pages
     {
         public const string CLASS_NAME = "Pages.Product";
 
+        public bool IsCombo { get; set; }
         public ProductType ProductType { get; set; } = ProductType.SIMPLE;
         public ProductGroup ProductGroup { get; set; } = ProductGroup.COMODITY;
 
@@ -50,5 +51,6 @@ namespace LumStoreAPI.Core.Entities.Pages
         public bool IsNeedBox { get; set; }
         public bool IsFragile { get; set; }
         public virtual ICollection<ProductVariant> ProductVariants { get; set; } = [];
+        public virtual ICollection<ProductCombo> ProductCombos { get; set; } = [];
     }
 }

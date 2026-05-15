@@ -17,5 +17,6 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<CustomerAddress> CustomerAddresses { get; set; }
         public DbSet<ColorCategory> ColorCategories { get; set; }
         public DbSet<ColorItem> ColorItems { get; set; }
+        public DbSet<ProductCombo> ProductCombos { get; set; }
     }
 }
