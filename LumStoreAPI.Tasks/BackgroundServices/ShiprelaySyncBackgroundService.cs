@@ -240,7 +240,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
         var media = await mediaService.GetMediaItemsAsync([imageGuids]);
         return new ShiprelayProductUpdateRequest
         {
-            SourceId = variant.ItemID.ToString(),
+            SourceId = product?.ProductType == ProductType.CASEPACK ? $"{product.PageID}_{variant.ItemID}" : variant.ItemID.ToString(),
             SKU = variant.SKU,
             Barcode = variant.UPC,
             Name = product is not null
@@ -258,8 +258,10 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                 IsAlcoholic = product?.IsAlcoholic ?? false,
                 IsHazmat = product?.IsHazmat ?? false,
                 NeedsBox = product?.IsNeedBox ?? false,
+                ParentQty = product?.ProductType == ProductType.CASEPACK ? product.ParentQty : null
             },
             Thumb = media.FirstOrDefault()?.FileURL ?? string.Empty,
+            ParentId = variant.ItemID,
         };
     }
 

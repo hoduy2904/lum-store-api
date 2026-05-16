@@ -50,6 +50,7 @@ namespace LumStoreAPI.Core.Entities.Pages
         public bool IsHazmat { get; set; }
         public bool IsNeedBox { get; set; }
         public bool IsFragile { get; set; }
+        public int ParentQty { get; set; }
         public virtual ICollection<ProductVariant> ProductVariants { get; set; } = [];
         public virtual ICollection<ProductCombo> ProductCombos { get; set; } = [];
     }

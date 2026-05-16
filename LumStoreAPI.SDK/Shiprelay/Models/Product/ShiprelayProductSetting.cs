@@ -17,7 +17,7 @@ public class ShiprelayProductSetting
     [JsonPropertyName("tariff_code")]
     public string? TariffCode { get; set; }
     [JsonPropertyName("parent_qty")]
-    public int ParentQty { get; set; }
+    public int? ParentQty { get; set; }
     [JsonPropertyName("is_requestable")]
     public bool IsRequestable { get; set; }
     [JsonPropertyName("is_fragile")]
