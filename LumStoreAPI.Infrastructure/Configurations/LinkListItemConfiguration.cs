@@ -10,12 +10,12 @@ public class LinkListItemConfiguration : IEntityTypeConfiguration<LinkListItem>
     public void Configure(EntityTypeBuilder<LinkListItem> builder)
     {
         builder.Property(x => x.LinkListTitle)
-        .HasMaxLength(50);
+        .HasMaxLength(100);
 
         builder.Property(x => x.IconName)
-            .HasMaxLength(20);
+            .HasMaxLength(40);
 
         builder.Property(x => x.LinkUrl)
-            .HasMaxLength(100);
+            .HasMaxLength(250);
     }
 }

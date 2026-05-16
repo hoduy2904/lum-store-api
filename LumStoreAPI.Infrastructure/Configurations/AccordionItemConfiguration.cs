@@ -8,7 +8,7 @@ namespace LumStoreAPI.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<AccordionItem> builder)
         {
-            builder.Property(x => x.Title).HasMaxLength(100);
+            builder.Property(x => x.Title).HasMaxLength(120);
 
             builder.Property(x => x.Description).HasMaxLength(250);
         }

@@ -14,13 +14,13 @@ namespace LumStoreAPI.Infrastructure.Configurations
                 .HasMaxLength(20);
 
             builder.Property(x => x.Title)
-                .HasMaxLength(100);
+                .HasMaxLength(170);
 
             builder.Property(x => x.Pretitle)
-                .HasMaxLength(50);
+                .HasMaxLength(100);
 
             builder.Property(x => x.Description)
-                .HasMaxLength(250);
+                .HasMaxLength(270);
 
             builder.Property(x => x.PrimaryButton)
                 .HasConversion(ConverterHelper.ContentConverters<LinkControl?>(null));
