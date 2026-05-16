@@ -72,8 +72,9 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
         // Take up to 20 pending items per cycle
         var pending = await ctx.ShiprelayDataSyncs
-            .Where(s => s.Status == EmailStatus.Waiting)
-            .OrderBy(s => s.CreatedAt)
+            .Where(s => s.Status != EmailStatus.Success)
+            .OrderBy(s => s.Status)
+            .ThenBy(x => x.CreatedAt)
             .Take(20)
             .ToListAsync(ct);
 
@@ -173,8 +174,8 @@ public class ShiprelaySyncBackgroundService : BackgroundService
             {
                 _logger.LogError(ex, "ShipRelay sync failed for VariantID={VariantID}", syncEntry.VariantID);
                 MarkFailed(syncEntry, ex.Message);
-                await eventLog.LogWarning("ShiprelaySyncService", "SHIPRELAY_SYNC_EXCEPTION",
-                    $"Sync exception | VariantId={syncEntry.VariantID} | Action={syncEntry.EntryActionStatus} | {ex.Message}");
+                await eventLog.LogException("ShiprelaySyncService", "SHIPRELAY_SYNC_EXCEPTION",
+                    $"Sync exception | VariantId={syncEntry.VariantID} | Action={syncEntry.EntryActionStatus}", ex);
             }
         }
 

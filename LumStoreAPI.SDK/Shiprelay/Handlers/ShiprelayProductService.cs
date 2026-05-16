@@ -64,6 +64,10 @@ internal class ShiprelayProductService(
                 var id = product.Data.First().Id;
                 return await this.UpdateProductAsync(id, request, productType, true);
             }
+            else
+            {
+                throw new Exception(error);
+            }
         }
         var data = await response.EnsureSuccessStatusCode().Content.ReadFromJsonAsync<ShiprelayProduct>();
         return data;
