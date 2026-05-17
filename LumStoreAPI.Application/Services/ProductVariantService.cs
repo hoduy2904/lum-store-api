@@ -96,6 +96,7 @@ internal class ProductVariantService : IProductVariantService
         .Set(p => p.SKU, request.SKU)
         .Set(p => p.UPC, request.UPC)
         .Set(p => p.VariantName, request.VariantName)
+        .Set(p => p.ParentId, request.ParentId)
         );
 
         if (count > 0)

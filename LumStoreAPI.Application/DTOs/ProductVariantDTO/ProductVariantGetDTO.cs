@@ -14,6 +14,7 @@ public record class ProductVariantGetDTO
     public string? Color { get; set; }
     public int? ColorId { get; set; }
     public string VariantName { get; set; } = default!;
+    public int? ParentId { get; set; }
 
     public ProductVariantGetDTO(ProductVariant productVariant, MediaItemDTO[]? mediaItemDTO = null)
     {
@@ -29,5 +30,6 @@ public record class ProductVariantGetDTO
         this.Color = productVariant.Color?.ColorValue;
         this.VariantName = productVariant.VariantName;
         this.ColorId = productVariant.ColorId;
+        this.ParentId = productVariant.ParentId;
     }
 }

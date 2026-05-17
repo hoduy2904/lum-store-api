@@ -35,6 +35,11 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.HasOne(x => x.Color)
             .WithMany(x => x.ProductVariants)
             .HasForeignKey(x => x.ColorId);
+
+            builder.HasOne(x => x.CasePack)
+            .WithMany(x => x.CasePacks)
+            .HasForeignKey(x => x.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

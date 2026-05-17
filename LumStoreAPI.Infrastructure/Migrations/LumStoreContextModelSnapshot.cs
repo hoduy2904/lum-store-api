@@ -633,6 +633,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ProductID")
                         .HasColumnType("int");
 
@@ -658,6 +661,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasIndex("ColorId");
+
+                    b.HasIndex("ParentId");
 
                     b.HasIndex("ProductID");
 
@@ -1686,12 +1691,19 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasForeignKey("ColorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", "CasePack")
+                        .WithMany("CasePacks")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
                         .WithMany("ProductVariants")
                         .HasForeignKey("ProductID")
                         .HasPrincipalKey("NodeID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CasePack");
 
                     b.Navigation("Color");
 
@@ -1910,6 +1922,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
                 {
+                    b.Navigation("CasePacks");
+
                     b.Navigation("ProductCombos");
                 });
 

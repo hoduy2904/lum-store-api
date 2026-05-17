@@ -43,7 +43,7 @@ internal class ShiprelayProductService(
             if (response.IsSuccessStatusCode) shiprelayProduct = await response.Content.ReadFromJsonAsync<ShiprelayProduct>();
             else return null;
         }
-        if (shiprelayProduct is not null && shiprelayProduct.ArchivedAt == null)
+        if (shiprelayProduct is not null && shiprelayProduct.ArchivedAt is not null)
         {
             return await this.RestoreProductAsync(shiprelayProduct.Id);
         }

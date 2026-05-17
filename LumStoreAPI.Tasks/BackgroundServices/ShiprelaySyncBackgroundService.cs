@@ -236,12 +236,16 @@ public class ShiprelaySyncBackgroundService : BackgroundService
         var mediaService = scope.ServiceProvider.GetRequiredService<IMediaService>();
         var product = variant.Product;
 
-        var imageGuids = variant.Images.Union(product?.Images ?? []).FirstOrDefault();
+        var imageGuids = variant.Images;
+        if (!imageGuids.Any())
+        {
+            imageGuids = product?.Images ?? [];
+        }
 
-        var media = await mediaService.GetMediaItemsAsync([imageGuids]);
+        var media = await mediaService.GetMediaItemsAsync([imageGuids.FirstOrDefault()]);
         return new ShiprelayProductUpdateRequest
         {
-            SourceId = product?.ProductType == ProductType.CASEPACK ? $"{product.PageID}_{variant.ItemID}" : variant.ItemID.ToString(),
+            SourceId = variant.ItemID.ToString(),
             SKU = variant.SKU,
             Barcode = variant.UPC,
             Name = product is not null
@@ -262,7 +266,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                 ParentQty = product?.ProductType == ProductType.CASEPACK ? product.ParentQty : null
             },
             Thumb = media.FirstOrDefault()?.FileURL ?? string.Empty,
-            ParentId = variant.ItemID,
+            ParentId = variant.CasePack?.ShiprelayId,
         };
     }
 
