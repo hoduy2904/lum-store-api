@@ -24,7 +24,7 @@ public class ShiprelayProduct
     [JsonPropertyName("thumb")]
     public string? Thumb { get; set; }
     [JsonPropertyName("stock_count")]
-    public int StockCount { get; set; }
+    public int? StockCount { get; set; }
     [JsonPropertyName("reserved_count")]
     public int ReservedCount { get; set; }
     [JsonPropertyName("available_count")]

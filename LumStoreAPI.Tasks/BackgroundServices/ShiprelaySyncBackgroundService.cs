@@ -220,7 +220,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
             var product = result?.Data?.FirstOrDefault();
             if (product is null) continue;
 
-            variant.Stock = product.StockCount;
+            variant.Stock = product.StockCount ?? 0;
             synced++;
         }
 
