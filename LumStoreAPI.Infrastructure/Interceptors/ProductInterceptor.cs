@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Interfaces.Repositories;
@@ -8,71 +9,103 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace LumStoreAPI.Infrastructure.Interceptors;
 
-public class ProductInterceptor
-(IServiceProvider serviceProvider) : SaveChangesInterceptor
+public class ProductInterceptor(IServiceProvider serviceProvider) : SaveChangesInterceptor
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
-    public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result, CancellationToken cancellationToken = default)
+
+    private static readonly ConditionalWeakTable<DbContext, List<SyncTrackerItem>> _stateTable = new();
+
+    private class SyncTrackerItem
+    {
+        public object Entity { get; set; } = null!;
+        public EntryActionStatus Action { get; set; }
+        public bool IsVariant { get; set; }
+    }
+
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
     {
         var context = eventData.Context;
-        if (context is null) return await base.SavedChangesAsync(eventData, result, cancellationToken);
+        if (context is null) return base.SavingChangesAsync(eventData, result, cancellationToken);
 
-        // Only care about entities that were actually mutated (not mere tracked reads)
+        context.ChangeTracker.DetectChanges();
+
         var entities = context.ChangeTracker.Entries()
             .Where(x => (x.Entity is Product || x.Entity is ProductVariant) &&
                         x.State != EntityState.Unchanged &&
                         x.State != EntityState.Detached)
             .ToList();
 
-        // Skip scope creation entirely when no product/variant changes are present
-        if (!entities.Any())
-            return await base.SavedChangesAsync(eventData, result, cancellationToken);
-
-        var scope = _serviceProvider.CreateScope();
-        var shiprelaySyncRepository = scope.ServiceProvider.GetRequiredService<IShiprelaySystemRespository>();
-
-        var variants = entities.Where(x => x.Entity is ProductVariant)
-            .Select(x => new { Entity = (ProductVariant)x.Entity, x.State })
-            .GroupBy(x => x.State)
-            .ToList();
-
-        var products = entities
-            .Where(x => x.Entity is Product)
-            .Select(x => new { Entity = (Product)x.Entity, x.State })
-            .GroupBy(x => x.State)
-            .ToList();
-
-        if (variants.Any())
+        if (entities.Any())
         {
-            foreach (var variant in variants)
+            var trackedList = _stateTable.GetOrCreateValue(context);
+            trackedList.Clear();
+
+            foreach (var entry in entities)
             {
-                var variantActions = variant.Select(x => x.Entity.ItemID).ToArray();
-                var shiprelayState = variant.Key == EntityState.Deleted ? EntryActionStatus.DELETE : EntryActionStatus.UPDATE;
-                await shiprelaySyncRepository
-                .SyncVariantShiprelayAsync(variantActions, shiprelayState);
+                var state = entry.State;
+                var shiprelayState = state == EntityState.Deleted ? EntryActionStatus.DELETE : EntryActionStatus.UPDATE;
+
+                if (entry.Entity is ProductVariant variant)
+                {
+                    trackedList.Add(new SyncTrackerItem { Entity = variant, Action = shiprelayState, IsVariant = true });
+                }
+                else if (entry.Entity is Product product)
+                {
+                    if (state == EntityState.Modified)
+                    {
+                        bool hasRealChanges = entry.Properties.Any(p => p.IsModified && !Equals(p.CurrentValue, p.OriginalValue));
+                        if (!hasRealChanges) continue;
+                    }
+
+                    trackedList.Add(new SyncTrackerItem { Entity = product, Action = shiprelayState, IsVariant = false });
+                }
             }
         }
-        if (products.Any())
+
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
+    public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result, CancellationToken cancellationToken = default)
+    {
+        var context = eventData.Context;
+        if (context is null) return await base.SavedChangesAsync(eventData, result, cancellationToken);
+
+        if (!_stateTable.TryGetValue(context, out var trackedItems) || !trackedItems.Any())
         {
-            if (!entities.Where(x => x.Entity is Product).Any(x =>
+            return await base.SavedChangesAsync(eventData, result, cancellationToken);
+        }
+
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var shiprelaySyncRepository = scope.ServiceProvider.GetRequiredService<IShiprelaySystemRespository>();
+
+            var variants = trackedItems.Where(x => x.IsVariant).GroupBy(x => x.Action).ToList();
+            if (variants.Any())
             {
-                return x.Metadata.GetDeclaredProperties().Any(p =>
-                 {
-                     var propEntry = x.Property(p.Name);
-                     return propEntry.CurrentValue != propEntry.OriginalValue;
-                 });
-            }))
-            {
-                return await base.SavedChangesAsync(eventData, result, cancellationToken);
+                foreach (var variant in variants)
+                {
+                    var variantActions = variant.Select(x => ((ProductVariant)x.Entity).ItemID).ToArray();
+                    await shiprelaySyncRepository.SyncVariantShiprelayAsync(variantActions, variant.Key);
+                }
             }
 
-            foreach (var product in products)
+            var products = trackedItems.Where(x => !x.IsVariant).GroupBy(x => x.Action).ToList();
+            if (products.Any())
             {
-                var productActions = product.Select(x => x.Entity.NodeID).ToArray();
-                var shiprelayState = product.Key == EntityState.Deleted ? EntryActionStatus.DELETE : EntryActionStatus.UPDATE;
-                await shiprelaySyncRepository
-                .SyncProductShiprelaysAsync(productActions, shiprelayState);
+                foreach (var product in products)
+                {
+                    var productActions = product.Select(x => ((Product)x.Entity).NodeID).ToArray();
+                    await shiprelaySyncRepository.SyncProductShiprelaysAsync(productActions, product.Key);
+                }
             }
+        }
+        finally
+        {
+            _stateTable.Remove(context);
         }
 
         return await base.SavedChangesAsync(eventData, result, cancellationToken);

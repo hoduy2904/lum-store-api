@@ -47,7 +47,7 @@ namespace LumStoreAPI.Controllers
                         query.GetDescendants(request.ParentID.Value, 1);
                     }
                 }
-                else
+                else if (string.IsNullOrWhiteSpace(request.ClassName))
                 {
                     query.Where(x => x.Node.ParentNodeID == null);
                 }

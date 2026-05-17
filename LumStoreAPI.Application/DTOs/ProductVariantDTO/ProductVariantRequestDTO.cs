@@ -17,6 +17,7 @@ public record class ProductVariantRequestDTO : ProductVariantUpdateDTO
             UPC = UPC,
             VariantName = VariantName,
             Images = Images,
+            ParentId = ParentId
         };
     }
 }

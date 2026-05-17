@@ -14,10 +14,12 @@ namespace LumStoreAPI.Core.Entities.DocumentTypes
         public int? ColorId { get; set; }
         public string VariantName { get; set; } = default!;
         public int ShiprelayId { get; set; }
+        public int? ParentId { get; set; }
 
         public virtual Product? Product { get; set; }
         public virtual ColorItem? Color { get; set; }
         public virtual ICollection<ProductCombo> ProductCombos { get; set; } = [];
-
+        public virtual ProductVariant? CasePack { get; set; }
+        public virtual ICollection<ProductVariant> CasePacks { get; set; } = [];
     }
 }

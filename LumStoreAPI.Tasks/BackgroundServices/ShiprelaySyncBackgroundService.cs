@@ -72,8 +72,9 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
         // Take up to 20 pending items per cycle
         var pending = await ctx.ShiprelayDataSyncs
-            .Where(s => s.Status == EmailStatus.Waiting)
-            .OrderBy(s => s.CreatedAt)
+            .Where(s => s.Status != EmailStatus.Success)
+            .OrderBy(s => s.Status)
+            .ThenBy(x => x.CreatedAt)
             .Take(20)
             .ToListAsync(ct);
 
@@ -173,8 +174,8 @@ public class ShiprelaySyncBackgroundService : BackgroundService
             {
                 _logger.LogError(ex, "ShipRelay sync failed for VariantID={VariantID}", syncEntry.VariantID);
                 MarkFailed(syncEntry, ex.Message);
-                await eventLog.LogWarning("ShiprelaySyncService", "SHIPRELAY_SYNC_EXCEPTION",
-                    $"Sync exception | VariantId={syncEntry.VariantID} | Action={syncEntry.EntryActionStatus} | {ex.Message}");
+                await eventLog.LogException("ShiprelaySyncService", "SHIPRELAY_SYNC_EXCEPTION",
+                    $"Sync exception | VariantId={syncEntry.VariantID} | Action={syncEntry.EntryActionStatus}", ex);
             }
         }
 
@@ -235,12 +236,16 @@ public class ShiprelaySyncBackgroundService : BackgroundService
         var mediaService = scope.ServiceProvider.GetRequiredService<IMediaService>();
         var product = variant.Product;
 
-        var imageGuids = variant.Images.Union(product?.Images ?? []).FirstOrDefault();
+        var imageGuids = variant.Images;
+        if (!imageGuids.Any())
+        {
+            imageGuids = product?.Images ?? [];
+        }
 
-        var media = await mediaService.GetMediaItemsAsync([imageGuids]);
+        var media = await mediaService.GetMediaItemsAsync([imageGuids.FirstOrDefault()]);
         return new ShiprelayProductUpdateRequest
         {
-            SourceId = product?.ProductType == ProductType.CASEPACK ? $"{product.PageID}_{variant.ItemID}" : variant.ItemID.ToString(),
+            SourceId = variant.ItemID.ToString(),
             SKU = variant.SKU,
             Barcode = variant.UPC,
             Name = product is not null
@@ -261,7 +266,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                 ParentQty = product?.ProductType == ProductType.CASEPACK ? product.ParentQty : null
             },
             Thumb = media.FirstOrDefault()?.FileURL ?? string.Empty,
-            ParentId = variant.ItemID,
+            ParentId = variant.CasePack?.ShiprelayId,
         };
     }
 

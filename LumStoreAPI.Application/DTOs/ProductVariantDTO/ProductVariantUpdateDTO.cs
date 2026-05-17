@@ -9,4 +9,5 @@ public record class ProductVariantUpdateDTO
     public Guid[] Images { get; set; } = [];
     public int? ColorId { get; set; }
     public string VariantName { get; set; } = default!;
+    public int? ParentId { get; set; }
 }
