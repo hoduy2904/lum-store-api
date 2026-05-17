@@ -83,6 +83,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
         var variantIds = pending.Select(s => s.VariantID).Distinct().ToArray();
 
         var variants = await ctx.ProductVariants
+            .Include(x => x.CasePack)
             .Where(v => variantIds.Contains(v.ItemID))
             .ToListAsync(ct);
 
@@ -103,7 +104,8 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
             try
             {
-                var variant = variants.FirstOrDefault(v => v.ItemID == syncEntry.VariantID);
+                var variant = variants
+                .FirstOrDefault(v => v.ItemID == syncEntry.VariantID);
 
                 switch (syncEntry.EntryActionStatus)
                 {
