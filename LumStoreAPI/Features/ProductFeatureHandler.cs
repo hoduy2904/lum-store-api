@@ -33,7 +33,7 @@ public class ProductFeatureHandler(
                 ? (await mediaService.GetMediaItemsAsync(variantImageGuids)).ToList()
                 : []).OrderBy(x => variantImageGuids.IndexOf(x.FileID));
 
-            variantDTOs = variantList.Select(v => new ProductVariantGetDTO(
+            variantDTOs = variantList.Select(v => new ProductVariantClientGetDTO(
                 v,
                 variantImages.Where(img => v.Images.Contains(img.FileID)).ToArray()
             ));
