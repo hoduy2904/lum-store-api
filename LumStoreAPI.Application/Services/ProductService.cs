@@ -610,7 +610,7 @@ IProductVariantRepository productVariantRepository)
     /// Batch-loads variants for a set of product IDs and resolves their images in one media call.
     /// Returns a dictionary keyed by ProductID → list of mapped DTOs.
     /// </summary>
-    private async Task<Dictionary<int, List<ProductVariantGetDTO>>> LoadVariantsAsync(IEnumerable<int> productIds)
+    private async Task<Dictionary<int, List<ProductVariantClientGetDTO>>> LoadVariantsAsync(IEnumerable<int> productIds)
     {
         var ids = productIds.ToList();
         if (ids.Count == 0)
@@ -629,7 +629,7 @@ IProductVariantRepository productVariantRepository)
             .GroupBy(v => v.ProductID)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(v => new ProductVariantGetDTO(
+                g => g.Select(v => new ProductVariantClientGetDTO(
                     v,
                     variantImages.Where(img => v.Images.Contains(img.FileID)).ToArray()
                 )).ToList()

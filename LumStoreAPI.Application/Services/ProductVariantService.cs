@@ -10,12 +10,10 @@ namespace LumStoreAPI.Application.Services;
 internal class ProductVariantService : IProductVariantService
 {
     private readonly IProductVariantRepository _productVariantRepository;
-    private readonly IMediaService _mediaService;
     private readonly IShiprelaySystemRespository _shiprelaySystemRespository;
-    public ProductVariantService(IProductVariantRepository productVariantRepository, IMediaService mediaService, IShiprelaySystemRespository shiprelaySystemRespository)
+    public ProductVariantService(IProductVariantRepository productVariantRepository, IShiprelaySystemRespository shiprelaySystemRespository)
     {
         _productVariantRepository = productVariantRepository;
-        _mediaService = mediaService;
         _shiprelaySystemRespository = shiprelaySystemRespository;
     }
     public async Task<int> DeleteProductVariantsAsync(int[] variantIds)
@@ -35,11 +33,7 @@ internal class ProductVariantService : IProductVariantService
         if (productVariant == null)
             return null;
         var mediaItems = Array.Empty<MediaItemDTO>();
-        if (productVariant.Images.Any())
-        {
-            mediaItems = (await _mediaService.GetMediaItemsAsync(productVariant.Images)).ToArray();
-        }
-        return new ProductVariantGetDTO(productVariant, mediaItems);
+        return new ProductVariantGetDTO(productVariant);
     }
 
     public async Task<ProductVariantGetDTO?> GetProductVariantAsync(string sku)
@@ -47,8 +41,7 @@ internal class ProductVariantService : IProductVariantService
         var productVariant = await _productVariantRepository.GetProductVariantAsync(sku);
 
         if (productVariant == null) return null;
-        var mediaItems = (await _mediaService.GetMediaItemsAsync(productVariant.Images)).ToArray();
-        return new ProductVariantGetDTO(productVariant, mediaItems);
+        return new ProductVariantGetDTO(productVariant);
     }
 
     public async Task<IEnumerable<ContentKeyValue>> GetProductVariantColorsAsync(int MaxColor)
@@ -73,18 +66,14 @@ internal class ProductVariantService : IProductVariantService
     {
         var productVariants = await _productVariantRepository.GetProductVariantsAsync(x => x.ProductID == productId);
         if (!productVariants.Any()) return Enumerable.Empty<ProductVariantGetDTO>();
-
-        var mediaItems = await _mediaService.GetMediaItemsAsync(productVariants.SelectMany(x => x.Images).ToArray());
-
-        return productVariants.Select(x => new ProductVariantGetDTO(x, mediaItems.Where(m => x.Images.Contains(m.FileID)).ToArray()));
+        return productVariants.Select(x => new ProductVariantGetDTO(x));
     }
 
     public async Task<ProductVariantGetDTO> InsertProductVariantAsync(ProductVariantRequestDTO request)
     {
         var entity = await _productVariantRepository.InsertProductVariantAsync(request.GetEntity());
-        var mediaItems = await _mediaService.GetMediaItemsAsync(entity.Images);
         await _shiprelaySystemRespository.SyncProductShiprelayAsync(entity.ProductID, Core.Models.Enums.EntryActionStatus.INSERT, entity.ItemID);
-        return new ProductVariantGetDTO(entity, mediaItems.ToArray());
+        return new ProductVariantGetDTO(entity);
     }
 
     public async Task<int> UpdateProductVariantAsync(int variantId, ProductVariantUpdateDTO request)

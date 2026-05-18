@@ -29,7 +29,6 @@ namespace LumStoreAPI.Controllers
         }
 
         [HttpGet("bysku/{sku}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetProductVariant(string sku)
         {
             var productVariant = await _productVariantService.GetProductVariantAsync(sku);
@@ -38,7 +37,6 @@ namespace LumStoreAPI.Controllers
         }
 
         [HttpGet("{productId}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetProductVariants(int productId)
         {
             var productVariants = await _productVariantService.GetProductVariantsAsync(productId);
