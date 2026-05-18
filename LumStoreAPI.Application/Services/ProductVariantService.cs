@@ -18,10 +18,13 @@ internal class ProductVariantService : IProductVariantService
     }
     public async Task<int> DeleteProductVariantsAsync(int[] variantIds)
     {
+        var variants = await _productVariantRepository.GetProductVariants()
+        .Where(x => variantIds.Contains(x.ItemID))
+        .ToArrayAsync();
         var count = await _productVariantRepository.DeleteProductVariantsAsync(x => variantIds.Contains(x.ItemID));
         if (count > 0)
         {
-            await _shiprelaySystemRespository.SyncVariantShiprelayAsync(variantIds.ToArray(), Core.Models.Enums.EntryActionStatus.DELETE);
+            await _shiprelaySystemRespository.SyncVariantShiprelayAsync(variants, Core.Models.Enums.EntryActionStatus.DELETE);
         }
 
         return count;
@@ -72,7 +75,7 @@ internal class ProductVariantService : IProductVariantService
     public async Task<ProductVariantGetDTO> InsertProductVariantAsync(ProductVariantRequestDTO request)
     {
         var entity = await _productVariantRepository.InsertProductVariantAsync(request.GetEntity());
-        await _shiprelaySystemRespository.SyncProductShiprelayAsync(entity.ProductID, Core.Models.Enums.EntryActionStatus.INSERT, entity.ItemID);
+        await _shiprelaySystemRespository.SyncVariantShiprelayAsync(entity.ItemID, Core.Models.Enums.EntryActionStatus.INSERT);
         return new ProductVariantGetDTO(entity);
     }
 
