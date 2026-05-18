@@ -11,6 +11,7 @@ namespace LumStoreAPI.Core.Interfaces.Repositories
         Task SyncProductShiprelayAsync(int productId, EntryActionStatus entryActionStatus, int? variantId = null);
         Task SyncVariantShiprelayAsync(int variantId, EntryActionStatus entryActionStatus);
         Task SyncProductShiprelaysAsync(int[] productIds, EntryActionStatus entryActionStatus);
+        Task SyncVariantShiprelayAsync(ProductVariant[] variants, EntryActionStatus entryActionStatus);
         Task SyncVariantShiprelayAsync(int[] variantIds, EntryActionStatus entryActionStatus);
         Task<IPagedEnumerable<ShiprelayDataSync>> GetShiprelayDataAsync(int page, int pageSize, Expression<Func<ShiprelayDataSync, bool>>? where = null);
         Task<bool> UpdateShiprelayDataAsync(int productId, int? variantId, EmailStatus status, EntryActionStatus entryActionStatus, string? message = null);

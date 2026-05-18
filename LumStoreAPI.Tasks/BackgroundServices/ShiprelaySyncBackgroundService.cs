@@ -159,12 +159,12 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                         break;
 
                     case EntryActionStatus.DELETE:
-                        int shiprelayId = variant?.ShiprelayId ?? 0;
-                        if (shiprelayId > 0)
+
+                        if (syncEntry.ShiprelayId > 0)
                         {
-                            await productService.ArchiveProductAsync(shiprelayId);
+                            await productService.ArchiveProductAsync(syncEntry.ShiprelayId.Value);
                             await eventLog.LogInformation("ShiprelaySyncService", "SHIPRELAY_PRODUCT_ARCHIVED",
-                                $"PATCH products/{shiprelayId}/archive OK | VariantId={syncEntry.VariantID}");
+                                $"PATCH products/{syncEntry.ShiprelayId.Value}/archive OK | VariantId={syncEntry.VariantID}");
                         }
                         MarkSuccess(syncEntry);
                         break;
