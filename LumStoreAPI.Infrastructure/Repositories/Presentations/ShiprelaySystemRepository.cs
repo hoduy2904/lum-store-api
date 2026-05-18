@@ -136,8 +136,10 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 .SetProperty(p => p.Message, message)
                 .SetProperty(p => p.EntryActionStatus, entryActionStatus)
                 .SetProperty(p => p.RunnedAt, p => status == EmailStatus.Waiting ? p.RunnedAt : DateTime.UtcNow)
-                .SetProperty(p => p.ShiprelayId, p => variants.Any(x => x.ItemID == p.VariantID) ? variants.FirstOrDefault(x => x.ItemID == p.VariantID)!.ShiprelayId : null));
-
+                .SetProperty(p => p.ShiprelayId, p => variants
+                            .Where(v => v.ItemID == p.VariantID)
+                            .Select(v => v.ShiprelayId)
+                            .FirstOrDefault()));
             return shiprelaySystem > 0;
         }
 
