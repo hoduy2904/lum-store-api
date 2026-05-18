@@ -32,14 +32,14 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             return new PagedEnumerable<ShiprelayDataSync>(await data.ToListAsync(), count);
         }
 
-        public async Task SyncProductShiprelayAsync(int productId, EntryActionStatus entryActionStatus, int? variantId = null)
+        public async Task SyncProductShiprelayAsync(int productId, EntryActionStatus entryActionStatus, int variantId)
         {
             if (!await UpdateShiprelayDataAsync(productId, variantId, EmailStatus.Waiting, entryActionStatus) && variantId != null)
             {
                 _context.Add(new ShiprelayDataSync
                 {
                     Status = EmailStatus.Waiting,
-                    VariantID = variantId.Value,
+                    VariantID = variantId,
                     EntryActionStatus = entryActionStatus
                 });
 
@@ -107,8 +107,10 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         {
             if (variants.Length == 0) return;
 
+            var variantIds = variants.Select(x => x.ItemID).ToArray();
+
             await _context.ShiprelayDataSyncs
-                .Where(x => variants.Any(v => v.ItemID == x.VariantID))
+                .Where(x => variantIds.Contains(x.VariantID))
                 .ExecuteDeleteAsync();
 
             _context.ShiprelayDataSyncs.AddRange(variants.Select(x => new ShiprelayDataSync
@@ -117,16 +119,17 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 VariantID = x.ItemID,
                 ShiprelayId = x.ShiprelayId,
                 Status = EmailStatus.Waiting,
-            }));
+            }).ToArray());
             await _context.SaveChangesAsync();
         }
 
         public async Task<bool> UpdateShiprelayDataAsync(int productId, int? variantId, EmailStatus status, EntryActionStatus entryActionStatus, string? message = null)
         {
-            var variants = _context.ProductVariants
+            var variants = await _context.ProductVariants
                 .Where(x => x.ProductID == productId)
                 .AsNoTracking()
-                .Select(x => new { x.ItemID, x.ShiprelayId });
+                .Select(x => new { x.ItemID, x.ShiprelayId })
+                .ToListAsync();
 
             var shiprelaySystem = await _context.ShiprelayDataSyncs
                 .Where(x => (variantId != null ? x.VariantID == variantId.Value : variants.Any(v => v.ItemID == x.VariantID)) && x.Status != EmailStatus.Success)
@@ -136,10 +139,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                 .SetProperty(p => p.Message, message)
                 .SetProperty(p => p.EntryActionStatus, entryActionStatus)
                 .SetProperty(p => p.RunnedAt, p => status == EmailStatus.Waiting ? p.RunnedAt : DateTime.UtcNow)
-                .SetProperty(p => p.ShiprelayId, p => variants
-                            .Where(v => v.ItemID == p.VariantID)
-                            .Select(v => v.ShiprelayId)
-                            .FirstOrDefault()));
+                .SetProperty(p => p.ShiprelayId, p => variants.Any(x => x.ItemID == p.VariantID) ? variants.FirstOrDefault(x => x.ItemID == p.VariantID)!.ShiprelayId : null));
+
             return shiprelaySystem > 0;
         }
 

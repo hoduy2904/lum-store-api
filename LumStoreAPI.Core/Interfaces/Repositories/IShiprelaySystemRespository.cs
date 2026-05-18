@@ -8,7 +8,7 @@ namespace LumStoreAPI.Core.Interfaces.Repositories
 {
     public interface IShiprelaySystemRespository
     {
-        Task SyncProductShiprelayAsync(int productId, EntryActionStatus entryActionStatus, int? variantId = null);
+        Task SyncProductShiprelayAsync(int productId, EntryActionStatus entryActionStatus, int variantId);
         Task SyncVariantShiprelayAsync(int variantId, EntryActionStatus entryActionStatus);
         Task SyncProductShiprelaysAsync(int[] productIds, EntryActionStatus entryActionStatus);
         Task SyncVariantShiprelayAsync(ProductVariant[] variants, EntryActionStatus entryActionStatus);
