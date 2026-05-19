@@ -25,7 +25,7 @@ public class ProductFeatureHandler(
         var variants = await productVariantRepository.GetProductVariantsAsync(v => v.ProductID == product.NodeID);
         var variantList = variants.ToList();
 
-        IEnumerable<ProductVariantGetDTO> variantDTOs = [];
+        IEnumerable<ProductVariantClientGetDTO> variantDTOs = [];
         if (variantList.Count > 0)
         {
             var variantImageGuids = variantList.SelectMany(v => v.Images).Distinct().ToArray();
