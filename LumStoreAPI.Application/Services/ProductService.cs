@@ -486,13 +486,13 @@ IProductVariantRepository productVariantRepository)
         };
     }
 
-    public async Task<IEnumerable<DocumentClientGetDTO>> GetRelatedProductsAsync(string nodeAlias, int limit)
+    public async Task<IEnumerable<DocumentClientGetDTO>> GetRelatedProductsAsync(string relativeUrl, int limit)
     {
         limit = Math.Clamp(limit, 1, 15);
         var now = DateTimeOffset.UtcNow;
 
         var current = await _lumStoreContext.Products
-            .Where(p => p.Node.NodeAlias == nodeAlias && !p.IsDeleted)
+            .Where(p => p.Node.RelativeUrl == relativeUrl && !p.IsDeleted)
             .Select(p => new { p.NodeID, ParentNodeID = p.Node.ParentNodeID })
             .FirstOrDefaultAsync();
 

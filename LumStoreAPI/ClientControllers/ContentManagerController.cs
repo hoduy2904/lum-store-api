@@ -74,18 +74,18 @@ namespace LumStoreAPI.ClientControllers
             return Ok(APIResponse<IEnumerable<DocumentPageGetDTO>>.Success(dtos, ["Success"]));
         }
 
-        [HttpGet("categories/{nodeAlias}/products")]
-        public async Task<IActionResult> GetCategoryProducts(string nodeAlias, [FromQuery] CategoryProductsRequest request)
+        [HttpGet("categories/products")]
+        public async Task<IActionResult> GetCategoryProducts([FromQuery] string relativeUrl, [FromQuery] CategoryProductsRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(APIResponseBase.Failure("pageSize cannot exceed 50"));
 
-            nodeAlias = HttpUtility.UrlDecode(nodeAlias);
+            relativeUrl = HttpUtility.UrlDecode(relativeUrl);
 
             var category = (await _pageRetrieveContext.GetPagesAsync<ProductCategory>(query =>
             {
                 query
-                    .Where(x => x.Node.NodeAlias.Equals(nodeAlias))
+                    .Where(x => x.Node.RelativeUrl.Equals(relativeUrl))
                     .IncludeQueryable(q => q.Take(1));
             })).FirstOrDefault();
 
@@ -97,14 +97,17 @@ namespace LumStoreAPI.ClientControllers
             return Ok(PagedResponse<DocumentClientGetDTO>.Success(products, request.Page, request.PageSize));
         }
 
-        [HttpGet("{alias}")]
+        [HttpGet]
+        [HttpGet("{*alias}")]
         public async Task<IActionResult> Index(string? alias)
         {
-            alias = HttpUtility.UrlDecode(alias);
+            alias = string.IsNullOrWhiteSpace(alias)
+                ? string.Empty
+                : "/" + HttpUtility.UrlDecode(alias).TrimStart('/');
             var node = (await Task.WhenAll((await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
                 query
-                    .Where(x => string.IsNullOrEmpty(alias) ? x.Node.NodeAlias.Equals(string.Empty) : x.Node.NodeAlias.Equals(alias))
+                    .Where(x => string.IsNullOrEmpty(alias) ? x.Node.RelativeUrl.Equals(string.Empty) : x.Node.RelativeUrl.Equals(alias))
                         .Published(Core.Models.Enums.TreeNodePublished.Published)
                         .OnlyPages()
                         .IncludeQueryable(q => q.Take(1));

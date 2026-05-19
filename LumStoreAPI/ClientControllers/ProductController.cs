@@ -41,12 +41,12 @@ namespace LumStoreAPI.ClientControllers
             return Ok(APIResponse<IEnumerable<string>>.Success(recommendations, ["Success"]));
         }
 
-        [HttpGet("{nodeAlias}/related")]
+        [HttpGet("{relativeUrl}/related")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetRelatedProducts([FromRoute] string nodeAlias, [FromQuery] int limit = 8)
+        public async Task<IActionResult> GetRelatedProducts([FromRoute] string relativeUrl, [FromQuery] int limit = 8)
         {
             limit = Math.Clamp(limit, 1, 15);
-            var products = await _productService.GetRelatedProductsAsync(nodeAlias, limit);
+            var products = await _productService.GetRelatedProductsAsync(relativeUrl, limit);
             return Ok(APIResponse<IEnumerable<DocumentClientGetDTO>>.Success(products));
         }
 
