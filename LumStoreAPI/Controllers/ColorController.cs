@@ -68,7 +68,7 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponseBase.Success(["Updated"]));
         }
 
-        [HttpDelete("{categoryId:int}")]
+        [HttpDelete("{colorId:int}")]
         public async Task<IActionResult> DeleteColor(int colorId)
         {
             var isSuccess = await _colorItemRepository.DeleteColorAsync(colorId);
