@@ -136,7 +136,7 @@ namespace LumStoreAPI.ClientControllers
             var breadcrumbs = await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
                 query.GetAncestors(node.NodeID)
-                .Where(x => !x.Node.ClassName.Equals(HomePage.CLASS_NAME))
+                .Where(x => !x.Node.ClassName.Equals(HomePage.CLASS_NAME) && !x.Node.ClassName.Equals("CMS.Folder"))
                 .Select(x => new DocumentPage
                 {
                     DocumentName = x.DocumentName,
