@@ -7,9 +7,9 @@ using LumStoreAPI.Libraries.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
-using Org.BouncyCastle.Ocsp;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
+using System.ComponentModel.DataAnnotations;
 
 namespace LumStoreAPI.Controllers
 {
@@ -75,6 +75,13 @@ namespace LumStoreAPI.Controllers
             }
 
             return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND));
+        }
+
+        [HttpGet("getFiles")]
+        public async Task<IActionResult> GetFiles([MinLength(1)][FromQuery] Guid[] fileIds)
+        {
+            var result = await _mediaService.GetMediaItemsAsync(fileIds);
+            return Ok(APIResponse<MediaItemDTO[]>.Success(result.ToArray()));
         }
 
         [HttpGet("getFile/{fileId}")]
