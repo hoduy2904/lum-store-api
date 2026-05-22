@@ -34,7 +34,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 
         public async Task SyncProductShiprelayAsync(int productId, EntryActionStatus entryActionStatus, int variantId)
         {
-            if (!await UpdateShiprelayDataAsync(productId, variantId, EmailStatus.Waiting, entryActionStatus) && variantId != null)
+            if (!await UpdateShiprelayDataAsync(productId, variantId, EmailStatus.Waiting, entryActionStatus) && variantId != 0)
             {
                 _context.Add(new ShiprelayDataSync
                 {
