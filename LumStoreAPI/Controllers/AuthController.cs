@@ -14,10 +14,12 @@ namespace LumStoreAPI.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IUserService _userService;
-        public AuthController(IAuthService authService, IUserService userService)
+        private readonly ISocialAuthService _socialAuthService;
+        public AuthController(IAuthService authService, IUserService userService, ISocialAuthService socialAuthService)
         {
             _authService = authService;
             _userService = userService;
+            _socialAuthService = socialAuthService;
         }
 
         [HttpPost("Register")]
@@ -75,6 +77,13 @@ namespace LumStoreAPI.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
             return Ok(await _authService.ResetPasswordAsync(request));
+        }
+
+        [HttpPost("social-login")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SocialLogin(SocialLoginRequest request)
+        {
+            return Ok(await _socialAuthService.SocialLoginAsync(request));
         }
 
         [HttpPost("RefreshToken")]

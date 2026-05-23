@@ -315,9 +315,9 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             if (isSuccess)
             {
                 var type = typeof(T);
-
+                var relativeUrl = await _lumStoreContext.DocumentNodes.Where(x => x.NodeID == nodeID).Select(x => x.RelativeUrl).FirstOrDefaultAsync() ?? "";
                 string className = type.GetField("CLASS_NAME", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)?.ToString() ?? "CMS.Folder";
-                _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(nodeID).ClassName(className).GetDependencies().ToArray());
+                _cacheService.TouchKey(new CacheDependency().Nodes().NodeID(nodeID).ClassName(className).NodeUrl(relativeUrl).GetDependencies().ToArray());
             }
 
             return isSuccess;
@@ -411,7 +411,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                   .ExecuteUpdateAsync(x => x.SetProperty(p => p.DocumentPageWidgets, widgetData));
             if (count > 0)
             {
-                _cacheService.TouchKey(new CacheDependency().NodeID(nodeID).GetDependencies().ToArray());
+                var relativeUrl = await _lumStoreContext.DocumentNodes.Where(x => x.NodeID == nodeID).Select(x => x.RelativeUrl).FirstOrDefaultAsync() ?? "";
+                _cacheService.TouchKey(new CacheDependency().NodeID(nodeID).NodeUrl(relativeUrl).GetDependencies().ToArray());
                 return widgetData;
 
             }

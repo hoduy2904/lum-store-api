@@ -50,6 +50,7 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IContactService, ContactService>();
                 services.AddScoped<ISiteService, SiteService>();
                 services.AddScoped<IColorService, ColorService>();
+                services.AddScoped<ISocialAuthService, SocialAuthService>();
                 services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizeHandler>();
                 return services;
             }

@@ -43,6 +43,7 @@ builder.Services.AddJwtAuthentication();
 builder.Services.AddHttpClient("Shiprelay")
     .AddHttpMessageHandler<ShiprelayClientHandler>();
 builder.Services.AddHttpClient("WMS");
+builder.Services.AddHttpClient("SocialAuth");
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblies(typeof(LumStoreApplicationConfiguration).Assembly, typeof(Program).Assembly);

@@ -30,6 +30,10 @@ namespace LumStoreAPI.Core.Entities.Systems
         public bool IsAdmin { get; set; }
         public DateTimeOffset? TimeActionCode { get; set; }
 
+        public string? GoogleId { get; set; }
+        public string? FacebookId { get; set; }
+        public string? Provider { get; set; }
+
         public virtual ICollection<UserToken> UserTokens { get; set; } = [];
         public virtual ICollection<EventLog> EventLogs { get; set; } = [];
     }

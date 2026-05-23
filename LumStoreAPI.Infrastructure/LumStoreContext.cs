@@ -137,7 +137,10 @@ namespace LumStoreAPI.Infrastructure
                     if (entry.Entity is DocumentPage documentPage)
                     {
                         string className = DocumentPageTypeHelper.GetClassName(entry.Entity.GetType());
-                        foreach (var cache in new CacheDependency().NodeID(documentPage.NodeID).ClassName(className).NodeOrder().GetDependencies())
+                        var dep = new CacheDependency().NodeID(documentPage.NodeID).ClassName(className).NodeOrder();
+                        if (documentPage.Node != null)
+                            dep.NodeUrl(documentPage.Node.RelativeUrl);
+                        foreach (var cache in dep.GetDependencies())
                         {
                             _cacheService.TouchKey(cache);
                         }
