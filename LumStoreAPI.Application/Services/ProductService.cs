@@ -499,8 +499,8 @@ IProductVariantRepository productVariantRepository)
         string? imageUrl = null;
         if (product.Images.Length > 0)
         {
-            var media = await _mediaService.GetMediaItemsAsync(product.Images);
-            imageUrl = media.OrderBy(q => q.FileID).FirstOrDefault()?.FileURL;
+            var media = await _mediaService.GetMediaItemsAsync([product.Images[0]]);
+            imageUrl = media.FirstOrDefault()?.FileURL;
         }
 
         // Resolve parent category name as availableIn
