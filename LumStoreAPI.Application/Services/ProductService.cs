@@ -256,7 +256,7 @@ IProductVariantRepository productVariantRepository)
                     Color = v.Color,
                     Stock = v.Stock,
                     SKU = v.SKU,
-                    Images = [..productImageUrls, ..v.Images]
+                    Images = [.. productImageUrls, .. v.Images]
                 }).ToList()
             };
             return new DocumentClientGetDTO(fields, p);
@@ -499,7 +499,7 @@ IProductVariantRepository productVariantRepository)
         string? imageUrl = null;
         if (product.Images.Length > 0)
         {
-            var media = await _mediaService.GetMediaItemsAsync([product.Images[0]]);
+            var media = await _mediaService.GetMediaItemsAsync(product.Images);
             imageUrl = media.FirstOrDefault()?.FileURL;
         }
 
@@ -637,6 +637,7 @@ IProductVariantRepository productVariantRepository)
                     SKU = v.SKU,
                     Images = variantImages
                         .Where(img => v.Images.Contains(img.FileID))
+                        .OrderBy(img => v.Images.IndexOf(img.FileID))
                         .Select(img => img.FileURL)
                         .ToArray()
                 }).ToList()
@@ -668,7 +669,7 @@ IProductVariantRepository productVariantRepository)
                 g => g.Key,
                 g => g.Select(v => new ProductVariantClientGetDTO(
                     v,
-                    variantImages.Where(img => v.Images.Contains(img.FileID)).ToArray()
+                    variantImages.Where(img => v.Images.Contains(img.FileID)).OrderBy(img => v.Images.IndexOf(img.FileID)).ToArray()
                 )).ToList()
             );
     }
