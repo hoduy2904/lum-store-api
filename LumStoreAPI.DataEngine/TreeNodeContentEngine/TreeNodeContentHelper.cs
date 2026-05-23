@@ -35,7 +35,7 @@ namespace LumStoreAPI.DataEngine.TreeNodeContentEngine
                 {
                     _query = _query.Where(x =>
                     (x.PublishedFrom == null || x.PublishedFrom <= now)
-                    && x.PublishedTo == null || x.PublishedTo >= now);
+                    && (x.PublishedTo == null || x.PublishedTo >= now));
                 }
                 else
                 {

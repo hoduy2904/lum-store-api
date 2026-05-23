@@ -177,10 +177,30 @@ IProductVariantRepository productVariantRepository)
         return productDTOs;
     }
 
-    public Task<IEnumerable<DocumentClientGetDTO>> GetProductsByNodeIdsAsync(int[] nodeIds)
+    public async Task<IEnumerable<DocumentClientGetDTO>> GetProductsByNodeIdsAsync(int[] nodeIds)
     {
-        if (nodeIds.Length == 0) return Task.FromResult(Enumerable.Empty<DocumentClientGetDTO>());
-        return GetProducts(x => nodeIds.Contains(x.NodeID), nodeIds.Length);
+        if (nodeIds.Length == 0) return Enumerable.Empty<DocumentClientGetDTO>();
+
+        var products = (await _pageRetrieveContext.GetPagesAsync<Product>(query =>
+        {
+            query.Where(x => nodeIds.Contains(x.NodeID));
+        })).ToList();
+
+        if (products.Count == 0) return Enumerable.Empty<DocumentClientGetDTO>();
+
+        var imageGuids = products.SelectMany(x => x.Images).ToArray();
+        var images = await _mediaService.GetMediaItemsAsync(imageGuids);
+        var variantsByProduct = await LoadVariantsAsync(products.Select(x => x.NodeID));
+
+        return products.Select(x =>
+        {
+            var productItem = new ProductClientDTO(x)
+            {
+                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
+            };
+            return new DocumentClientGetDTO(productItem, x);
+        });
     }
 
     public async Task<IPagedEnumerable<DocumentClientGetDTO>> GetProductsByCategoryAsync(
