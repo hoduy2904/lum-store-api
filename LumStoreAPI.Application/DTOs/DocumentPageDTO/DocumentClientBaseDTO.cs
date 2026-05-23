@@ -27,7 +27,9 @@ public class DocumentClientBaseDTO
 
     public DocumentClientBaseDTO(DocumentPage documentPage)
     {
-        this.DocumentPageWidgets = documentPage.DocumentPageWidgets;
+        this.DocumentPageWidgets = documentPage.DocumentPageWidgets
+            .Select(w => new WidgetData<object> { WidgetCode = w.WidgetCode, WidgetId = w.WidgetId, Properties = w.Properties })
+            .ToArray();
         if (DocumentPageTypeHelper.DocumentFeatureQueries.TryGetValue(documentPage.GetType(), out var query))
         {
             this.FeatureQuery = (IGenericFeatureQuery?)Activator.CreateInstance(query, documentPage);

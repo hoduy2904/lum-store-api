@@ -209,7 +209,7 @@ IProductVariantRepository productVariantRepository)
         var products = await _pageRetrieveContext.GetPagedPagesAsync<Product>(query =>
         {
             query
-                .GetDescendants(categoryNodeId, 1)
+                .GetDescendants(categoryNodeId)
                 .Published(Core.Models.Enums.TreeNodePublished.Published)
                 .Where(x =>
                     (!request.MinPrice.HasValue || x.Price >= request.MinPrice.Value) &&
@@ -258,14 +258,17 @@ IProductVariantRepository productVariantRepository)
         if (categoryNodeIds.Length == 0) return [];
 
         var now = DateTimeOffset.UtcNow;
-        return await _lumStoreContext.Products
-            .Where(p =>
-                p.Node.ParentNodeID.HasValue &&
-                categoryNodeIds.Contains(p.Node.ParentNodeID.Value) &&
-                !p.IsDeleted &&
-                (p.PublishedFrom == null || p.PublishedFrom <= now) &&
-                (p.PublishedTo == null || p.PublishedTo > now))
-            .GroupBy(p => p.Node.ParentNodeID!.Value)
+        return await _lumStoreContext.DocumentLinkedNodes
+            .Where(ln => categoryNodeIds.Contains(ln.Ancestor) && ln.Depth > 0)
+            .Join(
+                _lumStoreContext.Products.Where(p =>
+                    !p.IsDeleted &&
+                    (p.PublishedFrom == null || p.PublishedFrom <= now) &&
+                    (p.PublishedTo == null || p.PublishedTo > now)),
+                ln => ln.Descendant,
+                p => p.NodeID,
+                (ln, p) => new { ln.Ancestor })
+            .GroupBy(x => x.Ancestor)
             .Select(g => new { NodeId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.NodeId, x => x.Count);
     }

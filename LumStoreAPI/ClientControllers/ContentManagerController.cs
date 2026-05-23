@@ -71,7 +71,7 @@ namespace LumStoreAPI.ClientControllers
                 }
             }
 
-            return Ok(APIResponse<IEnumerable<DocumentPageGetDTO>>.Success(dtos, ["Success"]));
+            return Ok(APIResponse<IEnumerable<DocumentPageGetDTO>>.Success(dtos.OrderBy(q => q.NodeID).ToList(), ["Success"]));
         }
 
         [HttpGet("categories/products")]
