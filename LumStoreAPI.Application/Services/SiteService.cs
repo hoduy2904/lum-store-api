@@ -19,6 +19,7 @@ public class SiteService(
         var navigations = await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
               {
                   query.Where(x => x.IsEnableNavigation)
+                  .OrderBy(x => x.Node.NodeOrder)
                   .Select(x => new DocumentPage
                   {
                       DocumentName = x.DocumentName,
@@ -28,7 +29,8 @@ public class SiteService(
                           NodeID = x.NodeID,
                           RelativeUrl = x.Node.RelativeUrl,
                           ParentNodeID = x.Node.ParentNodeID,
-                          ClassName = x.Node.ClassName
+                          ClassName = x.Node.ClassName,
+                          NodeOrder = x.Node.NodeOrder
                       },
                       IsEnableNavigation = x.IsEnableNavigation,
                       OgImage = x.OgImage,
@@ -43,6 +45,7 @@ public class SiteService(
             : await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
               {
                   query.Where(x => navNodeIds.Contains(x.Node.ParentNodeID) && x.Node.ClassName == "Pages.ProductCategory")
+                  .OrderBy(x => x.Node.NodeOrder)
                   .Select(x => new DocumentPage
                   {
                       DocumentName = x.DocumentName,
@@ -52,7 +55,8 @@ public class SiteService(
                           NodeID = x.NodeID,
                           RelativeUrl = x.Node.RelativeUrl,
                           ParentNodeID = x.Node.ParentNodeID,
-                          ClassName = x.Node.ClassName
+                          ClassName = x.Node.ClassName,
+                          NodeOrder = x.Node.NodeOrder
                       },
                       OgImage = x.OgImage,
                       OgTitle = x.OgTitle,

@@ -499,7 +499,7 @@ IProductVariantRepository productVariantRepository)
         string? imageUrl = null;
         if (product.Images.Length > 0)
         {
-            var media = await _mediaService.GetMediaItemsAsync(product.Images);
+            var media = await _mediaService.GetMediaItemsAsync([product.Images[0]]);
             imageUrl = media.FirstOrDefault()?.FileURL;
         }
 

@@ -14,12 +14,13 @@ public static class TreeNodeExtensions
 
             foreach (var node in documentPages)
             {
-                node.Children = lookups[node.NodeID].ToList();
+                node.Children = lookups[node.NodeID].OrderBy(x => x.Node.NodeOrder).ToList();
             }
             var allIds = documentPages.Select(n => n.NodeID).ToHashSet();
 
             return documentPages
                 .Where(n => !n.Node.ParentNodeID.HasValue || !allIds.Contains(n.Node.ParentNodeID.Value))
+                .OrderBy(X => X.Node.NodeOrder)
                 .ToList();
         }
     }
