@@ -109,7 +109,7 @@ IProductVariantRepository productVariantRepository)
         {
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
             };
 
@@ -196,7 +196,7 @@ IProductVariantRepository productVariantRepository)
         {
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
             };
             return new DocumentClientGetDTO(productItem, x);
@@ -577,7 +577,7 @@ IProductVariantRepository productVariantRepository)
         {
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
             };
             return new DocumentClientGetDTO(productItem, x);
