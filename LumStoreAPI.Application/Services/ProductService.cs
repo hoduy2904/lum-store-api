@@ -505,7 +505,7 @@ IProductVariantRepository productVariantRepository)
 
         return new ProductByColorDTO
         {
-            NodeAlias = product.RelativeUrl,
+            RelativeUrl = product.RelativeUrl,
             NodeAlias = product.NodeAlias,
             ProductName = product.ProductName,
             AvailableIn = availableIn,
