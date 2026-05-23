@@ -377,6 +377,7 @@ IProductVariantRepository productVariantRepository)
             .Select(p => new
             {
                 p.NodeID,
+                p.Node.RelativeUrl,
                 p.Node.NodeAlias,
                 p.ProductName,
                 p.Price,
@@ -430,6 +431,7 @@ IProductVariantRepository productVariantRepository)
             {
                 NodeID = x.product.NodeID,
                 NodeAlias = x.product.NodeAlias,
+                RelativeUrl = x.product.RelativeUrl,
                 ProductName = x.product.ProductName,
                 Price = x.product.Price,
                 PriceDiscount = x.product.PriceDiscount,
@@ -473,6 +475,7 @@ IProductVariantRepository productVariantRepository)
             {
                 p.NodeID,
                 p.Node.NodeAlias,
+                p.Node.RelativeUrl,
                 p.ProductName,
                 p.Images,
                 ParentNodeID = p.Node.ParentNodeID,
@@ -502,6 +505,7 @@ IProductVariantRepository productVariantRepository)
 
         return new ProductByColorDTO
         {
+            RelativeUrl = product.RelativeUrl,
             NodeAlias = product.NodeAlias,
             ProductName = product.ProductName,
             AvailableIn = availableIn,
