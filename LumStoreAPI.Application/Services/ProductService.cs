@@ -500,7 +500,7 @@ IProductVariantRepository productVariantRepository)
         if (product.Images.Length > 0)
         {
             var media = await _mediaService.GetMediaItemsAsync(product.Images);
-            imageUrl = media.FirstOrDefault()?.FileURL;
+            imageUrl = media.OrderBy(q => q.FileID).FirstOrDefault()?.FileURL;
         }
 
         // Resolve parent category name as availableIn
