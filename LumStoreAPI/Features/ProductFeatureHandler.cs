@@ -21,7 +21,9 @@ public class ProductFeatureHandler(
 
         var images = (product.Images.Length > 0
             ? await mediaService.GetMediaItemsAsync(product.Images)
-            : []).OrderBy(x => product.Images.IndexOf(x.FileID));
+            : []).OrderBy(x => product.Images.IndexOf(x.FileID)).ToArray();
+
+        var productImageIds = new HashSet<Guid>(product.Images);
 
         var variants = await productVariantRepository.GetProductVariantsAsync(v => v.ProductID == product.NodeID);
         var variantList = variants.ToList();
@@ -32,14 +34,17 @@ public class ProductFeatureHandler(
             var variantImageGuids = variantList.SelectMany(v => v.Images).Distinct().ToArray();
             var variantImages = (variantImageGuids.Length > 0
                 ? (await mediaService.GetMediaItemsAsync(variantImageGuids)).ToList()
-                : []).OrderBy(x => variantImageGuids.IndexOf(x.FileID));
+                : []).OrderBy(x => variantImageGuids.IndexOf(x.FileID)).ToList();
 
-            variantDTOs = variantList.Select(v => new ProductVariantClientGetDTO(
-                v,
-                variantImages.Where(img => v.Images.Contains(img.FileID))
-        .OrderBy(img => v.Images.IndexOf(img.FileID))
-        .ToArray()
-            ));
+            variantDTOs = variantList.Select(v =>
+            {
+                var uniqueVariantImages = variantImages
+                    .Where(img => v.Images.Contains(img.FileID) && !productImageIds.Contains(img.FileID))
+                    .OrderBy(img => v.Images.IndexOf(img.FileID))
+                    .ToArray();
+
+                return new ProductVariantClientGetDTO(v, [.. images, .. uniqueVariantImages]);
+            });
         }
 
         var discountRules = await discountRuleRepository.GetRulesAsync(product.NodeID, activeOnly: true);
