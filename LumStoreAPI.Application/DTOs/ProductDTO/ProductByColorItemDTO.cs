@@ -4,6 +4,7 @@ public class ProductByColorItemDTO
 {
     public int NodeID { get; set; }
     public string NodeAlias { get; set; } = default!;
+    public string RelativeUrl { get; set; } = default!;
     public string ProductName { get; set; } = default!;
     public decimal Price { get; set; }
     public decimal PriceDiscount { get; set; }
