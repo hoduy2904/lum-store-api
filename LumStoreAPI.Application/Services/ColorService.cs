@@ -1,4 +1,3 @@
-using System;
 using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
@@ -16,7 +15,7 @@ internal class ColorService(
         return await _colorCategoryRepository.GetColorCategories()
          .Include(x => x.Colors)
          .AsNoTrackingWithIdentityResolution()
-         .Where(x => x.Colors.Any(c => c.ProductVariants.Any()))
+         //.Where(x => x.Colors.Any(c => c.ProductVariants.Any()))
          .Select(x => new RelatedContentKeyValue
          {
              Key = x.CategoryName,

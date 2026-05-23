@@ -177,10 +177,30 @@ IProductVariantRepository productVariantRepository)
         return productDTOs;
     }
 
-    public Task<IEnumerable<DocumentClientGetDTO>> GetProductsByNodeIdsAsync(int[] nodeIds)
+    public async Task<IEnumerable<DocumentClientGetDTO>> GetProductsByNodeIdsAsync(int[] nodeIds)
     {
-        if (nodeIds.Length == 0) return Task.FromResult(Enumerable.Empty<DocumentClientGetDTO>());
-        return GetProducts(x => nodeIds.Contains(x.NodeID), nodeIds.Length);
+        if (nodeIds.Length == 0) return Enumerable.Empty<DocumentClientGetDTO>();
+
+        var products = (await _pageRetrieveContext.GetPagesAsync<Product>(query =>
+        {
+            query.Where(x => nodeIds.Contains(x.NodeID));
+        })).ToList();
+
+        if (products.Count == 0) return Enumerable.Empty<DocumentClientGetDTO>();
+
+        var imageGuids = products.SelectMany(x => x.Images).ToArray();
+        var images = await _mediaService.GetMediaItemsAsync(imageGuids);
+        var variantsByProduct = await LoadVariantsAsync(products.Select(x => x.NodeID));
+
+        return products.Select(x =>
+        {
+            var productItem = new ProductClientDTO(x)
+            {
+                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
+            };
+            return new DocumentClientGetDTO(productItem, x);
+        });
     }
 
     public async Task<IPagedEnumerable<DocumentClientGetDTO>> GetProductsByCategoryAsync(
@@ -189,7 +209,7 @@ IProductVariantRepository productVariantRepository)
         var products = await _pageRetrieveContext.GetPagedPagesAsync<Product>(query =>
         {
             query
-                .GetDescendants(categoryNodeId, 1)
+                .GetDescendants(categoryNodeId)
                 .Published(Core.Models.Enums.TreeNodePublished.Published)
                 .Where(x =>
                     (!request.MinPrice.HasValue || x.Price >= request.MinPrice.Value) &&
@@ -238,14 +258,17 @@ IProductVariantRepository productVariantRepository)
         if (categoryNodeIds.Length == 0) return [];
 
         var now = DateTimeOffset.UtcNow;
-        return await _lumStoreContext.Products
-            .Where(p =>
-                p.Node.ParentNodeID.HasValue &&
-                categoryNodeIds.Contains(p.Node.ParentNodeID.Value) &&
-                !p.IsDeleted &&
-                (p.PublishedFrom == null || p.PublishedFrom <= now) &&
-                (p.PublishedTo == null || p.PublishedTo > now))
-            .GroupBy(p => p.Node.ParentNodeID!.Value)
+        return await _lumStoreContext.DocumentLinkedNodes
+            .Where(ln => categoryNodeIds.Contains(ln.Ancestor) && ln.Depth > 0)
+            .Join(
+                _lumStoreContext.Products.Where(p =>
+                    !p.IsDeleted &&
+                    (p.PublishedFrom == null || p.PublishedFrom <= now) &&
+                    (p.PublishedTo == null || p.PublishedTo > now)),
+                ln => ln.Descendant,
+                p => p.NodeID,
+                (ln, p) => new { ln.Ancestor })
+            .GroupBy(x => x.Ancestor)
             .Select(g => new { NodeId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.NodeId, x => x.Count);
     }
