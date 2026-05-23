@@ -28,7 +28,19 @@ public class SettingKeyValueService(
             {
                 d.SettingKey(key);
             }
-        }).Expiration(-1).Expiration(-1).Key($"setting|keys|{string.Join(',', keys)}"))!;
+        }).Expiration(-1).Key($"setting|keys|{string.Join(',', keys)}"))!;
+    }
+
+    public async Task<IEnumerable<ContentKeyValue>> GetSettingContentsAsync(string startWith)
+    {
+        if (string.IsNullOrWhiteSpace(startWith)) return [];
+        var settingKeys = await _cacheService.GetCacheAsync(async () =>
+        {
+            var data = await _settingKeyValueRepository.GetSettingKeysAsync(query => query.SettingCode.StartsWith(startWith));
+            return data.Select(x => new ContentKeyValue { Key = x.SettingName, Value = x.SettingValue });
+        }, cache => cache.Dependencies(d => d.SettingKeys()).Key("settings|content|startwith|" + startWith).Expiration(-1));
+
+        return settingKeys ?? [];
     }
 
     public async Task<T?> GetSystemSettingAsync<T>()

@@ -11,7 +11,8 @@ namespace LumStoreAPI.Features;
 public class ProductFeatureHandler(
     IMediaService mediaService,
     IProductVariantRepository productVariantRepository,
-    IDiscountRuleRepository discountRuleRepository
+    IDiscountRuleRepository discountRuleRepository,
+    ISettingKeyValueService settingKeyValueService
 ) : IRequestHandler<ProductFeatureQuery, ProductClientDTO>
 {
     public async Task<ProductClientDTO> Handle(ProductFeatureQuery request, CancellationToken cancellationToken)
@@ -48,11 +49,14 @@ public class ProductFeatureHandler(
             DiscountAmount = r.DiscountAmount
         });
 
+        var accordions = await settingKeyValueService.GetSettingContentsAsync("Product_Accordion");
+
         return new ProductClientDTO(product)
         {
             Images = images.Select(i => i.FileURL).ToArray(),
             ProductVariants = variantDTOs,
-            DiscountRules = discountTiers
+            DiscountRules = discountTiers,
+            Accordions = accordions
         };
     }
 }

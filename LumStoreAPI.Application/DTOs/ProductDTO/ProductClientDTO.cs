@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
+using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Core.Entities.Pages;
 
 namespace LumStoreAPI.Application.DTOs.ProductDTO;
@@ -23,6 +24,7 @@ public class ProductClientDTO
     public bool IsFragile { get; set; }
     public IEnumerable<ProductVariantClientGetDTO> ProductVariants { get; set; } = [];
     public IEnumerable<ProductDiscountTierDTO> DiscountRules { get; set; } = [];
+    public IEnumerable<ContentKeyValue> Accordions { get; set; } = [];
 
     public ProductClientDTO(Product product)
     {

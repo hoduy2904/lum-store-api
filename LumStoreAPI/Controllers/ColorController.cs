@@ -62,8 +62,7 @@ namespace LumStoreAPI.Controllers
         {
             var category = await _colorItemRepository.UpdateColorAsync(colorId,
             x => x.SetProperty(p => p.ColorName, request.ColorName)
-            .SetProperty(p => p.ColorValue, request.ColorValue)
-            .SetProperty(p => p.CategoryId, request.CategoryId));
+            .SetProperty(p => p.ColorValue, request.ColorValue));
 
             return Ok(APIResponseBase.Success(["Updated"]));
         }
