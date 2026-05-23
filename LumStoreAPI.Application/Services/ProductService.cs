@@ -166,7 +166,7 @@ IProductVariantRepository productVariantRepository)
         {
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).Select(i => i.FileURL).ToArray(),
+                Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
             };
 
@@ -234,6 +234,11 @@ IProductVariantRepository productVariantRepository)
         return products.Select(p =>
         {
             var variants = variantsByProduct.GetValueOrDefault(p.NodeID, []);
+            var productImageUrls = productImages
+                .Where(img => p.Images.Contains(img.FileID))
+                .OrderBy(img => p.Images.IndexOf(img.FileID))
+                .Select(img => img.FileURL)
+                .ToArray();
             var fields = new CategoryProductFieldsDTO
             {
                 ProductName = p.ProductName,
@@ -242,12 +247,17 @@ IProductVariantRepository productVariantRepository)
                 IsBestSeller = p.IsBestSeller,
                 Price = p.Price,
                 PriceDiscount = p.PriceDiscount,
-                Images = productImages
-                    .Where(img => p.Images.Contains(img.FileID))
-                    .Select(img => img.FileURL)
-                    .ToArray(),
+                Images = productImageUrls,
                 Stock = variants.Sum(v => v.Stock),
-                ProductVariants = variants
+                ProductVariants = variants.Select(v => new CategoryProductVariantDTO
+                {
+                    VariantId = v.VariantId,
+                    VariantName = v.VariantName,
+                    Color = v.Color,
+                    Stock = v.Stock,
+                    SKU = v.SKU,
+                    Images = [..productImageUrls, ..v.Images]
+                }).ToList()
             };
             return new DocumentClientGetDTO(fields, p);
         });

@@ -36,7 +36,9 @@ public class ProductFeatureHandler(
 
             variantDTOs = variantList.Select(v => new ProductVariantClientGetDTO(
                 v,
-                variantImages.Where(img => v.Images.Contains(img.FileID)).ToArray()
+                variantImages.Where(img => v.Images.Contains(img.FileID))
+        .OrderBy(img => v.Images.IndexOf(img.FileID))
+        .ToArray()
             ));
         }
 
