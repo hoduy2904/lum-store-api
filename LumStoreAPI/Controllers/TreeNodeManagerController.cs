@@ -148,6 +148,13 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponse<int>.Success(result));
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> DeleteNode([FromBody] int[] nodeIds)
+        {
+            var result = await _treeNodeRepository.DeletesAsync(nodeIds, true);
+            return Ok(APIResponse<int>.Success(result));
+        }
+
         [HttpPatch("navigation/{nodeId}")]
         public async Task<IActionResult> UpdateNavigation(int nodeId, [FromBody] DocumentPageNavigationDTO navigation)
         {
