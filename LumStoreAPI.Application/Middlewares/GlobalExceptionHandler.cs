@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Net;
@@ -71,6 +72,13 @@ namespace LumStoreAPI.Application.Middlewares
                 else if (sqlException.Number == 515)
                 {
                     message = "Missing required data";
+                }
+            }
+            else if (exception is DbUpdateException dbUpdateException)
+            {
+                if (dbUpdateException.InnerException is SqlException sqlEx && (sqlEx.Number == 2627 || sqlEx.Number == 2601))
+                {
+                    message = "Data already exists";
                 }
             }
 
