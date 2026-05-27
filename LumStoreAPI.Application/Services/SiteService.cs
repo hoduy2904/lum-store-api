@@ -1,6 +1,7 @@
 using System;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.DocumentEngine;
+using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Extensions;
@@ -41,12 +42,12 @@ public class SiteService(
 
         var navNodeIds = navigations.Select(x => (int?)x.NodeID).ToArray();
         var children = navNodeIds.Length == 0
-            ? []
-            : await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
+            ? (IEnumerable<DocumentPage>)[]
+            : (await _pageRetrieveContext.GetPagesAsync<ProductCategory>(query =>
               {
-                  query.Where(x => navNodeIds.Contains(x.Node.ParentNodeID) && x.Node.ClassName == "Pages.ProductCategory")
+                  query.Where(x => navNodeIds.Contains(x.Node.ParentNodeID))
                   .OrderBy(x => x.Node.NodeOrder)
-                  .Select(x => new DocumentPage
+                  .Select(x => new ProductCategory
                   {
                       DocumentName = x.DocumentName,
                       NodeID = x.NodeID,
@@ -58,11 +59,13 @@ public class SiteService(
                           ClassName = x.Node.ClassName,
                           NodeOrder = x.Node.NodeOrder
                       },
-                      OgImage = x.OgImage,
+                      OgImage = x.CategoryImage,
                       OgTitle = x.OgTitle,
-                      OgDescription = x.OgDescription
+                      OgDescription = x.OgDescription,
+                      CategoryImage = x.CategoryImage
                   });
-              }, cache => cache.Dependencies(d => d.Nodes().NodeOrder()).Key("navigations_children"));
+              }, cache => cache.Dependencies(d => d.Nodes().NodeOrder()).Key("navigations_children")))
+              .Cast<DocumentPage>();
 
         var allPages = navigations.Concat(children).ToList();
 
