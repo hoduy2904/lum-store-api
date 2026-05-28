@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
 using System.ComponentModel.DataAnnotations;
 
 namespace LumStoreAPI.Controllers
@@ -103,10 +104,15 @@ namespace LumStoreAPI.Controllers
                     var outputStream = new MemoryStream();
                     using (var image = await Image.LoadAsync(inputStream))
                     {
+                        if (image.Width > 1920)
+                        {
+                            image.Mutate(x => x.Resize(1920, 0));
+                        }
                         var encoder = new WebpEncoder
                         {
                             Quality = 75,
-                            FileFormat = WebpFileFormatType.Lossy
+                            FileFormat = WebpFileFormatType.Lossy,
+                            Method = WebpEncodingMethod.Fastest
                         };
 
                         await image.SaveAsWebpAsync(outputStream, encoder);
