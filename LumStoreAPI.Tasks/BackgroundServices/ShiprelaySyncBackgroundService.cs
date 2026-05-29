@@ -209,7 +209,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
             lastSynced = new DateTime(2026, 01, 01).ToUniversalTime();
         }
         var updateVariants = await productService.GetShiprelayProductsAsync(
-            new ShiprelayProductGetRequest { PerPage = 10000, UpdatedAtFrom = lastSynced }
+            new ShiprelayProductGetRequest { Page = 1, PerPage = 10000, UpdatedAtFrom = lastSynced }
         );
 
         if (updateVariants is null || !updateVariants.Data.Any()) return;
