@@ -210,12 +210,12 @@ internal class OrderRepository : IOrderRepository
         return q.CountAsync();
     }
 
-    public Task<decimal> SumRevenueAsync(DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null)
+    public async Task<decimal> SumRevenueAsync(DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null)
     {
         IQueryable<Order> q = _ctx.Orders.Where(o => o.PaymentStatus == PaymentStatus.Paid);
         if (fromDate.HasValue) q = q.Where(o => o.CreatedAt >= fromDate.Value);
         if (toDate.HasValue) q = q.Where(o => o.CreatedAt <= toDate.Value);
-        return q.SumAsync(o => (decimal?)o.Total).ContinueWith(t => t.Result ?? 0m);
+        return await q.SumAsync(o => (decimal?)o.Total) ?? 0m;
     }
 
     public async Task<IEnumerable<(DateTimeOffset Date, int Count, decimal Revenue)>> GetDailyStatsAsync(DateTimeOffset fromDate, DateTimeOffset toDate)
