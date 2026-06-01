@@ -24,7 +24,7 @@ namespace LumStoreAPI.Controllers
             return Ok(APIResponse<IEnumerable<ProductRelated>>.Success(combos));
         }
 
-        [HttpPost("{productId}")]
+        [HttpPost]
         public async Task<IActionResult> InsertProductCombo(ProductComboRequest request)
         {
             var combo = await _productComboRepository.InsertProductCombo(new ProductCombo

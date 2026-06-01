@@ -10,6 +10,7 @@ public class ProductClientDTO
     public string? ShortDescription { get; set; }
     public string? Description { get; set; }
     public bool IsBestSeller { get; set; }
+    public bool IsCombo { get; set; }
     public decimal? Price { get; set; }
     public decimal? PriceDiscount { get; set; }
     public string[] Images { get; set; } = [];
@@ -43,5 +44,6 @@ public class ProductClientDTO
         this.IsHazmat = product.IsHazmat;
         this.IsNeedBox = product.IsNeedBox;
         this.IsFragile = product.IsFragile;
+        this.IsCombo = product.IsCombo;
     }
 }

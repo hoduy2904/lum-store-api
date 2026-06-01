@@ -110,7 +110,8 @@ IProductVariantRepository productVariantRepository)
             var productItem = new ProductClientDTO(x)
             {
                 Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
-                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
+                IsCombo = x.IsCombo,
             };
 
             var product = new DocumentClientGetDTO(productItem, x);

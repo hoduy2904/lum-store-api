@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
@@ -18,7 +19,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
     private readonly ILogger<ShiprelaySyncBackgroundService> _logger;
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan StockSyncEvery = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan StockSyncEvery = TimeSpan.FromMinutes(1);
 
     private DateTimeOffset _lastStockSync = DateTimeOffset.MinValue;
 
@@ -45,7 +46,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                 _logger.LogError(ex, "ShipRelay queue processing failed");
             }
 
-            // Stock pull every 30 minutes
+            // Stock pull every 1 minutes
             if (DateTimeOffset.UtcNow - _lastStockSync >= StockSyncEvery)
             {
                 try
@@ -196,38 +197,57 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
     private async Task SyncStockFromShiprelayAsync(CancellationToken ct)
     {
+        DateTime currentTime = DateTime.UtcNow;
         await using var scope = _serviceProvider.CreateAsyncScope();
         var ctx = scope.ServiceProvider.GetRequiredService<LumStoreContext>();
         var productService = scope.ServiceProvider.GetRequiredService<IShiprelayProductService>();
+        var keySettingService = scope.ServiceProvider.GetRequiredService<ISettingKeyValueRepository>();
 
-        var variants = await ctx.ProductVariants
-            .Where(v => v.ShiprelayId > 0)
-            .ToListAsync(ct);
-
-        if (variants.Count == 0) return;
-
-        int synced = 0;
-        foreach (var variant in variants)
+        var lastSyncedData = await keySettingService.GetSettingKeyAsync("SHIPRELAY_STOCK_LAST_SYNC");
+        if (!DateTime.TryParse(lastSyncedData?.SettingValue, out DateTime lastSynced))
         {
-            if (ct.IsCancellationRequested) break;
+            lastSynced = new DateTime(2026, 01, 01).ToUniversalTime();
+        }
+        var updateVariants = await productService.GetShiprelayProductsAsync(
+            new ShiprelayProductGetRequest { Page = 1, PerPage = 10000, UpdatedAtFrom = lastSynced }
+        );
 
-            var exists = await productService.IsExistsProductAsync(variant.ShiprelayId);
-            if (!exists) continue;
+        if (updateVariants is null || !updateVariants.Data.Any()) return;
+        var updateVariantDict = updateVariants.Data.ToDictionary(x => x.Id, x => x) ?? [];
 
-            var result = await productService.GetShiprelayProductsAsync(
-                new ShiprelayProductGetRequest { SKU = variant.SKU, PerPage = 1 });
+        var productVariants = await ctx.ProductVariants
+            .Where(x => x.ShiprelayId != 0 && updateVariantDict.Keys.Contains(x.ShiprelayId))
+            .ToArrayAsync();
 
-            var product = result?.Data?.FirstOrDefault();
-            if (product is null) continue;
+        if (!productVariants.Any()) return;
 
-            variant.Stock = product.StockCount ?? 0;
-            synced++;
+        foreach (var variant in productVariants)
+        {
+            if (!updateVariantDict.ContainsKey(variant.ShiprelayId)) return;
+            variant.Stock = updateVariantDict[variant.ShiprelayId].StockCount ?? 0;
         }
 
-        if (synced > 0)
-            await ctx.SaveChangesAsync(ct);
+        int changeCounter = 0;
 
-        _logger.LogInformation("ShipRelay stock sync: {Synced}/{Total} variants updated", synced, variants.Count);
+        if (ctx.ChangeTracker.HasChanges())
+            changeCounter = await ctx.SaveChangesAsync(ct);
+
+        if (lastSyncedData is null)
+        {
+            await keySettingService.InsertSettingKeyAsync(new Core.Entities.Systems.SettingKeyValue
+            {
+                SettingCode = "SHIPRELAY_STOCK_LAST_SYNC",
+                SettingName = "Shiprelay stock last synced",
+                SettingValue = DateTime.UtcNow.ToString()
+            });
+        }
+        else
+        {
+            lastSyncedData.SettingValue = currentTime.ToString();
+            await keySettingService.UpdateSettingKeyAsync("SHIPRELAY_STOCK_LAST_SYNC", lastSyncedData);
+        }
+
+        _logger.LogInformation("ShipRelay stock sync: {Synced}/{Total} variants updated", changeCounter, productVariants.Length);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

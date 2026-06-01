@@ -18,8 +18,11 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public async Task<bool> DeleteProductCombos(params ProductCombo[] productCombos)
         {
             if (productCombos.Length == 0) return false;
+
+            var variantIds = productCombos.Select(x => x.VariantID).Distinct();
+            var productIds = productCombos.Select(x => x.ProductID).Distinct();
             var count = await _lumStoreContext.ProductCombos
-                .Where(x => productCombos.Any(c => c.ProductID == x.ProductID && c.VariantID == x.VariantID))
+                .Where(x => variantIds.Contains(x.VariantID) && productIds.Contains(x.ProductID))
                 .ExecuteDeleteAsync();
 
             return count > 0;
