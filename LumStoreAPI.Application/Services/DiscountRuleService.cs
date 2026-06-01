@@ -31,6 +31,7 @@ public class DiscountRuleService : IDiscountRuleService
             RuleName = dto.RuleName,
             MinQuantity = dto.MinQuantity,
             MaxQuantity = dto.MaxQuantity,
+            DiscountPercent = dto.DiscountPercent,
             DiscountAmount = dto.DiscountAmount,
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
@@ -48,6 +49,7 @@ public class DiscountRuleService : IDiscountRuleService
             r.RuleName = dto.RuleName;
             r.MinQuantity = dto.MinQuantity;
             r.MaxQuantity = dto.MaxQuantity;
+            r.DiscountPercent = dto.DiscountPercent;
             r.DiscountAmount = dto.DiscountAmount;
             r.StartDate = dto.StartDate;
             r.EndDate = dto.EndDate;
@@ -63,7 +65,8 @@ public class DiscountRuleService : IDiscountRuleService
         var rule = await _ruleRepo.GetBestRuleAsync(productId, quantity);
         if (rule == null) return unitPrice;
 
-        return Math.Max(0, Math.Round(unitPrice - rule.DiscountAmount, 2));
+        // Formula: Max(0, Round(unitPrice × (1 - DiscountPercent/100) - DiscountAmount, 2))
+        return Math.Max(0, Math.Round(unitPrice * (1 - rule.DiscountPercent / 100) - rule.DiscountAmount, 2));
     }
 
     private static DiscountRuleGetDTO MapToDTO(DiscountRule r) => new()
@@ -73,6 +76,7 @@ public class DiscountRuleService : IDiscountRuleService
         RuleName = r.RuleName,
         MinQuantity = r.MinQuantity,
         MaxQuantity = r.MaxQuantity,
+        DiscountPercent = r.DiscountPercent,
         DiscountAmount = r.DiscountAmount,
         StartDate = r.StartDate,
         EndDate = r.EndDate,

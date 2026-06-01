@@ -11,6 +11,7 @@ internal class DiscountRuleConfiguration : IEntityTypeConfiguration<DiscountRule
         builder.HasIndex(x => x.IsActive);
 
         builder.Property(x => x.RuleName).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.DiscountPercent).HasPrecision(5, 2).IsRequired();
         builder.Property(x => x.DiscountAmount).HasPrecision(18, 2).IsRequired();
     }
 }
