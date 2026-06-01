@@ -309,6 +309,7 @@ IProductVariantRepository productVariantRepository)
             {
                 p.NodeID,
                 p.Node.NodeAlias,
+                p.Node.RelativeUrl,
                 p.ProductName,
                 p.Price,
                 p.PriceDiscount,
@@ -343,6 +344,7 @@ IProductVariantRepository productVariantRepository)
         return sorted.Select(p => new SearchSuggestionDTO
         {
             NodeAlias = p.NodeAlias,
+            RelativeUrl = p.RelativeUrl,
             Fields = new SearchSuggestionFieldsDTO
             {
                 ProductName = p.ProductName,
