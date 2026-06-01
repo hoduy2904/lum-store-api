@@ -76,7 +76,7 @@ internal class CartService : ICartService
                 NodeID = c.NodeId,
                 Quantity = c.Quantity,
                 VariantId = c.VariantId,
-                Product = product
+                Product = product,
             };
         }).ToList();
 
