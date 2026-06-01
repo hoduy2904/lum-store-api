@@ -61,7 +61,7 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
                         (r.ProductId == null || r.ProductId == productId) &&
                         r.MinQuantity <= quantity &&
                         (r.MaxQuantity == null || r.MaxQuantity >= quantity))
-            .OrderByDescending(r => r.DiscountAmount)
+            .OrderByDescending(r => r.DiscountPercent + r.DiscountAmount)
             .FirstOrDefaultAsync();
     }
 }

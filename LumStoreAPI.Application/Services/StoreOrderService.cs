@@ -172,6 +172,7 @@ internal class StoreOrderService : IStoreOrderService
             ShipmentTotalCost = total,
             PackageRef = 1,
             ShipmentCreatedAt = DateTimeOffset.UtcNow,
+            ShippingSelectedRef = request.ShippingServiceCode,
             RecipientName = user.FullName,
             Email = user.Email,
             Phone = address.Phone,

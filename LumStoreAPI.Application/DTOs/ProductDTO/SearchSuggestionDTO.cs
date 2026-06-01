@@ -2,6 +2,7 @@ namespace LumStoreAPI.Application.DTOs.ProductDTO;
 
 public class SearchSuggestionDTO
 {
+    public string RelativeUrl { get; set; } = default!;
     public string NodeAlias { get; set; } = default!;
     public SearchSuggestionFieldsDTO Fields { get; set; } = default!;
 }

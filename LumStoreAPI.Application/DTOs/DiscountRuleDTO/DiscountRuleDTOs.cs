@@ -9,13 +9,14 @@ public class DiscountRuleGetDTO
     public string RuleName { get; set; } = default!;
     public int MinQuantity { get; set; }
     public int? MaxQuantity { get; set; }
+    public decimal DiscountPercent { get; set; }
     public decimal DiscountAmount { get; set; }
     public DateTimeOffset? StartDate { get; set; }
     public DateTimeOffset? EndDate { get; set; }
     public bool IsActive { get; set; }
 }
 
-public class DiscountRuleUpsertDTO
+public class DiscountRuleUpsertDTO : IValidatableObject
 {
     public int? ProductId { get; set; }
 
@@ -27,11 +28,22 @@ public class DiscountRuleUpsertDTO
 
     public int? MaxQuantity { get; set; }
 
-    [Range(0.01, double.MaxValue, ErrorMessage = "DiscountAmount must be greater than 0.")]
+    [Range(0, 100, ErrorMessage = "DiscountPercent must be between 0 and 100.")]
+    public decimal DiscountPercent { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "DiscountAmount must be >= 0.")]
     public decimal DiscountAmount { get; set; }
 
     public DateTimeOffset? StartDate { get; set; }
     public DateTimeOffset? EndDate { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (DiscountPercent <= 0 && DiscountAmount <= 0)
+            yield return new ValidationResult(
+                "At least one of DiscountPercent or DiscountAmount must be greater than 0.",
+                [nameof(DiscountPercent), nameof(DiscountAmount)]);
+    }
 }

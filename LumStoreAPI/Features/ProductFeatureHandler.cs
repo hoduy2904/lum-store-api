@@ -53,6 +53,7 @@ public class ProductFeatureHandler(
             RuleName = r.RuleName,
             MinQuantity = r.MinQuantity,
             MaxQuantity = r.MaxQuantity,
+            DiscountPercent = r.DiscountPercent,
             DiscountAmount = r.DiscountAmount
         });
 
