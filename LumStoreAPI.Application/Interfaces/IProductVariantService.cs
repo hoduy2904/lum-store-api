@@ -1,6 +1,6 @@
 using System;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
-using LumStoreAPI.Application.DTOs.StoreDTO;
+using LumStoreAPI.Core.Models.Systems;
 
 namespace LumStoreAPI.Application.Interfaces;
 

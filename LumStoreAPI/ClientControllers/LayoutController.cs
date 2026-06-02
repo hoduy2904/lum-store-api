@@ -3,6 +3,7 @@ using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.DocumentEngine;
 using LumStoreAPI.Core.Entities.DocumentTypes;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Core.Models.Systems.SettingKeys;

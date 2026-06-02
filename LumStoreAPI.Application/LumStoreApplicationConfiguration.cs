@@ -3,6 +3,7 @@ using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Application.Middlewares;
 using LumStoreAPI.Application.Services;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;

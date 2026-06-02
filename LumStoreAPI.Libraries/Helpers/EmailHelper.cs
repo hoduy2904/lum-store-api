@@ -1,5 +1,5 @@
 ﻿using LumStoreAPI.Core.Models.Systems;
-using LumStoreAPI.Infrastructure.Models;
+using LumStoreAPI.Core.Models.Systems.SettingKeys;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
@@ -8,7 +8,7 @@ namespace LumStoreAPI.Libraries.Helpers
 {
     public class EmailHelper
     {
-        public static Task SendMail(EmailMessage emailMessage, EmailConfig emailConfig)
+        public static async Task SendMail(EmailMessage emailMessage, EmailSettings emailConfig)
         {
             using (var mailMessage = new MimeMessage())
             {
@@ -43,15 +43,15 @@ namespace LumStoreAPI.Libraries.Helpers
                     }
                 }
                 mailMessage.Body = bodyBuilder.ToMessageBody();
-                return SendEmail(mailMessage, emailConfig);
+                await SendEmail(mailMessage, emailConfig);
             }
         }
 
-        private static async Task SendEmail(MimeMessage mimeMessage, EmailConfig emailConfig)
+        private static async Task SendEmail(MimeMessage mimeMessage, EmailSettings emailConfig)
         {
             using var client = new SmtpClient();
-            await client.ConnectAsync(emailConfig.host, emailConfig.port, SecureSocketOptions.StartTls);
-            await client.AuthenticateAsync(emailConfig.username, emailConfig.password);
+            await client.ConnectAsync(emailConfig.Host, emailConfig.Port, SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(emailConfig.Username, emailConfig.Password);
             await client.SendAsync(mimeMessage);
             await client.DisconnectAsync(true);
         }

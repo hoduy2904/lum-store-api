@@ -1,5 +1,6 @@
 using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 

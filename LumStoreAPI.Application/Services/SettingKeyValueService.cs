@@ -1,9 +1,8 @@
-using System;
-using LumStoreAPI.Application.DTOs.StoreDTO;
-using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Libraries.Helpers;
 
 namespace LumStoreAPI.Application.Services;
