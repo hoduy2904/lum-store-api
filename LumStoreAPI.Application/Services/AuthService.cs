@@ -8,6 +8,7 @@ using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Systems;
+using LumStoreAPI.Core.Models.Systems.SettingKeys;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.AspNetCore.Http;
 
@@ -20,18 +21,21 @@ namespace LumStoreAPI.Application.Services
         private readonly IUserTokenRepository _userTokenRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IEmailService _emailService;
+        private readonly ISettingKeyValueService _settingKeyValueService;
         public AuthService(
             IUserRepository userRepository,
             IJwtTokenService jwtTokenService,
             IUserTokenRepository userTokenRepository,
             IHttpContextAccessor httpContextAccessor,
-            IEmailService emailService)
+            IEmailService emailService,
+            ISettingKeyValueService settingKeyValueService)
         {
             _userRepository = userRepository;
             _jwtTokenService = jwtTokenService;
             _userTokenRepository = userTokenRepository;
             _httpContextAccessor = httpContextAccessor;
             _emailService = emailService;
+            _settingKeyValueService = settingKeyValueService;
         }
 
         DateTime REFRESH_TOKEN_TIME => DateTime.UtcNow.AddDays(7);
@@ -147,12 +151,13 @@ namespace LumStoreAPI.Application.Services
             entity.VerifyCode = StringHelper.GenerateCode();
             entity.TimeActionCode = DateTime.UtcNow;
             var user = await _userRepository.InsertUserAsync(entity);
+            var setting = await _settingKeyValueService.GetSystemSettingAsync<EmailSettings>();
 
             await _emailService.SendEmailAsync(new EmailMessage
             {
                 EmailTo = [request.Email],
                 EmailSubject = "Register Account",
-                EmailFrom = "noreply@lumstore.com",
+                EmailFrom = setting?.FromEmail ?? "noreply@lumnails.com",
                 EmailBody = "Code: " + entity.VerifyCode
             });
 
@@ -175,6 +180,7 @@ namespace LumStoreAPI.Application.Services
                 return APIResponseBase.Success(["If your email is registered, you will receive a reset code."]);
 
             var code = StringHelper.GenerateCode();
+            var setting = await _settingKeyValueService.GetSystemSettingAsync<EmailSettings>();
 
             await _userRepository.UpdateUsersAsync(
                 x => x.ItemID == user.ItemID,
@@ -185,7 +191,7 @@ namespace LumStoreAPI.Application.Services
             {
                 EmailTo = [user.Email],
                 EmailSubject = "Reset Password",
-                EmailFrom = "noreply@lumstore.com",
+                EmailFrom = setting?.FromEmail ?? "noreply@lumstore.com",
                 EmailBody = "Your password reset code is: " + code + ". This code is valid for 15 minutes."
             });
 

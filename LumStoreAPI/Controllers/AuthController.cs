@@ -26,7 +26,7 @@ namespace LumStoreAPI.Controllers
         public async Task<IActionResult> Register(UserCreateRequest userCreateRequest)
         {
             var user = await _authService.RegisterUserAsync(userCreateRequest);
-            return Ok(user);
+            return Ok(APIResponse<UserDTO>.Success(user));
         }
 
         [HttpPost("Verify")]
