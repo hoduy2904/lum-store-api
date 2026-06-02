@@ -21,6 +21,7 @@ internal class StoreOrderService : IStoreOrderService
     private readonly LumStoreContext _ctx;
     private readonly IPaymentService _paymentService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IDiscountRuleService _discountRuleService;
 
     public StoreOrderService(
         ICustomerService customerService,
@@ -28,7 +29,8 @@ internal class StoreOrderService : IStoreOrderService
         IOrderService orderService,
         LumStoreContext ctx,
         IHttpContextAccessor httpContextAccessor,
-        IPaymentService paymentService)
+        IPaymentService paymentService,
+        IDiscountRuleService discountRuleService)
     {
         _customerService = customerService;
         _shiprelayService = shiprelayService;
@@ -36,6 +38,7 @@ internal class StoreOrderService : IStoreOrderService
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
         _paymentService = paymentService;
+        _discountRuleService = discountRuleService;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -117,7 +120,17 @@ internal class StoreOrderService : IStoreOrderService
                 ? variants.FirstOrDefault(v => v.ItemID == cartItem.VariantId)
                 : null;
 
-            var unitPrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+            decimal unitPrice;
+            if (product.IsCombo)
+            {
+                var comboResult = await _discountRuleService.CalculateComboPriceAsync(product.NodeID);
+                unitPrice = comboResult.TotalPrice;
+            }
+            else
+            {
+                unitPrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+            }
+
             var lineTotal = unitPrice * cartItem.Quantity;
             subTotal += lineTotal;
 
@@ -438,7 +451,17 @@ internal class StoreOrderService : IStoreOrderService
 
             if (variant == null) continue;
 
-            var unitPrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+            decimal unitPrice;
+            if (product.IsCombo)
+            {
+                var comboResult = await _discountRuleService.CalculateComboPriceAsync(product.NodeID);
+                unitPrice = comboResult.TotalPrice;
+            }
+            else
+            {
+                unitPrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+            }
+
             var lineTotal = unitPrice * cartItem.Quantity;
             subTotal += lineTotal;
 

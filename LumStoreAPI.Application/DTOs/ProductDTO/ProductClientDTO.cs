@@ -1,3 +1,4 @@
+using LumStoreAPI.Application.DTOs.ProductComboDTO;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Models.Systems;
@@ -26,6 +27,7 @@ public class ProductClientDTO
     public IEnumerable<ProductVariantClientGetDTO> ProductVariants { get; set; } = [];
     public IEnumerable<ProductDiscountTierDTO> DiscountRules { get; set; } = [];
     public IEnumerable<ContentKeyValue> Accordions { get; set; } = [];
+    public IEnumerable<ComboItemDetailDTO> ComboItems { get; set; } = [];
 
     public ProductClientDTO(Product product)
     {
