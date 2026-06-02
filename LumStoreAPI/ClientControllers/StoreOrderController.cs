@@ -36,6 +36,15 @@ public class StoreOrderController(IStoreOrderService storeOrderService) : Contro
         return Ok(result);
     }
 
+    /// <summary>POST /api/store/orders/{orderId}/cancel — Cancel own order (Pending or Confirmed only).</summary>
+    [HttpPost("{orderId:int}/cancel")]
+    public async Task<IActionResult> CancelOrder(int orderId, [FromBody] StoreCancelOrderRequest request, CancellationToken ct)
+    {
+        var result = await _storeOrderService.CancelOrderAsync(orderId, request, ct);
+        if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : BadRequest(result);
+        return Ok(result);
+    }
+
     /// <summary>GET /api/store/orders/{orderId}/returns — List returns for own order.</summary>
     [HttpGet("{orderId:int}/returns")]
     public async Task<IActionResult> GetOrderReturns(int orderId, CancellationToken ct)

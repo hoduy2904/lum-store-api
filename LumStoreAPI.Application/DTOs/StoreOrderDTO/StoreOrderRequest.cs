@@ -19,3 +19,9 @@ public class StoreCheckoutPreviewRequest
     [Required]
     public int AddressId { get; set; }
 }
+
+public class StoreCancelOrderRequest
+{
+    [MaxLength(500)]
+    public string? Reason { get; set; }
+}

@@ -526,6 +526,33 @@ internal class StoreOrderService : IStoreOrderService
         });
     }
 
+    // ── Cancel ────────────────────────────────────────────────────────────────
+
+    public async Task<APIResponse<bool>> CancelOrderAsync(int orderId, StoreCancelOrderRequest request, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
+
+        var order = await _ctx.Orders.FirstOrDefaultAsync(o => o.ItemID == orderId, ct);
+        if (order is null)
+            return APIResponse<bool>.Failure("Order not found");
+
+        if (order.CustomerId != profileDto.ProfileId)
+            return APIResponse<bool>.Failure("Forbidden");
+
+        var cancellableStatuses = new[] { OrderStatus.Pending, OrderStatus.Confirmed };
+        if (!cancellableStatuses.Contains(order.Status))
+            return APIResponse<bool>.Failure("Order cannot be cancelled at this stage");
+
+        await _orderService.UpdateOrderStatusAsync(orderId, new OrderUpdateStatusDTO
+        {
+            NewStatus = OrderStatus.Cancelled,
+            Comment = request.Reason ?? "Cancelled by customer"
+        });
+
+        return APIResponse<bool>.Success(true, ["Order cancelled successfully"]);
+    }
+
     // ── Returns ───────────────────────────────────────────────────────────────
 
     public async Task<APIResponse<IEnumerable<OrderReturnGetDTO>>> GetOrderReturnsAsync(
