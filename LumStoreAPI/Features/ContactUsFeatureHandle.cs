@@ -1,7 +1,7 @@
 using System;
 using LumStoreAPI.Application.DTOs.QueryDTOs;
 using LumStoreAPI.Application.FeatureQueries;
-using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Systems.SettingKeys;

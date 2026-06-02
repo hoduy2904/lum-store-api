@@ -1,8 +1,7 @@
-using System;
-using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Models.Systems;
 
-namespace LumStoreAPI.Application.Interfaces;
+namespace LumStoreAPI.Core.Interfaces.Services;
 
 public interface ISettingKeyValueService
 {

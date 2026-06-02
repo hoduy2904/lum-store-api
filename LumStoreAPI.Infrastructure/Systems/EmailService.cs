@@ -1,52 +1,28 @@
 ﻿using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
-using LumStoreAPI.Core.Models.Constants;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
-using LumStoreAPI.Infrastructure.Models;
+using LumStoreAPI.Core.Models.Systems.SettingKeys;
 
 namespace LumStoreAPI.Infrastructure.Systems
 {
     internal class EmailService : IEmailService
     {
-        private readonly ISettingKeyValueRepository _settingKeyValueRepository;
+        private readonly ISettingKeyValueService _settingKeyValueService;
         private readonly IEmailRepository _emailRepository;
-        private readonly ICacheService _cacheService;
-        public EmailService(ISettingKeyValueRepository settingKeyValueRepository, IEmailRepository emailRepository, ICacheService cacheService)
+        public EmailService(ISettingKeyValueService settingKeyValueService, IEmailRepository emailRepository)
         {
-            _settingKeyValueRepository = settingKeyValueRepository;
+            _settingKeyValueService = settingKeyValueService;
             _emailRepository = emailRepository;
-            _cacheService = cacheService;
         }
 
-        public async Task<EmailConfig> GetConfigAsync()
+        public async Task<EmailSettings> GetConfigAsync()
         {
-            string[] emailConfigKeys = [SystemKeyConstants.EMAIL_PASSWORD, SystemKeyConstants.EMAIL_PORT,
-                    SystemKeyConstants.EMAIL_HOST, SystemKeyConstants.EMAIL_USERNAME];
+            return (await _settingKeyValueService.GetSystemSettingAsync<EmailSettings>()) ?? new EmailSettings();
 
-            var emailConfig = await _cacheService.GetCacheAsync(async () =>
-              {
-                  var emailConfigData = (await _settingKeyValueRepository
-                    .GetSettingKeysAsync(x => emailConfigKeys.Contains(x.SettingCode)))
-                    .ToDictionary(x => x.SettingCode, x => x.SettingValue);
-
-                  return new EmailConfig(
-                      emailConfigData.GetValueOrDefault(SystemKeyConstants.EMAIL_HOST, ""),
-                      int.Parse(emailConfigData.GetValueOrDefault(SystemKeyConstants.EMAIL_PORT, "0")),
-                      emailConfigData.GetValueOrDefault(SystemKeyConstants.EMAIL_USERNAME, ""),
-                      emailConfigData.GetValueOrDefault(SystemKeyConstants.EMAIL_PASSWORD, "")
-                   );
-              }, cache => cache.Dependencies(d =>
-              {
-                  foreach (var key in emailConfigKeys)
-                  {
-                      d.SettingKey(key);
-                  }
-              }).Expiration(30).Key("emailconfig"));
-
-            return emailConfig ?? new EmailConfig("", 0, "", "");
         }
 
         public async Task<IEnumerable<EmailQueue>> GetEmailQueuesAsync(int topN)
