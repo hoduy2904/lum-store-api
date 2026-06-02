@@ -1,5 +1,5 @@
 ﻿using LumStoreAPI.Core.Models.Systems;
-using LumStoreAPI.Infrastructure.Models;
+using LumStoreAPI.Core.Models.Systems.SettingKeys;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
@@ -8,7 +8,8 @@ namespace LumStoreAPI.Libraries.Helpers
 {
     public class EmailHelper
     {
-        public static Task SendMail(EmailMessage emailMessage, EmailConfig emailConfig)
+        private static SmtpClient? _client = null;
+        public static async Task SendMail(EmailMessage emailMessage, EmailSettings emailConfig, CancellationToken cancellationToken = default)
         {
             using (var mailMessage = new MimeMessage())
             {
@@ -43,17 +44,55 @@ namespace LumStoreAPI.Libraries.Helpers
                     }
                 }
                 mailMessage.Body = bodyBuilder.ToMessageBody();
-                return SendEmail(mailMessage, emailConfig);
+                await SendEmail(mailMessage, emailConfig, cancellationToken);
             }
         }
 
-        private static async Task SendEmail(MimeMessage mimeMessage, EmailConfig emailConfig)
+        private static async Task SendEmail(MimeMessage mimeMessage, EmailSettings emailConfig, CancellationToken cancellationToken = default)
         {
-            using var client = new SmtpClient();
-            await client.ConnectAsync(emailConfig.host, emailConfig.port, SecureSocketOptions.StartTls);
-            await client.AuthenticateAsync(emailConfig.username, emailConfig.password);
-            await client.SendAsync(mimeMessage);
-            await client.DisconnectAsync(true);
+            if (_client == null)
+            {
+                _client = new SmtpClient();
+            }
+            if (!_client.IsConnected)
+            {
+                await _client.ConnectAsync(emailConfig.Host, emailConfig.Port, SecureSocketOptions.StartTls, cancellationToken);
+            }
+
+            if (!_client.IsAuthenticated)
+            {
+                await _client.AuthenticateAsync(emailConfig.Username, emailConfig.Password, cancellationToken);
+            }
+            try
+            {
+                await _client.SendAsync(mimeMessage, cancellationToken);
+            }
+            catch
+            {
+                await DisconnectAsync(cancellationToken);
+                throw;
+            }
+        }
+
+        public static async Task DisconnectAsync(CancellationToken cancellationToken = default)
+        {
+            if (_client == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (_client.IsConnected)
+                {
+                    await _client.DisconnectAsync(true, cancellationToken);
+                }
+            }
+            finally
+            {
+                _client.Dispose();
+                _client = null;
+            }
         }
     }
 }

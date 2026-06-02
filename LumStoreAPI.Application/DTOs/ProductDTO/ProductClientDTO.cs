@@ -1,7 +1,7 @@
 using LumStoreAPI.Application.DTOs.ProductComboDTO;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
-using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Core.Entities.Pages;
+using LumStoreAPI.Core.Models.Systems;
 
 namespace LumStoreAPI.Application.DTOs.ProductDTO;
 

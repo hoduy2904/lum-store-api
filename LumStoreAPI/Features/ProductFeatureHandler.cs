@@ -3,6 +3,7 @@ using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Application.FeatureQueries;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Interfaces.Services;
 using MediatR;
 
 namespace LumStoreAPI.Features;

@@ -1,4 +1,4 @@
-using System;
+using LumStoreAPI.Core.Models.Systems;
 
 namespace LumStoreAPI.Application.DTOs.StoreDTO;
 

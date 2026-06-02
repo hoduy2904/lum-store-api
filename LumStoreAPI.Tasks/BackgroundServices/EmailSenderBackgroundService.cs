@@ -1,5 +1,4 @@
 ﻿using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
@@ -23,6 +22,12 @@ namespace LumStoreAPI.Tasks.BackgroundServices
                 await DoWork();
                 await Task.Delay(10000);
             }
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await EmailHelper.DisconnectAsync(cancellationToken);
+            await base.StopAsync(cancellationToken);
         }
 
         private async Task DoWork()

@@ -1,6 +1,4 @@
-using System;
-
-namespace LumStoreAPI.Application.DTOs.StoreDTO;
+namespace LumStoreAPI.Core.Models.Systems;
 
 public class ContentKeyValue
 {

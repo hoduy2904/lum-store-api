@@ -1,8 +1,8 @@
 using LumStoreAPI.Application.DTOs.MediaDTO;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
-using LumStoreAPI.Application.DTOs.StoreDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Repositories;
+using LumStoreAPI.Core.Models.Systems;
 using Microsoft.EntityFrameworkCore;
 
 namespace LumStoreAPI.Application.Services;
