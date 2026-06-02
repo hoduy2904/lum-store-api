@@ -20,7 +20,7 @@ namespace LumStoreAPI.Application.Services
             {
                 PriceData = new SessionLineItemPriceDataOptions
                 {
-                    UnitAmountDecimal = item.Total,
+                    UnitAmount = (long)Math.Round(item.UnitPrice * 100),
                     Currency = "usd",
                     ProductData = new SessionLineItemPriceDataProductDataOptions
                     {
@@ -29,39 +29,41 @@ namespace LumStoreAPI.Application.Services
                     }
                 },
                 Quantity = item.Quantity,
-            });
+            }).ToList();
 
-            lineItems.Append(new SessionLineItemOptions
-            {
-                Quantity = 1,
-                PriceData = new SessionLineItemPriceDataOptions
+            if (request.ShippingFee > 0)
+                lineItems.Add(new SessionLineItemOptions
                 {
-                    UnitAmountDecimal = request.ShippingFee,
-                    Currency = "usd",
-                    ProductData = new SessionLineItemPriceDataProductDataOptions
+                    Quantity = 1,
+                    PriceData = new SessionLineItemPriceDataOptions
                     {
-                        Name = "Shipping fee"
+                        UnitAmount = (long)Math.Round(request.ShippingFee * 100),
+                        Currency = "usd",
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = "Shipping fee"
+                        }
                     }
-                }
-            });
+                });
 
-            lineItems.Append(new SessionLineItemOptions
-            {
-                Quantity = 1,
-                PriceData = new SessionLineItemPriceDataOptions
+            if (request.Order.Tax > 0)
+                lineItems.Add(new SessionLineItemOptions
                 {
-                    UnitAmountDecimal = request.Order.Tax,
-                    Currency = "usd",
-                    ProductData = new SessionLineItemPriceDataProductDataOptions
+                    Quantity = 1,
+                    PriceData = new SessionLineItemPriceDataOptions
                     {
-                        Name = "Tax fee"
+                        UnitAmount = (long)Math.Round(request.Order.Tax * 100),
+                        Currency = "usd",
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = "Tax fee"
+                        }
                     }
-                }
-            });
+                });
 
             var options = new SessionCreateOptions
             {
-                LineItems = lineItems.ToList(),
+                LineItems = lineItems,
                 Mode = "payment",
                 SuccessUrl = request.SuccessUrl,
                 CancelUrl = request.CancelUrl,
