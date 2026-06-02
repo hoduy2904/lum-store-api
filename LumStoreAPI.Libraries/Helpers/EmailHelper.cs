@@ -8,7 +8,8 @@ namespace LumStoreAPI.Libraries.Helpers
 {
     public class EmailHelper
     {
-        public static async Task SendMail(EmailMessage emailMessage, EmailSettings emailConfig)
+        private static SmtpClient? _client = null;
+        public static async Task SendMail(EmailMessage emailMessage, EmailSettings emailConfig, CancellationToken cancellationToken = default)
         {
             using (var mailMessage = new MimeMessage())
             {
@@ -43,17 +44,55 @@ namespace LumStoreAPI.Libraries.Helpers
                     }
                 }
                 mailMessage.Body = bodyBuilder.ToMessageBody();
-                await SendEmail(mailMessage, emailConfig);
+                await SendEmail(mailMessage, emailConfig, cancellationToken);
             }
         }
 
-        private static async Task SendEmail(MimeMessage mimeMessage, EmailSettings emailConfig)
+        private static async Task SendEmail(MimeMessage mimeMessage, EmailSettings emailConfig, CancellationToken cancellationToken = default)
         {
-            using var client = new SmtpClient();
-            await client.ConnectAsync(emailConfig.Host, emailConfig.Port, SecureSocketOptions.StartTls);
-            await client.AuthenticateAsync(emailConfig.Username, emailConfig.Password);
-            await client.SendAsync(mimeMessage);
-            await client.DisconnectAsync(true);
+            if (_client == null)
+            {
+                _client = new SmtpClient();
+            }
+            if (!_client.IsConnected)
+            {
+                await _client.ConnectAsync(emailConfig.Host, emailConfig.Port, SecureSocketOptions.StartTls, cancellationToken);
+            }
+
+            if (!_client.IsAuthenticated)
+            {
+                await _client.AuthenticateAsync(emailConfig.Username, emailConfig.Password, cancellationToken);
+            }
+            try
+            {
+                await _client.SendAsync(mimeMessage, cancellationToken);
+            }
+            catch
+            {
+                await DisconnectAsync(cancellationToken);
+                throw;
+            }
+        }
+
+        public static async Task DisconnectAsync(CancellationToken cancellationToken = default)
+        {
+            if (_client == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (_client.IsConnected)
+                {
+                    await _client.DisconnectAsync(true, cancellationToken);
+                }
+            }
+            finally
+            {
+                _client.Dispose();
+                _client = null;
+            }
         }
     }
 }
