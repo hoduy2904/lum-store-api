@@ -40,18 +40,41 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
         public async Task<IEnumerable<ProductRelated>> GetProductRelatedsAsync(int productId)
         {
             return await _lumStoreContext.ProductCombos
-                 .Include(x => x.Product)
+                 .Where(x => x.ProductID == productId)
                  .Include(x => x.ProductVariant)
                  .ThenInclude(x => x.Product)
                  .AsNoTrackingWithIdentityResolution()
                  .Select(x => new ProductRelated
                  {
-                     ProductId = productId,
+                     ProductId = x.ProductID,
                      ProductVariantName = x.ProductVariant!.Product!.ProductName,
                      VariantId = x.VariantID,
-                     VariantName = x.ProductVariant.VariantName
+                     VariantName = x.ProductVariant.VariantName,
+                     Price = x.ProductVariant.Product!.Price,
+                     PriceDiscount = x.ProductVariant.Product!.PriceDiscount,
                  }).ToArrayAsync();
+        }
 
+        public async Task<IEnumerable<ComboItemPricing>> GetComboItemsForPricingAsync(IEnumerable<int> productIds)
+        {
+            var ids = productIds.ToList();
+            if (ids.Count == 0) return [];
+
+            return await _lumStoreContext.ProductCombos
+                .Where(x => ids.Contains(x.ProductID))
+                .Include(x => x.ProductVariant)
+                .ThenInclude(v => v.Product)
+                .AsNoTrackingWithIdentityResolution()
+                .Select(x => new ComboItemPricing
+                {
+                    ProductId = x.ProductID,
+                    VariantId = x.VariantID,
+                    VariantName = x.ProductVariant!.VariantName,
+                    SubProductNodeId = x.ProductVariant.ProductID,
+                    SubProductName = x.ProductVariant.Product!.ProductName,
+                    SubProductPrice = x.ProductVariant.Product!.Price,
+                    SubProductPriceDiscount = x.ProductVariant.Product!.PriceDiscount,
+                }).ToListAsync();
         }
 
         public async Task<ProductCombo> InsertProductCombo(ProductCombo productCombo)

@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.DiscountRuleDTO;
+using LumStoreAPI.Application.DTOs.ProductComboDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Customers;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
@@ -8,8 +9,13 @@ namespace LumStoreAPI.Application.Services;
 public class DiscountRuleService : IDiscountRuleService
 {
     private readonly IDiscountRuleRepository _ruleRepo;
+    private readonly IProductComboRepository _comboRepo;
 
-    public DiscountRuleService(IDiscountRuleRepository ruleRepo) => _ruleRepo = ruleRepo;
+    public DiscountRuleService(IDiscountRuleRepository ruleRepo, IProductComboRepository comboRepo)
+    {
+        _ruleRepo = ruleRepo;
+        _comboRepo = comboRepo;
+    }
 
     public async Task<IEnumerable<DiscountRuleGetDTO>> GetRulesAsync(int? productId = null, bool activeOnly = false)
     {
@@ -67,6 +73,39 @@ public class DiscountRuleService : IDiscountRuleService
 
         // Formula: Max(0, Round(unitPrice × (1 - DiscountPercent/100) - DiscountAmount, 2))
         return Math.Max(0, Math.Round(unitPrice * (1 - rule.DiscountPercent / 100) - rule.DiscountAmount, 2));
+    }
+
+    public async Task<ComboPriceResult> CalculateComboPriceAsync(int comboProductNodeId)
+    {
+        var comboItems = (await _comboRepo.GetComboItemsForPricingAsync([comboProductNodeId])).ToList();
+
+        decimal subTotal = 0;
+        var itemDetails = new List<ComboItemDetailDTO>();
+
+        foreach (var item in comboItems)
+        {
+            var basePrice = item.SubProductPriceDiscount > 0 ? item.SubProductPriceDiscount : item.SubProductPrice;
+            var discountedPrice = await CalculateDiscountedPriceAsync(item.SubProductNodeId, basePrice, 1);
+            subTotal += discountedPrice;
+
+            itemDetails.Add(new ComboItemDetailDTO
+            {
+                VariantId = item.VariantId,
+                VariantName = item.VariantName,
+                ProductName = item.SubProductName,
+                UnitPrice = basePrice,
+                DiscountedPrice = discountedPrice
+            });
+        }
+
+        // Apply the combo product's own discount rule on the aggregated total
+        var totalPrice = await CalculateDiscountedPriceAsync(comboProductNodeId, subTotal, 1);
+
+        return new ComboPriceResult
+        {
+            TotalPrice = totalPrice,
+            Items = itemDetails
+        };
     }
 
     private static DiscountRuleGetDTO MapToDTO(DiscountRule r) => new()

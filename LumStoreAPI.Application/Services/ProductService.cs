@@ -19,13 +19,16 @@ internal class ProductService
 IPageRetrieveContext pageRetrieveContext,
 LumStoreContext lumStoreContext,
 IMediaService mediaService,
-IProductVariantRepository productVariantRepository)
+IProductVariantRepository productVariantRepository,
+IDiscountRuleService discountRuleService)
  : IProductService
 {
     private readonly IPageRetrieveContext _pageRetrieveContext = pageRetrieveContext;
     private readonly IMediaService _mediaService = mediaService;
     private readonly LumStoreContext _lumStoreContext = lumStoreContext;
     private readonly IProductVariantRepository _productVariantRepository = productVariantRepository;
+    private readonly IDiscountRuleService _discountRuleService = discountRuleService;
+
     public Task<IEnumerable<DocumentClientGetDTO>> GetFeatureProducts(int topN)
     {
         return this.GetProducts(x => x.IsBestSeller, topN);
@@ -94,6 +97,7 @@ IProductVariantRepository productVariantRepository)
                  UpdatedAt = x.UpdatedAt,
                  Price = x.Price,
                  PriceDiscount = x.PriceDiscount,
+                 IsCombo = x.IsCombo,
              });
 
              if (categoryId != 0)
@@ -105,6 +109,8 @@ IProductVariantRepository productVariantRepository)
         var imageGuids = products.SelectMany(x => x.Images).ToArray();
         var images = await _mediaService.GetMediaItemsAsync(imageGuids);
         var variantsByProduct = await LoadVariantsAsync(products.Select(x => x.NodeID));
+        var comboPrices = await GetComboPricesAsync(products);
+
         var productDTOs = products.Select(x =>
         {
             var productItem = new ProductClientDTO(x)
@@ -113,6 +119,12 @@ IProductVariantRepository productVariantRepository)
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
             };
+
+            if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
+            {
+                productItem.Price = cp;
+                productItem.PriceDiscount = null;
+            }
 
             var product = new DocumentClientGetDTO(productItem, x);
             return product;
@@ -156,6 +168,7 @@ IProductVariantRepository productVariantRepository)
                  UpdatedAt = x.UpdatedAt,
                  Price = x.Price,
                  PriceDiscount = x.PriceDiscount,
+                 IsCombo = x.IsCombo,
              });
          });
 
@@ -163,13 +176,22 @@ IProductVariantRepository productVariantRepository)
         var imageGuids = productList.SelectMany(x => x.Images).ToArray();
         var images = await _mediaService.GetMediaItemsAsync(imageGuids);
         var variantsByProduct = await LoadVariantsAsync(productList.Select(x => x.NodeID));
+        var comboPrices = await GetComboPricesAsync(productList);
+
         var productDTOs = productList.Select(x =>
         {
             var productItem = new ProductClientDTO(x)
             {
                 Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
-                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
+                IsCombo = x.IsCombo,
             };
+
+            if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
+            {
+                productItem.Price = cp;
+                productItem.PriceDiscount = null;
+            }
 
             var product = new DocumentClientGetDTO(productItem, x);
             return product;
@@ -192,14 +214,23 @@ IProductVariantRepository productVariantRepository)
         var imageGuids = products.SelectMany(x => x.Images).ToArray();
         var images = await _mediaService.GetMediaItemsAsync(imageGuids);
         var variantsByProduct = await LoadVariantsAsync(products.Select(x => x.NodeID));
+        var comboPrices = await GetComboPricesAsync(products);
 
         return products.Select(x =>
         {
             var productItem = new ProductClientDTO(x)
             {
                 Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
-                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
+                IsCombo = x.IsCombo,
             };
+
+            if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
+            {
+                productItem.Price = cp;
+                productItem.PriceDiscount = null;
+            }
+
             return new DocumentClientGetDTO(productItem, x);
         });
     }
@@ -231,6 +262,7 @@ IProductVariantRepository productVariantRepository)
             : [];
 
         var variantsByProduct = await LoadVariantsRawAsync(products.Select(x => x.NodeID));
+        var comboPrices = await GetComboPricesAsync(products);
 
         return products.Select(p =>
         {
@@ -240,14 +272,18 @@ IProductVariantRepository productVariantRepository)
                 .OrderBy(img => p.Images.IndexOf(img.FileID))
                 .Select(img => img.FileURL)
                 .ToArray();
+
+            decimal price = p.IsCombo && comboPrices.TryGetValue(p.NodeID, out var cp) ? cp : p.Price;
+            decimal priceDiscount = p.IsCombo ? 0 : p.PriceDiscount;
+
             var fields = new CategoryProductFieldsDTO
             {
                 ProductName = p.ProductName,
                 ShortDescription = p.ShortDescription,
                 Description = p.Description,
                 IsBestSeller = p.IsBestSeller,
-                Price = p.Price,
-                PriceDiscount = p.PriceDiscount,
+                Price = price,
+                PriceDiscount = priceDiscount,
                 Images = productImageUrls,
                 Stock = variants.Sum(v => v.Stock),
                 ProductVariants = variants.Select(v => new CategoryProductVariantDTO
@@ -291,7 +327,6 @@ IProductVariantRepository productVariantRepository)
 
         var now = DateTimeOffset.UtcNow;
 
-        // Find ProductIDs that have a variant whose SKU contains the query
         var skuMatchIds = await _lumStoreContext.ProductVariants
             .Where(v => v.SKU.Contains(q))
             .Select(v => v.ProductID)
@@ -315,11 +350,11 @@ IProductVariantRepository productVariantRepository)
                 p.Price,
                 p.PriceDiscount,
                 p.Images,
+                p.IsCombo,
                 ParentNodeID = p.Node.ParentNodeID,
             })
             .ToListAsync();
 
-        // Sort client-side: exact match → startsWith → contains
         var sorted = raw
             .OrderByDescending(p => p.ProductName.Equals(q, StringComparison.OrdinalIgnoreCase))
             .ThenByDescending(p => p.ProductName.StartsWith(q, StringComparison.OrdinalIgnoreCase))
@@ -328,13 +363,20 @@ IProductVariantRepository productVariantRepository)
 
         if (sorted.Count == 0) return [];
 
-        // Resolve first image only per product
+        // Compute combo prices for combo products in the result set
+        var comboIds = sorted.Where(p => p.IsCombo).Select(p => p.NodeID).ToList();
+        var comboPriceMap = new Dictionary<int, decimal>();
+        foreach (var id in comboIds)
+        {
+            var result = await _discountRuleService.CalculateComboPriceAsync(id);
+            comboPriceMap[id] = result.TotalPrice;
+        }
+
         var allGuids = sorted.Where(p => p.Images.Length > 0).Select(p => p.Images[0]).Distinct().ToArray();
         var mediaMap = allGuids.Length > 0
             ? (await _mediaService.GetMediaItemsAsync(allGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
             : [];
 
-        // Resolve category names from parent nodes
         var parentIds = sorted.Where(p => p.ParentNodeID.HasValue).Select(p => p.ParentNodeID!.Value).Distinct().ToArray();
         var categoryMap = parentIds.Length > 0
             ? await _lumStoreContext.ProductCategories
@@ -342,18 +384,24 @@ IProductVariantRepository productVariantRepository)
                 .ToDictionaryAsync(c => c.NodeID, c => c.CategoryName)
             : [];
 
-        return sorted.Select(p => new SearchSuggestionDTO
+        return sorted.Select(p =>
         {
-            NodeAlias = p.NodeAlias,
-            RelativeUrl = p.RelativeUrl,
-            Fields = new SearchSuggestionFieldsDTO
+            decimal displayPrice = p.IsCombo && comboPriceMap.TryGetValue(p.NodeID, out var cp) ? cp : p.Price;
+            decimal? displayPriceDiscount = p.IsCombo ? null : (p.PriceDiscount > 0 ? p.PriceDiscount : null);
+
+            return new SearchSuggestionDTO
             {
-                ProductName = p.ProductName,
-                Images = p.Images.Length > 0 && mediaMap.TryGetValue(p.Images[0], out var url) ? [url] : [],
-                Price = p.Price,
-                PriceDiscount = p.PriceDiscount > 0 ? p.PriceDiscount : null,
-                CategoryName = p.ParentNodeID.HasValue ? categoryMap.GetValueOrDefault(p.ParentNodeID.Value) : null
-            }
+                NodeAlias = p.NodeAlias,
+                RelativeUrl = p.RelativeUrl,
+                Fields = new SearchSuggestionFieldsDTO
+                {
+                    ProductName = p.ProductName,
+                    Images = p.Images.Length > 0 && mediaMap.TryGetValue(p.Images[0], out var url) ? [url] : [],
+                    Price = displayPrice,
+                    PriceDiscount = displayPriceDiscount,
+                    CategoryName = p.ParentNodeID.HasValue ? categoryMap.GetValueOrDefault(p.ParentNodeID.Value) : null
+                }
+            };
         });
     }
 
@@ -361,7 +409,6 @@ IProductVariantRepository productVariantRepository)
     {
         var now = DateTimeOffset.UtcNow;
 
-        // Step 1: fetch all variants whose Color contains the search string (case-insensitive)
         var matchingVariants = await _lumStoreContext.ProductVariants
         .Include(x => x.Color)
         .AsNoTrackingWithIdentityResolution()
@@ -372,7 +419,6 @@ IProductVariantRepository productVariantRepository)
         if (matchingVariants.Count == 0)
             return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(0);
 
-        // Step 2: per product keep only the variant with highest stock (stable tiebreaker: ItemID ASC)
         var bestVariantByProduct = matchingVariants
             .GroupBy(v => v.ProductID)
             .Select(g => g.OrderByDescending(v => v.Stock).ThenBy(v => v.ItemID).First())
@@ -380,7 +426,6 @@ IProductVariantRepository productVariantRepository)
 
         var productIds = bestVariantByProduct.Keys.ToList();
 
-        // Step 3: fetch published products for those IDs
         var products = await _lumStoreContext.Products
             .Where(p =>
                 productIds.Contains(p.NodeID) &&
@@ -396,6 +441,7 @@ IProductVariantRepository productVariantRepository)
                 p.Price,
                 p.PriceDiscount,
                 p.IsBestSeller,
+                p.IsCombo,
                 p.Images,
             })
             .ToListAsync();
@@ -403,7 +449,6 @@ IProductVariantRepository productVariantRepository)
         if (products.Count == 0)
             return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(0);
 
-        // Step 4: join + sort (stable order: isBestSeller DESC, stock DESC, nodeId ASC)
         var joined = products
             .Where(p => bestVariantByProduct.ContainsKey(p.NodeID))
             .Select(p => (product: p, variant: bestVariantByProduct[p.NodeID]))
@@ -414,7 +459,6 @@ IProductVariantRepository productVariantRepository)
 
         var totalRecords = joined.Count;
 
-        // Step 5: paginate
         var pageItems = joined
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -423,7 +467,15 @@ IProductVariantRepository productVariantRepository)
         if (pageItems.Count == 0)
             return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(totalRecords);
 
-        // Step 6: resolve first image per product in one batch call
+        // Compute combo prices for combo products on this page
+        var comboIds = pageItems.Where(x => x.product.IsCombo).Select(x => x.product.NodeID).ToList();
+        var comboPriceMap = new Dictionary<int, decimal>();
+        foreach (var id in comboIds)
+        {
+            var result = await _discountRuleService.CalculateComboPriceAsync(id);
+            comboPriceMap[id] = result.TotalPrice;
+        }
+
         var imageGuids = pageItems
             .Where(x => x.product.Images.Length > 0)
             .Select(x => x.product.Images[0])
@@ -434,11 +486,16 @@ IProductVariantRepository productVariantRepository)
             ? (await _mediaService.GetMediaItemsAsync(imageGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
             : new Dictionary<Guid, string>();
 
-        var result = pageItems.Select(x =>
+        var result2 = pageItems.Select(x =>
         {
             string? imageUrl = x.product.Images.Length > 0 && mediaMap.TryGetValue(x.product.Images[0], out var url)
                 ? url
                 : null;
+
+            decimal displayPrice = x.product.IsCombo && comboPriceMap.TryGetValue(x.product.NodeID, out var cp)
+                ? cp
+                : x.product.Price;
+            decimal displayPriceDiscount = x.product.IsCombo ? 0 : x.product.PriceDiscount;
 
             return new ProductByColorItemDTO
             {
@@ -446,8 +503,8 @@ IProductVariantRepository productVariantRepository)
                 NodeAlias = x.product.NodeAlias,
                 RelativeUrl = x.product.RelativeUrl,
                 ProductName = x.product.ProductName,
-                Price = x.product.Price,
-                PriceDiscount = x.product.PriceDiscount,
+                Price = displayPrice,
+                PriceDiscount = displayPriceDiscount,
                 Image = imageUrl,
                 MatchedVariant = new MatchedVariantDTO
                 {
@@ -460,14 +517,13 @@ IProductVariantRepository productVariantRepository)
             };
         });
 
-        return result.AsPagedEnumerable(totalRecords);
+        return result2.AsPagedEnumerable(totalRecords);
     }
 
     public async Task<ProductByColorDTO?> GetProductByColorAsync(int colorId)
     {
         var now = DateTimeOffset.UtcNow;
 
-        // Find product NodeIDs that have a variant with the given color
         var variantProductIds = await _lumStoreContext.ProductVariants
             .Where(v => v.VariantName != null && v.ColorId == colorId)
             .Select(v => v.ProductID)
@@ -498,7 +554,6 @@ IProductVariantRepository productVariantRepository)
         if (product == null)
             return null;
 
-        // Resolve first image
         string? imageUrl = null;
         if (product.Images.Length > 0)
         {
@@ -506,7 +561,6 @@ IProductVariantRepository productVariantRepository)
             imageUrl = media.FirstOrDefault()?.FileURL;
         }
 
-        // Resolve parent category name as availableIn
         string? availableIn = null;
         if (product.ParentNodeID.HasValue)
         {
@@ -557,6 +611,7 @@ IProductVariantRepository productVariantRepository)
                 Price = p.Price,
                 PriceDiscount = p.PriceDiscount,
                 IsBestSeller = p.IsBestSeller,
+                IsCombo = p.IsCombo,
                 Images = p.Images,
                 ShortDescription = p.ShortDescription,
                 PublishedFrom = p.PublishedFrom,
@@ -575,14 +630,23 @@ IProductVariantRepository productVariantRepository)
             : [];
 
         var variantsByProduct = await LoadVariantsAsync(related.Select(x => x.NodeID));
+        var comboPrices = await GetComboPricesAsync(related);
 
         return related.Select(x =>
         {
             var productItem = new ProductClientDTO(x)
             {
                 Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
-                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, [])
+                ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
+                IsCombo = x.IsCombo,
             };
+
+            if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
+            {
+                productItem.Price = cp;
+                productItem.PriceDiscount = null;
+            }
+
             return new DocumentClientGetDTO(productItem, x);
         });
     }
@@ -603,6 +667,21 @@ IProductVariantRepository productVariantRepository)
             .Take(limit)
             .Select(p => p.ProductName)
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// For a list of products, computes combo price for those with IsCombo = true.
+    /// Returns a dictionary: NodeID -> computed price.
+    /// </summary>
+    private async Task<Dictionary<int, decimal>> GetComboPricesAsync(IEnumerable<Product> products)
+    {
+        var result = new Dictionary<int, decimal>();
+        foreach (var p in products.Where(x => x.IsCombo))
+        {
+            var comboResult = await _discountRuleService.CalculateComboPriceAsync(p.NodeID);
+            result[p.NodeID] = comboResult.TotalPrice;
+        }
+        return result;
     }
 
     /// <summary>
