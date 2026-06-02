@@ -37,7 +37,7 @@ public class StoreOrderController(IStoreOrderService storeOrderService) : Contro
     }
 
     /// <summary>POST /api/store/orders/{orderId}/cancel — Cancel own order (Pending or Confirmed only).</summary>
-    [HttpPost("{orderId:int}/cancel")]
+    [HttpPatch("{orderId:int}/cancel")]
     public async Task<IActionResult> CancelOrder(int orderId, [FromBody] StoreCancelOrderRequest request, CancellationToken ct)
     {
         var result = await _storeOrderService.CancelOrderAsync(orderId, request, ct);
