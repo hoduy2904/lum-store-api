@@ -3,7 +3,6 @@ using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Application.FeatureQueries;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Repositories;
-using LumStoreAPI.Infrastructure.Repositories.Interfaces;
 using MediatR;
 
 namespace LumStoreAPI.Features;
@@ -11,7 +10,7 @@ namespace LumStoreAPI.Features;
 public class ProductFeatureHandler(
     IMediaService mediaService,
     IProductVariantRepository productVariantRepository,
-    IDiscountRuleRepository discountRuleRepository,
+    IDiscountRuleService discountRuleService,
     ISettingKeyValueService settingKeyValueService
 ) : IRequestHandler<ProductFeatureQuery, ProductClientDTO>
 {
@@ -47,7 +46,7 @@ public class ProductFeatureHandler(
             });
         }
 
-        var discountRules = await discountRuleRepository.GetRulesAsync(product.NodeID, activeOnly: true);
+        var discountRules = await discountRuleService.GetRulesAsync(product.NodeID, activeOnly: true);
         var discountTiers = discountRules.Select(r => new ProductDiscountTierDTO
         {
             RuleName = r.RuleName,
@@ -59,12 +58,22 @@ public class ProductFeatureHandler(
 
         var accordions = await settingKeyValueService.GetSettingContentsAsync("Product_Accordion");
 
-        return new ProductClientDTO(product)
+        var dto = new ProductClientDTO(product)
         {
             Images = images.Select(i => i.FileURL).ToArray(),
             ProductVariants = variantDTOs,
             DiscountRules = discountTiers,
             Accordions = accordions
         };
+
+        if (product.IsCombo)
+        {
+            var comboResult = await discountRuleService.CalculateComboPriceAsync(product.NodeID);
+            dto.Price = comboResult.TotalPrice;
+            dto.PriceDiscount = null;
+            dto.ComboItems = comboResult.Items;
+        }
+
+        return dto;
     }
 }
