@@ -28,6 +28,7 @@ public class ProductClientDTO
     public IEnumerable<ProductDiscountTierDTO> DiscountRules { get; set; } = [];
     public IEnumerable<ContentKeyValue> Accordions { get; set; } = [];
     public IEnumerable<ComboItemDetailDTO> ComboItems { get; set; } = [];
+    public int ComboStock { get; set; }
 
     public ProductClientDTO(Product product)
     {

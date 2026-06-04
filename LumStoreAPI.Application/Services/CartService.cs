@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.CartDTO;
+using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Customers;
@@ -56,6 +57,19 @@ internal class CartService : ICartService
             .FirstOrDefaultAsync(ct);
     }
 
+    private async Task<int?> GetComboStockAsync(int nodeId, CancellationToken ct)
+    {
+        var isCombo = await _ctx.Products
+            .Where(p => p.NodeID == nodeId)
+            .Select(p => (bool?)p.IsCombo)
+            .FirstOrDefaultAsync(ct);
+
+        if (isCombo != true) return null;
+
+        var comboResult = await _discountRuleService.CalculateComboPriceAsync(nodeId);
+        return comboResult.ComboStock;
+    }
+
     private async Task<CartResponseDTO> BuildCartResponseAsync(int userId, CancellationToken ct)
     {
         var cartItems = (await _cartRepo.GetByUserIdAsync(userId, ct)).ToList();
@@ -83,6 +97,21 @@ internal class CartService : ICartService
             };
         }).ToList();
 
+        // Batch-load discount tiers for all non-combo products — 1 query instead of 1 per item
+        var nonComboNodeIds = nodeIds.Where(id => prices.TryGetValue(id, out var p) && !p.IsCombo).ToArray();
+        var discountTiers = nonComboNodeIds.Length > 0
+            ? await _discountRuleService.GetDiscountTiersForProductsAsync(nonComboNodeIds)
+            : new Dictionary<int, IEnumerable<ProductDiscountTierDTO>>();
+
+        // Deduplicate combo price calls — 1 call per unique combo product, not per cart line
+        var comboNodeIds = nodeIds.Where(id => prices.TryGetValue(id, out var p) && p.IsCombo).Distinct().ToArray();
+        var comboPrices = new Dictionary<int, decimal>();
+        foreach (var comboId in comboNodeIds)
+        {
+            var comboResult = await _discountRuleService.CalculateComboPriceAsync(comboId);
+            comboPrices[comboId] = comboResult.TotalPrice;
+        }
+
         decimal subtotal = 0;
         foreach (var item in items)
         {
@@ -91,13 +120,12 @@ internal class CartService : ICartService
             decimal unitPrice;
             if (p.IsCombo)
             {
-                var comboResult = await _discountRuleService.CalculateComboPriceAsync(item.NodeID);
-                unitPrice = comboResult.TotalPrice;
+                unitPrice = comboPrices.TryGetValue(item.NodeID, out var cp) ? cp : p.Price;
             }
             else
             {
                 var basePrice = p.PriceDiscount > 0 ? p.PriceDiscount : p.Price;
-                unitPrice = await _discountRuleService.CalculateDiscountedPriceAsync(item.NodeID, basePrice, item.Quantity);
+                unitPrice = ApplyBestDiscount(discountTiers.GetValueOrDefault(item.NodeID, []), basePrice, item.Quantity);
             }
 
             subtotal += unitPrice * item.Quantity;
@@ -138,6 +166,17 @@ internal class CartService : ICartService
             var totalQty = (existing?.Quantity ?? 0) + request.Quantity;
             if (totalQty > stock)
                 return APIResponse<CartAddResultDTO>.Failure($"Insufficient stock. Available: {stock}");
+        }
+        else
+        {
+            var comboStock = await GetComboStockAsync(request.NodeID, ct);
+            if (comboStock.HasValue)
+            {
+                var existing = await _cartRepo.GetExistingItemAsync(userId, request.NodeID, null, ct);
+                var totalQty = (existing?.Quantity ?? 0) + request.Quantity;
+                if (totalQty > comboStock)
+                    return APIResponse<CartAddResultDTO>.Failure($"Insufficient stock. Available: {comboStock}");
+            }
         }
 
         var cartItem = await _cartRepo.GetExistingItemAsync(userId, request.NodeID, request.VariantId, ct);
@@ -181,6 +220,12 @@ internal class CartService : ICartService
             if (stock.HasValue && request.Quantity > stock)
                 return APIResponseBase.Failure($"Insufficient stock. Available: {stock}");
         }
+        else
+        {
+            var comboStock = await GetComboStockAsync(item.NodeId, ct);
+            if (comboStock.HasValue && request.Quantity > comboStock)
+                return APIResponseBase.Failure($"Insufficient stock. Available: {comboStock}");
+        }
 
         await _cartRepo.UpdateQuantityAsync(cartItemId, request.Quantity, ct);
         return APIResponseBase.Success(["Cart updated"]);
@@ -207,6 +252,26 @@ internal class CartService : ICartService
         return APIResponseBase.Success(["Cart cleared"]);
     }
 
+    // ── Helpers (pure, no DB) ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Replicates GetBestRuleAsync logic in-memory using pre-loaded tiers.
+    /// Formula: Max(0, Round(unitPrice × (1 − DiscountPercent/100) − DiscountAmount, 2))
+    /// </summary>
+    private static decimal ApplyBestDiscount(
+        IEnumerable<ProductDiscountTierDTO> tiers,
+        decimal unitPrice,
+        int quantity)
+    {
+        var best = tiers
+            .Where(t => t.MinQuantity <= quantity && (t.MaxQuantity == null || t.MaxQuantity >= quantity))
+            .OrderByDescending(t => t.DiscountPercent + t.DiscountAmount)
+            .FirstOrDefault();
+
+        if (best is null) return unitPrice;
+        return Math.Max(0, Math.Round(unitPrice * (1 - best.DiscountPercent / 100) - best.DiscountAmount, 2));
+    }
+
     public async Task<APIResponse<CartResponseDTO>> SyncCartAsync(CartSyncRequest request, CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
@@ -219,12 +284,15 @@ internal class CartService : ICartService
                 .Select(n => n.NodeID)
                 .ToHashSetAsync(ct);
 
+            // Pre-load all existing cart items in 1 query — eliminates N GetExistingItemAsync calls
+            var existingItems = (await _cartRepo.GetByUserIdAsync(userId, ct))
+                .ToDictionary(e => (e.NodeId, e.VariantId));
+
             foreach (var incoming in request.Items)
             {
                 if (!validNodeIds.Contains(incoming.NodeID)) continue;
 
-                var existing = await _cartRepo.GetExistingItemAsync(userId, incoming.NodeID, incoming.VariantId, ct);
-                if (existing is not null)
+                if (existingItems.TryGetValue((incoming.NodeID, incoming.VariantId), out var existing))
                 {
                     var merged = Math.Max(existing.Quantity, incoming.Quantity);
                     if (merged != existing.Quantity)

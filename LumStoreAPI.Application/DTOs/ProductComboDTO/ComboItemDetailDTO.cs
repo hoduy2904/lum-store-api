@@ -12,5 +12,6 @@ public class ComboItemDetailDTO
 public class ComboPriceResult
 {
     public decimal TotalPrice { get; set; }
+    public int ComboStock { get; set; }
     public IEnumerable<ComboItemDetailDTO> Items { get; set; } = [];
 }
