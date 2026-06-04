@@ -21,6 +21,7 @@ public class StoreCheckoutPreviewItemDTO
     public string? VariantName { get; set; }
     public string? SKU { get; set; }
     public string? Image { get; set; }
+    public decimal OriginalPrice { get; set; }
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public decimal LineTotal { get; set; }

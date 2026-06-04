@@ -120,17 +120,21 @@ internal class StoreOrderService : IStoreOrderService
                 ? variants.FirstOrDefault(v => v.ItemID == cartItem.VariantId)
                 : null;
 
+            decimal basePrice;
             decimal unitPrice;
             if (product.IsCombo)
             {
                 var comboResult = await _discountRuleService.CalculateComboPriceAsync(product.NodeID);
+                basePrice = comboResult.TotalPrice;
                 unitPrice = comboResult.TotalPrice;
             }
             else
             {
-                unitPrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+                basePrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+                unitPrice = await _discountRuleService.CalculateDiscountedPriceAsync(product.NodeID, basePrice, cartItem.Quantity);
             }
 
+            var discountPerUnit = basePrice - unitPrice;
             var lineTotal = unitPrice * cartItem.Quantity;
             subTotal += lineTotal;
 
@@ -148,8 +152,8 @@ internal class StoreOrderService : IStoreOrderService
                 SKU = variant?.SKU,
                 ImageUrl = imageUrl,
                 Quantity = cartItem.Quantity,
-                UnitPrice = unitPrice,
-                Discount = 0,
+                UnitPrice = basePrice,
+                Discount = discountPerUnit,
                 Total = lineTotal
             });
         }
@@ -451,15 +455,18 @@ internal class StoreOrderService : IStoreOrderService
 
             if (variant == null) continue;
 
+            decimal basePrice;
             decimal unitPrice;
             if (product.IsCombo)
             {
                 var comboResult = await _discountRuleService.CalculateComboPriceAsync(product.NodeID);
+                basePrice = comboResult.TotalPrice;
                 unitPrice = comboResult.TotalPrice;
             }
             else
             {
-                unitPrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+                basePrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
+                unitPrice = await _discountRuleService.CalculateDiscountedPriceAsync(product.NodeID, basePrice, cartItem.Quantity);
             }
 
             var lineTotal = unitPrice * cartItem.Quantity;
@@ -476,6 +483,7 @@ internal class StoreOrderService : IStoreOrderService
                 VariantName = variant?.VariantName,
                 SKU = variant?.SKU,
                 Image = imageUrl,
+                OriginalPrice = basePrice,
                 UnitPrice = unitPrice,
                 Quantity = cartItem.Quantity,
                 LineTotal = lineTotal,

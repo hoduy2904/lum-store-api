@@ -106,10 +106,12 @@ IDiscountRuleService discountRuleService)
              }
          });
 
+        var nodeIdsArray = products.Select(x => x.NodeID).ToArray();
         var imageGuids = products.SelectMany(x => x.Images).ToArray();
         var images = await _mediaService.GetMediaItemsAsync(imageGuids);
         var variantsByProduct = await LoadVariantsAsync(products.Select(x => x.NodeID));
         var comboPrices = await GetComboPricesAsync(products);
+        var discountTiers = await _discountRuleService.GetDiscountTiersForProductsAsync(nodeIdsArray);
 
         var productDTOs = products.Select(x =>
         {
@@ -118,6 +120,7 @@ IDiscountRuleService discountRuleService)
                 Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
+                DiscountRules = discountTiers.GetValueOrDefault(x.NodeID, []),
             };
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
@@ -173,10 +176,12 @@ IDiscountRuleService discountRuleService)
          });
 
         var productList = products.ToList();
+        var nodeIdsArray = productList.Select(x => x.NodeID).ToArray();
         var imageGuids = productList.SelectMany(x => x.Images).ToArray();
         var images = await _mediaService.GetMediaItemsAsync(imageGuids);
         var variantsByProduct = await LoadVariantsAsync(productList.Select(x => x.NodeID));
         var comboPrices = await GetComboPricesAsync(productList);
+        var discountTiers = await _discountRuleService.GetDiscountTiersForProductsAsync(nodeIdsArray);
 
         var productDTOs = productList.Select(x =>
         {
@@ -185,6 +190,7 @@ IDiscountRuleService discountRuleService)
                 Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
+                DiscountRules = discountTiers.GetValueOrDefault(x.NodeID, []),
             };
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
@@ -258,6 +264,7 @@ IDiscountRuleService discountRuleService)
                 });
         });
 
+        var categoryNodeIds = products.Select(x => x.NodeID).ToArray();
         var imageGuids = products.SelectMany(x => x.Images).Distinct().ToArray();
         var productImages = imageGuids.Length > 0
             ? (await _mediaService.GetMediaItemsAsync(imageGuids)).ToList()
@@ -265,6 +272,7 @@ IDiscountRuleService discountRuleService)
 
         var variantsByProduct = await LoadVariantsRawAsync(products.Select(x => x.NodeID));
         var comboPrices = await GetComboPricesAsync(products);
+        var discountTiers = await _discountRuleService.GetDiscountTiersForProductsAsync(categoryNodeIds);
 
         return products.Select(p =>
         {
@@ -296,7 +304,8 @@ IDiscountRuleService discountRuleService)
                     Stock = v.Stock,
                     SKU = v.SKU,
                     Images = [.. productImageUrls, .. v.Images]
-                }).ToList()
+                }).ToList(),
+                DiscountRules = discountTiers.GetValueOrDefault(p.NodeID, []),
             };
             return new DocumentClientGetDTO(fields, p);
         });
@@ -626,6 +635,7 @@ IDiscountRuleService discountRuleService)
 
         if (related.Count == 0) return [];
 
+        var relatedNodeIds = related.Select(x => x.NodeID).ToArray();
         var imageGuids = related.SelectMany(x => x.Images).Distinct().ToArray();
         var images = imageGuids.Length > 0
             ? (await _mediaService.GetMediaItemsAsync(imageGuids)).ToList()
@@ -633,6 +643,7 @@ IDiscountRuleService discountRuleService)
 
         var variantsByProduct = await LoadVariantsAsync(related.Select(x => x.NodeID));
         var comboPrices = await GetComboPricesAsync(related);
+        var discountTiers = await _discountRuleService.GetDiscountTiersForProductsAsync(relatedNodeIds);
 
         return related.Select(x =>
         {
@@ -641,6 +652,7 @@ IDiscountRuleService discountRuleService)
                 Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
+                DiscountRules = discountTiers.GetValueOrDefault(x.NodeID, []),
             };
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))

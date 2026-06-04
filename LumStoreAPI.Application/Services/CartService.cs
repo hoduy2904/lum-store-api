@@ -15,17 +15,20 @@ internal class CartService : ICartService
     private readonly IProductService _productService;
     private readonly LumStoreContext _ctx;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IDiscountRuleService _discountRuleService;
 
     public CartService(
         ICartRepository cartRepo,
         IProductService productService,
         LumStoreContext ctx,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IDiscountRuleService discountRuleService)
     {
         _cartRepo = cartRepo;
         _productService = productService;
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
+        _discountRuleService = discountRuleService;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -64,7 +67,7 @@ internal class CartService : ICartService
 
         var prices = await _ctx.Products
             .Where(p => nodeIds.Contains(p.NodeID))
-            .Select(p => new { p.NodeID, p.Price, p.PriceDiscount })
+            .Select(p => new { p.NodeID, p.Price, p.PriceDiscount, p.IsCombo })
             .ToDictionaryAsync(p => p.NodeID, ct);
 
         var items = cartItems.Select(c =>
@@ -83,11 +86,21 @@ internal class CartService : ICartService
         decimal subtotal = 0;
         foreach (var item in items)
         {
-            if (prices.TryGetValue(item.NodeID, out var p))
+            if (!prices.TryGetValue(item.NodeID, out var p)) continue;
+
+            decimal unitPrice;
+            if (p.IsCombo)
             {
-                var unitPrice = p.PriceDiscount > 0 ? p.PriceDiscount : p.Price;
-                subtotal += unitPrice * item.Quantity;
+                var comboResult = await _discountRuleService.CalculateComboPriceAsync(item.NodeID);
+                unitPrice = comboResult.TotalPrice;
             }
+            else
+            {
+                var basePrice = p.PriceDiscount > 0 ? p.PriceDiscount : p.Price;
+                unitPrice = await _discountRuleService.CalculateDiscountedPriceAsync(item.NodeID, basePrice, item.Quantity);
+            }
+
+            subtotal += unitPrice * item.Quantity;
         }
 
         return new CartResponseDTO

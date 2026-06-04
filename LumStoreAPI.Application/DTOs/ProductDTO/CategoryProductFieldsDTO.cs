@@ -12,6 +12,7 @@ public class CategoryProductFieldsDTO
     /// <summary>Sum of all variant stocks (0 if no variants).</summary>
     public int Stock { get; set; }
     public List<CategoryProductVariantDTO> ProductVariants { get; set; } = [];
+    public IEnumerable<ProductDiscountTierDTO> DiscountRules { get; set; } = [];
 }
 
 public class CategoryProductVariantDTO
