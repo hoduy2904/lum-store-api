@@ -8,6 +8,8 @@ public class OrderUpdateStatusDTO
     [Required]
     public OrderStatus NewStatus { get; set; }
 
+    public PaymentStatus? NewPaymentStatus { get; set; }
+
     [MaxLength(500)]
     public string? Comment { get; set; }
 }

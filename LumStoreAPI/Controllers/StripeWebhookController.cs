@@ -45,7 +45,7 @@ namespace LumStoreAPI.Controllers
 
                     string note = $"Paid via Stripe with {actualMethod} method: {amountRaw.ToString("C")} {currency}";
 
-                    await _orderService.UpdateOrderStatusAsync(orderId, new() { Comment = note, NewStatus = Core.Models.Enums.OrderStatus.Confirmed });
+                    await _orderService.UpdateOrderStatusAsync(orderId, new() { Comment = note, NewStatus = Core.Models.Enums.OrderStatus.Confirmed, NewPaymentStatus = Core.Models.Enums.PaymentStatus.Paid });
                 }
 
                 return Ok();
