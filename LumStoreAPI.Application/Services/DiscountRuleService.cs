@@ -109,6 +109,7 @@ public class DiscountRuleService : IDiscountRuleService
 
         decimal subTotal = 0;
         var itemDetails = new List<ComboItemDetailDTO>();
+        int comboStock = comboItems.Count > 0 ? comboItems.Min(x => x.Stock) : 0;
 
         foreach (var item in comboItems)
         {
@@ -132,6 +133,7 @@ public class DiscountRuleService : IDiscountRuleService
         return new ComboPriceResult
         {
             TotalPrice = totalPrice,
+            ComboStock = comboStock,
             Items = itemDetails
         };
     }

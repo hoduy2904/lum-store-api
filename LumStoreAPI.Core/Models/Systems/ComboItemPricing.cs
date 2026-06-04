@@ -9,5 +9,6 @@ namespace LumStoreAPI.Core.Models.Systems
         public string SubProductName { get; set; } = default!;
         public decimal SubProductPrice { get; set; }
         public decimal SubProductPriceDiscount { get; set; }
+        public int Stock { get; set; }
     }
 }

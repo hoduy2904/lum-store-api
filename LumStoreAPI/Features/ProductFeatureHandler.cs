@@ -73,6 +73,7 @@ public class ProductFeatureHandler(
             dto.Price = comboResult.TotalPrice;
             dto.PriceDiscount = null;
             dto.ComboItems = comboResult.Items;
+            dto.ComboStock = comboResult.ComboStock;
         }
 
         return dto;

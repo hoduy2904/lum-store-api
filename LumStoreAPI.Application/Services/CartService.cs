@@ -56,6 +56,19 @@ internal class CartService : ICartService
             .FirstOrDefaultAsync(ct);
     }
 
+    private async Task<int?> GetComboStockAsync(int nodeId, CancellationToken ct)
+    {
+        var isCombo = await _ctx.Products
+            .Where(p => p.NodeID == nodeId)
+            .Select(p => (bool?)p.IsCombo)
+            .FirstOrDefaultAsync(ct);
+
+        if (isCombo != true) return null;
+
+        var comboResult = await _discountRuleService.CalculateComboPriceAsync(nodeId);
+        return comboResult.ComboStock;
+    }
+
     private async Task<CartResponseDTO> BuildCartResponseAsync(int userId, CancellationToken ct)
     {
         var cartItems = (await _cartRepo.GetByUserIdAsync(userId, ct)).ToList();
@@ -139,6 +152,17 @@ internal class CartService : ICartService
             if (totalQty > stock)
                 return APIResponse<CartAddResultDTO>.Failure($"Insufficient stock. Available: {stock}");
         }
+        else
+        {
+            var comboStock = await GetComboStockAsync(request.NodeID, ct);
+            if (comboStock.HasValue)
+            {
+                var existing = await _cartRepo.GetExistingItemAsync(userId, request.NodeID, null, ct);
+                var totalQty = (existing?.Quantity ?? 0) + request.Quantity;
+                if (totalQty > comboStock)
+                    return APIResponse<CartAddResultDTO>.Failure($"Insufficient stock. Available: {comboStock}");
+            }
+        }
 
         var cartItem = await _cartRepo.GetExistingItemAsync(userId, request.NodeID, request.VariantId, ct);
         if (cartItem is not null)
@@ -180,6 +204,12 @@ internal class CartService : ICartService
             var stock = await GetStockAsync(item.VariantId, ct);
             if (stock.HasValue && request.Quantity > stock)
                 return APIResponseBase.Failure($"Insufficient stock. Available: {stock}");
+        }
+        else
+        {
+            var comboStock = await GetComboStockAsync(item.NodeId, ct);
+            if (comboStock.HasValue && request.Quantity > comboStock)
+                return APIResponseBase.Failure($"Insufficient stock. Available: {comboStock}");
         }
 
         await _cartRepo.UpdateQuantityAsync(cartItemId, request.Quantity, ct);
