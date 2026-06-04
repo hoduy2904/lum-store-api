@@ -12,4 +12,7 @@ public interface IDiscountRuleRepository
 
     /// <summary>Get the best applicable discount for a product + quantity combo.</summary>
     Task<DiscountRule?> GetBestRuleAsync(int productId, int quantity);
+
+    /// <summary>Get all active rules for a batch of product node IDs (including global rules where ProductId is null).</summary>
+    Task<IEnumerable<DiscountRule>> GetActiveRulesBatchAsync(int[] productNodeIds);
 }

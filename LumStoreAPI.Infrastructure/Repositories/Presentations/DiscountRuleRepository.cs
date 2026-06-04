@@ -64,4 +64,16 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
             .OrderByDescending(r => r.DiscountPercent + r.DiscountAmount)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<IEnumerable<DiscountRule>> GetActiveRulesBatchAsync(int[] productNodeIds)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return await _ctx.DiscountRules
+            .Where(r => r.IsActive &&
+                        (r.StartDate == null || r.StartDate <= now) &&
+                        (r.EndDate == null || r.EndDate >= now) &&
+                        (r.ProductId == null || productNodeIds.Contains(r.ProductId.Value)))
+            .OrderBy(r => r.MinQuantity)
+            .ToListAsync();
+    }
 }
