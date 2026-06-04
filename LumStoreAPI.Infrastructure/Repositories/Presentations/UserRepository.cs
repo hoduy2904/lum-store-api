@@ -26,7 +26,8 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 
         public Task<User?> GetUserAsync(int userId)
         {
-            return _lumStoreContext.Users.FirstOrDefaultAsync(x => x.ItemID == userId);
+            return _cacheService.GetCacheAsync(() => _lumStoreContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.ItemID == userId),
+                builder => builder.Dependencies(d => d.User(userId)).Key("user|byid|" + userId));
         }
 
         public async Task<IEnumerable<User>> GetUsersAsync(Func<IQueryable<User>, IQueryable<User>>? func = null)

@@ -1,4 +1,5 @@
 using LumStoreAPI.Core.Entities.Base;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LumStoreAPI.Core.Entities.Orders;
 
@@ -17,6 +18,9 @@ public class OrderItem : BaseClassItem
     public decimal UnitPrice { get; set; }
     public decimal Discount { get; set; }
     public decimal Total { get; set; }
+
+    [NotMapped ]
+    public int ShiprelayId { get; set; }
 
     // ── Navigation ────────────────────────────────────────────────────────
     public virtual Order Order { get; set; } = default!;

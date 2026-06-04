@@ -4,10 +4,11 @@ using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Customers;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace LumStoreAPI.Application.Services;
 
-public class DiscountRuleService : IDiscountRuleService
+internal class DiscountRuleService : IDiscountRuleService
 {
     private readonly IDiscountRuleRepository _ruleRepo;
     private readonly IProductComboRepository _comboRepo;
@@ -158,4 +159,12 @@ public class DiscountRuleService : IDiscountRuleService
         DiscountPercent = r.DiscountPercent,
         DiscountAmount = r.DiscountAmount
     };
+
+    public Task<Dictionary<int, IEnumerable<DiscountRule>>> GetDiscountForProductsAsync(int[] productNodeIds, int minQty = 1)
+    {
+        return _ruleRepo.GetDiscountRules()
+            .Where(x => x.ProductId != null && productNodeIds.Contains(x.ProductId.Value) && x.MinQuantity >= minQty)
+            .GroupBy(x => x.ProductId)
+            .ToDictionaryAsync(x => x.Key!.Value, x=>x.AsEnumerable());
+    }
 }

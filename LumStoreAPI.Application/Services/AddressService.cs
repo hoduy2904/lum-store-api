@@ -121,4 +121,13 @@ internal class AddressService : IAddressService
         await _repo.SetDefaultAsync(userId, id, ct);
         return APIResponseBase.Success();
     }
+
+    public async Task<AddressDTO?> GetAddressAsync(int addressId)
+    {
+        var userId = GetCurrentUserId();
+        var address = await _repo.GetByUserAsync(addressId, userId);
+        if (address is null) return null;
+        return new AddressDTO(address);
+
+    }
 }

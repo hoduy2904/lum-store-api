@@ -6,6 +6,7 @@ using LumStoreAPI.Infrastructure.SeedData;
 using LumStoreAPI.SDK;
 using LumStoreAPI.SDK.Shiprelay;
 using LumStoreAPI.Tasks;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Events;
@@ -24,7 +25,27 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
 });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new();
+
+        document.Components.SecuritySchemes ??=
+            new Dictionary<string, IOpenApiSecurityScheme>();
+
+        document.Components.SecuritySchemes["Bearer"] =
+            new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "JWT Bearer token"
+            };
+
+        return Task.CompletedTask;
+    });
+});
 builder.Services.AddCustomSettings(builder.Configuration);
 builder.Services
     .AddHttpContextAccessor()
@@ -60,7 +81,10 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options =>
+    {
+        options.AddPreferredSecuritySchemes("Bearer");
+    });
 }
 else
 {
