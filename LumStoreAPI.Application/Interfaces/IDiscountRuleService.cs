@@ -1,5 +1,6 @@
 using LumStoreAPI.Application.DTOs.DiscountRuleDTO;
 using LumStoreAPI.Application.DTOs.ProductComboDTO;
+using LumStoreAPI.Application.DTOs.ProductDTO;
 
 namespace LumStoreAPI.Application.Interfaces;
 
@@ -10,6 +11,9 @@ public interface IDiscountRuleService
     Task<DiscountRuleGetDTO> CreateRuleAsync(DiscountRuleUpsertDTO dto);
     Task<DiscountRuleGetDTO> UpdateRuleAsync(int ruleId, DiscountRuleUpsertDTO dto);
     Task<bool> DeleteRuleAsync(int ruleId);
+
+    /// <summary>Get active discount tiers for a batch of product node IDs, keyed by node ID.</summary>
+    Task<Dictionary<int, IEnumerable<ProductDiscountTierDTO>>> GetDiscountTiersForProductsAsync(int[] productNodeIds);
 
     /// <summary>Calculate the best discount price for a product + quantity combo.</summary>
     Task<decimal> CalculateDiscountedPriceAsync(int productId, decimal unitPrice, int quantity);

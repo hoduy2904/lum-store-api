@@ -122,6 +122,7 @@ public class OrderService : IOrderService
         var updated = await _orderRepo.UpdateOrderAsync(orderId, o =>
         {
             o.Status = dto.NewStatus;
+            if (dto.NewPaymentStatus.HasValue) o.PaymentStatus = dto.NewPaymentStatus.Value;
             if (dto.NewStatus == OrderStatus.Shipped) o.ShippedAt = DateTimeOffset.UtcNow;
             if (dto.NewStatus == OrderStatus.Delivered || dto.NewStatus == OrderStatus.Completed)
                 o.DeliveredAt = DateTimeOffset.UtcNow;

@@ -215,6 +215,7 @@ IDiscountRuleService discountRuleService)
         var images = await _mediaService.GetMediaItemsAsync(imageGuids);
         var variantsByProduct = await LoadVariantsAsync(products.Select(x => x.NodeID));
         var comboPrices = await GetComboPricesAsync(products);
+        var discountTiers = await _discountRuleService.GetDiscountTiersForProductsAsync(nodeIds);
 
         return products.Select(x =>
         {
@@ -223,6 +224,7 @@ IDiscountRuleService discountRuleService)
                 Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
+                DiscountRules = discountTiers.GetValueOrDefault(x.NodeID, []),
             };
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))

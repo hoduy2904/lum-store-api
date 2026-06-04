@@ -1,5 +1,6 @@
 using LumStoreAPI.Application.DTOs.DiscountRuleDTO;
 using LumStoreAPI.Application.DTOs.ProductComboDTO;
+using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Customers;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
@@ -66,6 +67,33 @@ public class DiscountRuleService : IDiscountRuleService
 
     public Task<bool> DeleteRuleAsync(int ruleId) => _ruleRepo.DeleteRuleAsync(ruleId);
 
+    public async Task<Dictionary<int, IEnumerable<ProductDiscountTierDTO>>> GetDiscountTiersForProductsAsync(int[] productNodeIds)
+    {
+        if (productNodeIds.Length == 0) return [];
+
+        var rules = (await _ruleRepo.GetActiveRulesBatchAsync(productNodeIds)).ToList();
+
+        var globalTiers = rules
+            .Where(r => r.ProductId == null)
+            .Select(MapToTier)
+            .ToList();
+
+        var productSpecific = rules
+            .Where(r => r.ProductId != null)
+            .GroupBy(r => r.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(MapToTier).ToList());
+
+        return productNodeIds.ToDictionary(
+            nodeId => nodeId,
+            nodeId =>
+            {
+                var tiers = new List<ProductDiscountTierDTO>(globalTiers);
+                if (productSpecific.TryGetValue(nodeId, out var specific))
+                    tiers.AddRange(specific);
+                return (IEnumerable<ProductDiscountTierDTO>)tiers.OrderBy(t => t.MinQuantity).ToList();
+            });
+    }
+
     public async Task<decimal> CalculateDiscountedPriceAsync(int productId, decimal unitPrice, int quantity)
     {
         var rule = await _ruleRepo.GetBestRuleAsync(productId, quantity);
@@ -120,5 +148,14 @@ public class DiscountRuleService : IDiscountRuleService
         StartDate = r.StartDate,
         EndDate = r.EndDate,
         IsActive = r.IsActive
+    };
+
+    private static ProductDiscountTierDTO MapToTier(DiscountRule r) => new()
+    {
+        RuleName = r.RuleName,
+        MinQuantity = r.MinQuantity,
+        MaxQuantity = r.MaxQuantity,
+        DiscountPercent = r.DiscountPercent,
+        DiscountAmount = r.DiscountAmount
     };
 }
