@@ -1,4 +1,6 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
+using LumStoreAPI.Application.DTOs.ProductComboDTO;
+using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.DTOs.StoreOrderDTO;
@@ -57,6 +59,22 @@ internal class StoreOrderService : IStoreOrderService
     private static string GenerateOrderCode()
         => $"ORD-{DateTimeOffset.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
 
+    /// <summary>
+    /// Applies best matching discount rule in-memory using pre-loaded tiers.
+    /// Formula: Max(0, Round(unitPrice × (1 − DiscountPercent/100) − DiscountAmount, 2))
+    /// </summary>
+    private static decimal ApplyBestDiscount(
+        IEnumerable<ProductDiscountTierDTO> tiers, decimal unitPrice, int quantity)
+    {
+        var best = tiers
+            .Where(t => t.MinQuantity <= quantity && (t.MaxQuantity == null || t.MaxQuantity >= quantity))
+            .OrderByDescending(t => t.DiscountPercent + t.DiscountAmount)
+            .FirstOrDefault();
+
+        if (best is null) return unitPrice;
+        return Math.Max(0, Math.Round(unitPrice * (1 - best.DiscountPercent / 100) - best.DiscountAmount, 2));
+    }
+
 
     // ── Commands ──────────────────────────────────────────────────────────────
 
@@ -107,6 +125,17 @@ internal class StoreOrderService : IStoreOrderService
                 .ToDictionaryAsync(m => m.FileID, ct)
             : new Dictionary<Guid, Core.Entities.Systems.MediaLibrary>();
 
+        // Batch-load discount data before the loop — eliminates N+1 queries
+        var nonComboNodeIds = products.Where(p => !p.IsCombo).Select(p => p.NodeID).ToArray();
+        var discountTiers = nonComboNodeIds.Length > 0
+            ? await _discountRuleService.GetDiscountTiersForProductsAsync(nonComboNodeIds)
+            : new Dictionary<int, IEnumerable<ProductDiscountTierDTO>>();
+
+        var comboNodeIds = products.Where(p => p.IsCombo).Select(p => p.NodeID).Distinct().ToArray();
+        var comboResults = comboNodeIds.Length > 0
+            ? await _discountRuleService.CalculateBatchComboPricesAsync(comboNodeIds)
+            : new Dictionary<int, ComboPriceResult>();
+
         // Build order items
         var orderItems = new List<OrderItem>();
         decimal subTotal = 0;
@@ -124,14 +153,15 @@ internal class StoreOrderService : IStoreOrderService
             decimal unitPrice;
             if (product.IsCombo)
             {
-                var comboResult = await _discountRuleService.CalculateComboPriceAsync(product.NodeID);
-                basePrice = comboResult.TotalPrice;
-                unitPrice = comboResult.TotalPrice;
+                var comboResult = comboResults.GetValueOrDefault(product.NodeID);
+                basePrice = comboResult?.TotalPrice ?? product.Price;
+                unitPrice = basePrice;
             }
             else
             {
                 basePrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
-                unitPrice = await _discountRuleService.CalculateDiscountedPriceAsync(product.NodeID, basePrice, cartItem.Quantity);
+                var tiers = discountTiers.GetValueOrDefault(product.NodeID, []);
+                unitPrice = ApplyBestDiscount(tiers, basePrice, cartItem.Quantity);
             }
 
             var discountPerUnit = basePrice - unitPrice;
@@ -441,6 +471,17 @@ internal class StoreOrderService : IStoreOrderService
                 .ToDictionaryAsync(m => m.FileID, ct)
             : new Dictionary<Guid, Core.Entities.Systems.MediaLibrary>();
 
+        // Batch-load discount data before the loop — eliminates N+1 queries
+        var previewNonComboIds = products.Where(p => !p.IsCombo).Select(p => p.NodeID).ToArray();
+        var previewDiscountTiers = previewNonComboIds.Length > 0
+            ? await _discountRuleService.GetDiscountTiersForProductsAsync(previewNonComboIds)
+            : new Dictionary<int, IEnumerable<ProductDiscountTierDTO>>();
+
+        var previewComboIds = products.Where(p => p.IsCombo).Select(p => p.NodeID).Distinct().ToArray();
+        var previewComboResults = previewComboIds.Length > 0
+            ? await _discountRuleService.CalculateBatchComboPricesAsync(previewComboIds)
+            : new Dictionary<int, ComboPriceResult>();
+
         var previewItems = new List<StoreCheckoutPreviewItemDTO>();
         decimal subTotal = 0;
 
@@ -459,14 +500,15 @@ internal class StoreOrderService : IStoreOrderService
             decimal unitPrice;
             if (product.IsCombo)
             {
-                var comboResult = await _discountRuleService.CalculateComboPriceAsync(product.NodeID);
-                basePrice = comboResult.TotalPrice;
-                unitPrice = comboResult.TotalPrice;
+                var comboResult = previewComboResults.GetValueOrDefault(product.NodeID);
+                basePrice = comboResult?.TotalPrice ?? product.Price;
+                unitPrice = basePrice;
             }
             else
             {
                 basePrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
-                unitPrice = await _discountRuleService.CalculateDiscountedPriceAsync(product.NodeID, basePrice, cartItem.Quantity);
+                var tiers = previewDiscountTiers.GetValueOrDefault(product.NodeID, []);
+                unitPrice = ApplyBestDiscount(tiers, basePrice, cartItem.Quantity);
             }
 
             var lineTotal = unitPrice * cartItem.Quantity;

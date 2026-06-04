@@ -31,6 +31,7 @@ public interface ICustomerRepository
     Task<CustomerTier?> GetTierAsync(int tierId);
     Task<CustomerTier?> GetTierByLevelAsync(CustomerTierLevel level);
     Task<CustomerTier> UpsertTierAsync(CustomerTier tier);
+    Task<IEnumerable<CustomerTier>> UpsertTiersBatchAsync(IEnumerable<CustomerTier> tiers);
 
     // ── Stats ─────────────────────────────────────────────────────────────
     Task<int> CountCustomersAsync();

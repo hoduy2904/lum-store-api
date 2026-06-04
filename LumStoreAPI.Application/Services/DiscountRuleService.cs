@@ -107,6 +107,10 @@ public class DiscountRuleService : IDiscountRuleService
     {
         var comboItems = (await _comboRepo.GetComboItemsForPricingAsync([comboProductNodeId])).ToList();
 
+        // Batch-load all rules for sub-products + combo product itself — 1 query instead of N+1
+        var allNodeIds = comboItems.Select(x => x.SubProductNodeId).Append(comboProductNodeId).Distinct().ToArray();
+        var rules = (await _ruleRepo.GetActiveRulesBatchAsync(allNodeIds)).ToList();
+
         decimal subTotal = 0;
         var itemDetails = new List<ComboItemDetailDTO>();
         int comboStock = comboItems.Count > 0 ? comboItems.Min(x => x.Stock) : 0;
@@ -114,7 +118,7 @@ public class DiscountRuleService : IDiscountRuleService
         foreach (var item in comboItems)
         {
             var basePrice = item.SubProductPriceDiscount > 0 ? item.SubProductPriceDiscount : item.SubProductPrice;
-            var discountedPrice = await CalculateDiscountedPriceAsync(item.SubProductNodeId, basePrice, 1);
+            var discountedPrice = ApplyBestRule(rules, item.SubProductNodeId, basePrice, 1);
             subTotal += discountedPrice;
 
             itemDetails.Add(new ComboItemDetailDTO
@@ -128,7 +132,7 @@ public class DiscountRuleService : IDiscountRuleService
         }
 
         // Apply the combo product's own discount rule on the aggregated total
-        var totalPrice = await CalculateDiscountedPriceAsync(comboProductNodeId, subTotal, 1);
+        var totalPrice = ApplyBestRule(rules, comboProductNodeId, subTotal, 1);
 
         return new ComboPriceResult
         {
@@ -136,6 +140,76 @@ public class DiscountRuleService : IDiscountRuleService
             ComboStock = comboStock,
             Items = itemDetails
         };
+    }
+
+    public async Task<Dictionary<int, ComboPriceResult>> CalculateBatchComboPricesAsync(int[] comboNodeIds)
+    {
+        if (comboNodeIds.Length == 0) return [];
+
+        // 1 query: load all combo items for every combo product at once
+        var allComboItems = (await _comboRepo.GetComboItemsForPricingAsync(comboNodeIds)).ToList();
+
+        // 1 query: load all active discount rules for sub-products + combo products
+        var allNodeIds = allComboItems.Select(x => x.SubProductNodeId)
+            .Concat(comboNodeIds)
+            .Distinct()
+            .ToArray();
+        var rules = allNodeIds.Length > 0
+            ? (await _ruleRepo.GetActiveRulesBatchAsync(allNodeIds)).ToList()
+            : [];
+
+        var result = new Dictionary<int, ComboPriceResult>(comboNodeIds.Length);
+        foreach (var comboId in comboNodeIds)
+        {
+            var items = allComboItems.Where(x => x.ProductId == comboId).ToList();
+            decimal subTotal = 0;
+            var itemDetails = new List<ComboItemDetailDTO>(items.Count);
+            int comboStock = items.Count > 0 ? items.Min(x => x.Stock) : 0;
+
+            foreach (var item in items)
+            {
+                var basePrice = item.SubProductPriceDiscount > 0 ? item.SubProductPriceDiscount : item.SubProductPrice;
+                var discountedPrice = ApplyBestRule(rules, item.SubProductNodeId, basePrice, 1);
+                subTotal += discountedPrice;
+
+                itemDetails.Add(new ComboItemDetailDTO
+                {
+                    VariantId = item.VariantId,
+                    VariantName = item.VariantName,
+                    ProductName = item.SubProductName,
+                    UnitPrice = basePrice,
+                    DiscountedPrice = discountedPrice
+                });
+            }
+
+            result[comboId] = new ComboPriceResult
+            {
+                TotalPrice = ApplyBestRule(rules, comboId, subTotal, 1),
+                ComboStock = comboStock,
+                Items = itemDetails
+            };
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Applies the best matching discount rule in-memory.
+    /// Replicates GetBestRuleAsync logic without a DB round-trip.
+    /// Formula: Max(0, Round(unitPrice × (1 − DiscountPercent/100) − DiscountAmount, 2))
+    /// </summary>
+    private static decimal ApplyBestRule(
+        IEnumerable<DiscountRule> rules, int productId, decimal unitPrice, int quantity)
+    {
+        var best = rules
+            .Where(r => (r.ProductId == null || r.ProductId == productId) &&
+                        r.MinQuantity <= quantity &&
+                        (r.MaxQuantity == null || r.MaxQuantity >= quantity))
+            .OrderByDescending(r => r.DiscountPercent + r.DiscountAmount)
+            .FirstOrDefault();
+
+        if (best is null) return unitPrice;
+        return Math.Max(0, Math.Round(unitPrice * (1 - best.DiscountPercent / 100) - best.DiscountAmount, 2));
     }
 
     private static DiscountRuleGetDTO MapToDTO(DiscountRule r) => new()

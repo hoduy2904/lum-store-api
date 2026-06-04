@@ -207,10 +207,20 @@ public class CustomerService : ICustomerService
 
     public async Task<IEnumerable<CustomerTierGetDTO>> UpsertTiersAsync(IEnumerable<CustomerTierUpsertDTO> dtos)
     {
-        var result = new List<CustomerTierGetDTO>();
-        foreach (var dto in dtos)
-            result.Add(await UpsertTierAsync(dto));
-        return result;
+        var tiers = dtos.Select(dto => new CustomerTier
+        {
+            TierLevel = dto.TierLevel,
+            TierName = dto.TierName,
+            MinPoints = dto.MinPoints,
+            MaxPoints = dto.MaxPoints,
+            DiscountPercent = dto.DiscountPercent,
+            PointsPerDollar = dto.PointsPerDollar,
+            BadgeColor = dto.BadgeColor,
+            Description = dto.Description,
+            IsActive = dto.IsActive
+        });
+        var saved = await _customerRepo.UpsertTiersBatchAsync(tiers);
+        return saved.Select(MapTierToDTO);
     }
 
     public async Task<CustomerTierGetDTO> UpsertTierAsync(CustomerTierUpsertDTO dto)

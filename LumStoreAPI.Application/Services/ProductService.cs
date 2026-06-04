@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.DocumentPageDTO;
+using LumStoreAPI.Application.DTOs.ProductComboDTO;
 using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Application.DTOs.StoreDTO;
@@ -374,14 +375,12 @@ IDiscountRuleService discountRuleService)
 
         if (sorted.Count == 0) return [];
 
-        // Compute combo prices for combo products in the result set
-        var comboIds = sorted.Where(p => p.IsCombo).Select(p => p.NodeID).ToList();
-        var comboPriceMap = new Dictionary<int, decimal>();
-        foreach (var id in comboIds)
-        {
-            var result = await _discountRuleService.CalculateComboPriceAsync(id);
-            comboPriceMap[id] = result.TotalPrice;
-        }
+        // Batch-compute combo prices — 2 DB queries total regardless of combo count
+        var comboIds = sorted.Where(p => p.IsCombo).Select(p => p.NodeID).Distinct().ToArray();
+        var comboResults = comboIds.Length > 0
+            ? await _discountRuleService.CalculateBatchComboPricesAsync(comboIds)
+            : new Dictionary<int, ComboPriceResult>();
+        var comboPriceMap = comboResults.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
 
         var allGuids = sorted.Where(p => p.Images.Length > 0).Select(p => p.Images[0]).Distinct().ToArray();
         var mediaMap = allGuids.Length > 0
@@ -478,14 +477,12 @@ IDiscountRuleService discountRuleService)
         if (pageItems.Count == 0)
             return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(totalRecords);
 
-        // Compute combo prices for combo products on this page
-        var comboIds = pageItems.Where(x => x.product.IsCombo).Select(x => x.product.NodeID).ToList();
-        var comboPriceMap = new Dictionary<int, decimal>();
-        foreach (var id in comboIds)
-        {
-            var result = await _discountRuleService.CalculateComboPriceAsync(id);
-            comboPriceMap[id] = result.TotalPrice;
-        }
+        // Batch-compute combo prices — 2 DB queries total regardless of combo count
+        var comboIds = pageItems.Where(x => x.product.IsCombo).Select(x => x.product.NodeID).Distinct().ToArray();
+        var comboResults = comboIds.Length > 0
+            ? await _discountRuleService.CalculateBatchComboPricesAsync(comboIds)
+            : new Dictionary<int, ComboPriceResult>();
+        var comboPriceMap = comboResults.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
 
         var imageGuids = pageItems
             .Where(x => x.product.Images.Length > 0)
@@ -686,16 +683,14 @@ IDiscountRuleService discountRuleService)
     /// <summary>
     /// For a list of products, computes combo price for those with IsCombo = true.
     /// Returns a dictionary: NodeID -> computed price.
+    /// Uses a single batch call regardless of how many combo products are present.
     /// </summary>
     private async Task<Dictionary<int, decimal>> GetComboPricesAsync(IEnumerable<Product> products)
     {
-        var result = new Dictionary<int, decimal>();
-        foreach (var p in products.Where(x => x.IsCombo))
-        {
-            var comboResult = await _discountRuleService.CalculateComboPriceAsync(p.NodeID);
-            result[p.NodeID] = comboResult.TotalPrice;
-        }
-        return result;
+        var comboIds = products.Where(x => x.IsCombo).Select(x => x.NodeID).Distinct().ToArray();
+        if (comboIds.Length == 0) return [];
+        var batchResults = await _discountRuleService.CalculateBatchComboPricesAsync(comboIds);
+        return batchResults.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
     }
 
     /// <summary>

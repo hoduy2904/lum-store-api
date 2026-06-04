@@ -148,6 +148,40 @@ internal class CustomerRepository : ICustomerRepository
         return existing ?? tier;
     }
 
+    public async Task<IEnumerable<CustomerTier>> UpsertTiersBatchAsync(IEnumerable<CustomerTier> tiers)
+    {
+        var tiersList = tiers.ToList();
+        if (tiersList.Count == 0) return [];
+
+        var levels = tiersList.Select(t => t.TierLevel).ToList();
+        var existingByLevel = await _ctx.CustomerTiers
+            .Where(t => levels.Contains(t.TierLevel))
+            .ToDictionaryAsync(t => t.TierLevel);
+
+        foreach (var tier in tiersList)
+        {
+            if (existingByLevel.TryGetValue(tier.TierLevel, out var existing))
+            {
+                existing.TierName = tier.TierName;
+                existing.MinPoints = tier.MinPoints;
+                existing.MaxPoints = tier.MaxPoints;
+                existing.DiscountPercent = tier.DiscountPercent;
+                existing.PointsPerDollar = tier.PointsPerDollar;
+                existing.BadgeColor = tier.BadgeColor;
+                existing.Description = tier.Description;
+                existing.IsActive = tier.IsActive;
+            }
+            else
+            {
+                _ctx.CustomerTiers.Add(tier);
+                existingByLevel[tier.TierLevel] = tier;
+            }
+        }
+
+        await _ctx.SaveChangesAsync();
+        return tiersList.Select(t => existingByLevel[t.TierLevel]);
+    }
+
     // ── Stats ─────────────────────────────────────────────────────────────
 
     public Task<int> CountCustomersAsync()

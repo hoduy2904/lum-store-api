@@ -23,4 +23,10 @@ public interface IDiscountRuleService
     /// then applying the combo's own discount rule on the total.
     /// </summary>
     Task<ComboPriceResult> CalculateComboPriceAsync(int comboProductNodeId);
+
+    /// <summary>
+    /// Batch-calculate combo prices for multiple combo products.
+    /// Uses 2 DB queries total regardless of how many combos are provided.
+    /// </summary>
+    Task<Dictionary<int, ComboPriceResult>> CalculateBatchComboPricesAsync(int[] comboNodeIds);
 }
