@@ -4,6 +4,7 @@ namespace LumStoreAPI.Application.DTOs.UserDTO;
 
 public class UserDTO
 {
+    public int UserID { get; set; }
     public string UserName { get; set; } = default!;
     public string FirstName { get; set; } = default!;
     public string? MiddleName { get; set; }
@@ -27,5 +28,6 @@ public class UserDTO
         this.Email = user.Email;
         this.Avatar = user.Avatar;
         this.UserRole = user.IsAdmin ? "admin" : "user";
+        this.UserID = user.ItemID;
     }
 }

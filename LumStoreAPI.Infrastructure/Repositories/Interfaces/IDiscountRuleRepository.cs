@@ -4,6 +4,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Interfaces;
 
 public interface IDiscountRuleRepository
 {
+    IQueryable<DiscountRule> GetDiscountRules();
     Task<DiscountRule?> GetRuleAsync(int ruleId);
     Task<IEnumerable<DiscountRule>> GetRulesAsync(int? productId = null, bool activeOnly = false);
     Task<DiscountRule> InsertRuleAsync(DiscountRule rule);

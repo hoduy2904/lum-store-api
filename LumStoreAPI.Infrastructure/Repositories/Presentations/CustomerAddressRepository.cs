@@ -70,4 +70,9 @@ internal class CustomerAddressRepository : ICustomerAddressRepository
 
     public Task<bool> ExistsForUserAsync(int id, int userId, CancellationToken ct = default)
         => _ctx.CustomerAddresses.AnyAsync(a => a.ItemID == id && a.UserId == userId, ct);
+
+    public Task<CustomerAddress?> GetByUserAsync(int id, int userId, CancellationToken ct = default)
+    {
+        return _ctx.CustomerAddresses.AsNoTracking().FirstOrDefaultAsync(x=>x.ItemID == id && x.UserId == userId, ct);
+    }
 }

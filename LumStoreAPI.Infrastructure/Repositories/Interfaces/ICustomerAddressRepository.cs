@@ -23,4 +23,5 @@ public interface ICustomerAddressRepository
     Task ClearDefaultsAsync(int userId, int? excludeId = null, CancellationToken ct = default);
 
     Task<bool> ExistsForUserAsync(int id, int userId, CancellationToken ct = default);
+    Task<CustomerAddress?> GetByUserAsync(int id, int userId, CancellationToken ct = default);
 }

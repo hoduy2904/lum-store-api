@@ -1,6 +1,5 @@
 ﻿using LumStoreAPI.Application.DTOs.UserDTO;
 using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Http;
@@ -27,13 +26,20 @@ namespace LumStoreAPI.Application.Services
 
         public async Task<UserDTO?> GetCurrentUserAsync()
         {
-            if (!int.TryParse(_httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(x => x.Type.Equals("id"))?.Value, out int userId))
-            {
-                return null;
-            }
+            var userId = GetCurrentUserId();
+            if (userId == 0) return null;
             var user = await _userRepository.GetUserAsync(userId);
 
             return user == null ? null : new UserDTO(user);
+        }
+
+        public int GetCurrentUserId()
+        {
+            if (!int.TryParse(_httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(x => x.Type.Equals("id"))?.Value, out int userId))
+            {
+                throw new UnauthorizedAccessException("User identity could not be resolved.");
+            }
+            return userId;
         }
     }
 }

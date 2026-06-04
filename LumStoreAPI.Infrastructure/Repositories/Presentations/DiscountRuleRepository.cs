@@ -76,4 +76,13 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
             .OrderBy(r => r.MinQuantity)
             .ToListAsync();
     }
+
+    public IQueryable<DiscountRule> GetDiscountRules()
+    {
+        var now = DateTimeOffset.UtcNow;
+        return _ctx.DiscountRules.AsNoTracking()
+            .Where(r => r.IsActive &&
+                        (r.StartDate == null || r.StartDate <= now) &&
+                        (r.EndDate == null || r.EndDate >= now));
+    }
 }
