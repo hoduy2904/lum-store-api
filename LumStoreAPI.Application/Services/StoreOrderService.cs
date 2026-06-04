@@ -160,14 +160,14 @@ internal class StoreOrderService : IStoreOrderService
         // Get tax rate from settings (fallback to 0)
         decimal taxRate = 0;
         var taxSetting = await _ctx.SettingKeyValues
-            .FirstOrDefaultAsync(s => s.SettingCode == "Site.TaxRate", ct);
+            .FirstOrDefaultAsync(s => s.SettingCode == "TAX_RATE", ct);
         if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
             taxRate = parsedRate;
 
         // Get shipping threshold
         decimal shippingFee = 9.99m;
         var shippingSetting = await _ctx.SettingKeyValues
-            .FirstOrDefaultAsync(s => s.SettingCode == "Site.FreeShippingThreshold", ct);
+            .FirstOrDefaultAsync(s => s.SettingCode == "FREE_SHIPPING", ct);
         if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var threshold))
             if (subTotal >= threshold) shippingFee = 0;
 
@@ -488,7 +488,7 @@ internal class StoreOrderService : IStoreOrderService
 
         decimal taxRate = 0;
         var taxSetting = await _ctx.SettingKeyValues
-            .FirstOrDefaultAsync(s => s.SettingCode == "Site.TaxRate", ct);
+            .FirstOrDefaultAsync(s => s.SettingCode == "TAX_RATE", ct);
         if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
             taxRate = parsedRate;
 
