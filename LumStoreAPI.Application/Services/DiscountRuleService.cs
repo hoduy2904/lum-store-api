@@ -34,7 +34,6 @@ public class DiscountRuleService : IDiscountRuleService
     {
         var rule = new DiscountRule
         {
-            ProductId = dto.ProductId,
             RuleName = dto.RuleName,
             MinQuantity = dto.MinQuantity,
             MaxQuantity = dto.MaxQuantity,
@@ -44,7 +43,7 @@ public class DiscountRuleService : IDiscountRuleService
             EndDate = dto.EndDate,
             IsActive = dto.IsActive
         };
-        var created = await _ruleRepo.InsertRuleAsync(rule);
+        var created = await _ruleRepo.InsertRuleAsync(rule, dto.ProductIds);
         return MapToDTO(created);
     }
 
@@ -52,7 +51,6 @@ public class DiscountRuleService : IDiscountRuleService
     {
         var updated = await _ruleRepo.UpdateRuleAsync(ruleId, r =>
         {
-            r.ProductId = dto.ProductId;
             r.RuleName = dto.RuleName;
             r.MinQuantity = dto.MinQuantity;
             r.MaxQuantity = dto.MaxQuantity;
@@ -61,6 +59,7 @@ public class DiscountRuleService : IDiscountRuleService
             r.StartDate = dto.StartDate;
             r.EndDate = dto.EndDate;
             r.IsActive = dto.IsActive;
+            r.DiscountRuleMappings = dto.ProductIds.Select(x => new Core.Entities.DocumentTypes.DiscountRuleMapping { DiscountRuleId = ruleId, ProductId = x }).ToList();
         });
         return MapToDTO(updated);
     }
@@ -74,14 +73,20 @@ public class DiscountRuleService : IDiscountRuleService
         var rules = (await _ruleRepo.GetActiveRulesBatchAsync(productNodeIds)).ToList();
 
         var globalTiers = rules
-            .Where(r => r.ProductId == null)
+            .Where(r => r.DiscountRuleMappings.Count == 0)
             .Select(MapToTier)
             .ToList();
 
         var productSpecific = rules
-            .Where(r => r.ProductId != null)
-            .GroupBy(r => r.ProductId!.Value)
-            .ToDictionary(g => g.Key, g => g.Select(MapToTier).ToList());
+            .Where(r => r.DiscountRuleMappings.Count > 0)
+            .SelectMany(r => r.DiscountRuleMappings
+            , (rule, mapping) => new
+            {
+                Rule = rule,
+                ProductId = mapping.ProductId
+            })
+            .GroupBy(r => r.ProductId)
+            .ToDictionary(g => g.Key, g => g.Select(s => MapToTier(s.Rule)).ToList());
 
         return productNodeIds.ToDictionary(
             nodeId => nodeId,
@@ -202,7 +207,7 @@ public class DiscountRuleService : IDiscountRuleService
         IEnumerable<DiscountRule> rules, int productId, decimal unitPrice, int quantity)
     {
         var best = rules
-            .Where(r => (r.ProductId == null || r.ProductId == productId) &&
+            .Where(r => (r.DiscountRuleMappings.Count == 0 || r.DiscountRuleMappings.Any(d => d.ProductId == productId)) &&
                         r.MinQuantity <= quantity &&
                         (r.MaxQuantity == null || r.MaxQuantity >= quantity))
             .OrderByDescending(r => r.DiscountPercent + r.DiscountAmount)
@@ -215,7 +220,7 @@ public class DiscountRuleService : IDiscountRuleService
     private static DiscountRuleGetDTO MapToDTO(DiscountRule r) => new()
     {
         RuleId = r.ItemID,
-        ProductId = r.ProductId,
+        ProductIds = r.DiscountRuleMappings.Select(x => x.ProductId).ToArray(),
         RuleName = r.RuleName,
         MinQuantity = r.MinQuantity,
         MaxQuantity = r.MaxQuantity,
