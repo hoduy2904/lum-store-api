@@ -14,7 +14,6 @@ namespace LumStoreAPI.Controllers;
 [Route("api/integrations/webhook/shiprelay")]
 [Route("api/webhooks/shiprelay")]
 [ApiController]
-[ApiExplorerSettings(GroupName = "Webhook")]
 [AllowAnonymous]
 public class ShiprelayWebhookController(
     IShiprelayService shiprelayService,
