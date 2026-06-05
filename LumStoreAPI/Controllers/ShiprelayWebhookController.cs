@@ -63,7 +63,7 @@ public class ShiprelayWebhookController(
             return Unauthorized();
         }
 
-        if (!shiprelayService.ValidateWebhookSignature(rawBody, signature))
+        if (!await shiprelayService.ValidateWebhookSignatureAsync(rawBody, signature))
         {
             await eventLog.LogWarning("ShiprelayWebhook", "INVALID_SIGNATURE",
                 "Webhook signature validation failed");

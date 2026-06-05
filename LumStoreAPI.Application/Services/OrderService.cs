@@ -119,16 +119,14 @@ public class OrderService : IOrderService
                     $"Failed to cancel ShipRelay shipment {order.ShiprelayShipmentId} for OrderId={orderId}");
         }
 
-        var updated = await _orderRepo.UpdateOrderAsync(orderId, o =>
+        var updated = await _orderRepo.UpdateOrderAsync(order, o =>
         {
             o.Status = dto.NewStatus;
             if (dto.NewPaymentStatus.HasValue) o.PaymentStatus = dto.NewPaymentStatus.Value;
             if (dto.NewStatus == OrderStatus.Shipped) o.ShippedAt = DateTimeOffset.UtcNow;
             if (dto.NewStatus == OrderStatus.Delivered || dto.NewStatus == OrderStatus.Completed)
                 o.DeliveredAt = DateTimeOffset.UtcNow;
-        });
-
-        await _orderRepo.InsertOrderHistoryAsync(new OrderHistory
+        }, new OrderHistory
         {
             OrderId = orderId,
             FromStatus = prevStatus,

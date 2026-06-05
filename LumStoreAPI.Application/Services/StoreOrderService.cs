@@ -84,6 +84,7 @@ internal class StoreOrderService : IStoreOrderService
 
         // Load cart
         var cartItems = (await _ctx.UserCarts
+            .AsNoTracking()
             .Where(c => c.UserId == userId)
             .ToListAsync(ct));
 
@@ -92,13 +93,14 @@ internal class StoreOrderService : IStoreOrderService
 
         // Verify address ownership
         var address = await _ctx.CustomerAddresses
+            .AsNoTracking()
             .FirstOrDefaultAsync(a => a.ItemID == request.AddressId && a.UserId == userId, ct);
 
         if (address is null)
             return APIResponse<StoreOrderSummaryDTO>.Failure("Address not found");
 
         // Load user
-        var user = await _ctx.Users.FirstOrDefaultAsync(u => u.ItemID == userId, ct);
+        var user = await _ctx.Users.AsNoTracking().FirstOrDefaultAsync(u => u.ItemID == userId, ct);
         if (user is null)
             return APIResponse<StoreOrderSummaryDTO>.Failure("User not found");
 
@@ -108,19 +110,21 @@ internal class StoreOrderService : IStoreOrderService
         // Load products for snapshot
         var nodeIds = cartItems.Select(c => c.NodeId).Distinct().ToArray();
         var products = await _ctx.Products
+            .AsNoTracking()
             .Where(p => nodeIds.Contains(p.NodeID))
             .ToListAsync(ct);
 
         // Load variants
         var variantIds = cartItems.Where(c => c.VariantId.HasValue).Select(c => c.VariantId!.Value).ToArray();
         var variants = variantIds.Length > 0
-            ? await _ctx.ProductVariants.Where(v => variantIds.Contains(v.ItemID)).ToListAsync(ct)
+            ? await _ctx.ProductVariants.AsNoTracking().Where(v => variantIds.Contains(v.ItemID)).ToListAsync(ct)
             : [];
 
         // Load first image for each product
         var allImageGuids = products.SelectMany(p => p.Images).Distinct().ToArray();
         var mediaByGuid = allImageGuids.Length > 0
             ? await _ctx.MediaLibraries
+                .AsNoTracking()
                 .Where(m => allImageGuids.Contains(m.FileID))
                 .ToDictionaryAsync(m => m.FileID, ct)
             : new Dictionary<Guid, Core.Entities.Systems.MediaLibrary>();
@@ -194,16 +198,44 @@ internal class StoreOrderService : IStoreOrderService
         // Get tax rate from settings (fallback to 0)
         decimal taxRate = 0;
         var taxSetting = await _ctx.SettingKeyValues
+            .AsNoTracking()
             .FirstOrDefaultAsync(s => s.SettingCode == "TAX_RATE", ct);
         if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
             taxRate = parsedRate;
 
-        // Get shipping threshold
-        decimal shippingFee = 9.99m;
+        // Get free-shipping threshold
+        decimal shippingThreshold = 0;
         var shippingSetting = await _ctx.SettingKeyValues
+            .AsNoTracking()
             .FirstOrDefaultAsync(s => s.SettingCode == "FREE_SHIPPING", ct);
-        if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var threshold))
-            if (subTotal >= threshold) shippingFee = 0;
+        if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var parsedThreshold))
+            shippingThreshold = parsedThreshold;
+
+        // Build items list once — reused for both GetRates and CreateShipment
+        var shipmentItems = orderItems.Select(i => new ShiprelayItemDTO
+        {
+            ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
+            Quantity = i.Quantity,
+            Price = i.UnitPrice
+        }).ToList();
+
+        // Fetch actual shipping rate BEFORE creating the shipment or saving the order
+        var rateResults = await _shiprelayService.GetRatesAsync(new ShiprelayRateRequestDTO
+        {
+            OrderId = 0,
+            RecipientName = user.FullName,
+            Address1 = address.Address,
+            City = address.City,
+            Region = address.State ?? string.Empty,
+            Country = "US",
+            Zip = address.ZipCode,
+            Phone = address.Phone,
+            Email = user.Email,
+            Items = shipmentItems
+        });
+
+        decimal shippingFee = rateResults.FirstOrDefault(r => r.ServiceCode == request.ShippingServiceCode)?.TotalPrice ?? 9.99m;
+        if (shippingThreshold > 0 && subTotal >= shippingThreshold) shippingFee = 0;
 
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
@@ -230,12 +262,7 @@ internal class StoreOrderService : IStoreOrderService
             Zip = address.ZipCode,
             Country = "US",
             Notes = request.Note,
-            Items = orderItems.Select(i => new ShiprelayItemDTO
-            {
-                ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
-                Quantity = i.Quantity,
-                Price = i.UnitPrice
-            }).ToList()
+            Items = shipmentItems
         };
 
         var shipResult = await _shiprelayService.CreateShipmentAsync(shipmentDto);
@@ -243,7 +270,7 @@ internal class StoreOrderService : IStoreOrderService
             return APIResponse<StoreOrderSummaryDTO>.Failure(
                 shipResult.ErrorMessage ?? "Unable to create shipment. Please try again.");
 
-        // Create order
+        // Create order with correct totals — saved once below after PaymentCheckoutAsync
         var order = new Order
         {
             OrderCode = orderCode,
@@ -272,32 +299,7 @@ internal class StoreOrderService : IStoreOrderService
         };
 
         _ctx.Orders.Add(order);
-        await _ctx.SaveChangesAsync(ct);
-
-        var rateResults = await _shiprelayService.GetRatesAsync(new ShiprelayRateRequestDTO
-        {
-            OrderId = 0,
-            RecipientName = user.FullName,
-            Address1 = address.Address,
-            City = address.City,
-            Region = address.State ?? string.Empty,
-            Country = "US",
-            Zip = address.ZipCode,
-            Phone = address.Phone,
-            Email = user.Email,
-            Items = orderItems.Select(x => new ShiprelayItemDTO
-            {
-                ProductId = variants.FirstOrDefault(v => v.ItemID == x.VariantId)?.ShiprelayId ?? 0,
-                Quantity = x.Quantity,
-                Price = x.UnitPrice
-            }).ToList()
-        });
-
-        shippingFee = rateResults.FirstOrDefault(r => r.ServiceCode == request.ShippingServiceCode)?.TotalPrice ?? 0;
-
-        // Sync ShippingFee + Total in DB with the actual ShipRelay rate
-        order.ShippingFee = shippingFee;
-        order.Total = order.SubTotal + shippingFee + order.Tax;
+        await _ctx.SaveChangesAsync(ct);  // save to get order.ItemID for payment + history
 
         var paymentUrl = await _paymentService.PaymentCheckoutAsync(new() { Order = order, SuccessUrl = request.SuccessUrl, CancelUrl = request.CancelUrl, ShippingFee = shippingFee });
 
@@ -494,8 +496,6 @@ internal class StoreOrderService : IStoreOrderService
                 ? variants.FirstOrDefault(v => v.ItemID == cartItem.VariantId)
                 : null;
 
-            if (variant == null) continue;
-
             decimal basePrice;
             decimal unitPrice;
             if (product.IsCombo)
@@ -529,7 +529,7 @@ internal class StoreOrderService : IStoreOrderService
                 UnitPrice = unitPrice,
                 Quantity = cartItem.Quantity,
                 LineTotal = lineTotal,
-                ProductId = variant!.ShiprelayId
+                ProductId = variant?.ShiprelayId ?? 0
             });
         }
 

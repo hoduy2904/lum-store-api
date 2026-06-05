@@ -17,7 +17,7 @@ public static class SDKConfiguration
             services.AddTransient<ShiprelayClientHandler>();
             services.AddHttpClient(nameof(ShiprelayClientHandler), (sp, client) =>
             {
-                var scope = sp.CreateScope();
+                using var scope = sp.CreateScope();
                 var config = scope.ServiceProvider.GetRequiredService<IIntegrationConfigRepository>().GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Shiprelay).GetAwaiter().GetResult();
                 client.BaseAddress = new Uri(config?.BaseUrl ?? "");
             }).AddHttpMessageHandler<ShiprelayClientHandler>();

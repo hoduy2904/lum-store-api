@@ -89,9 +89,12 @@ namespace LumStoreAPI.Application.Services
         public async Task<IPagedEnumerable<MediaItemDTO>> GetMediaItemsAsync(MediaItemListingRequest request)
         {
             var mediaItems = await _mediaLibraryRepository.GetMediaItemsAsync(request.Page, request.PageSize,
-                x => x.CategoryID == request.CategoryID &&
-                 (string.IsNullOrWhiteSpace(request.Search) || x.FileID.Equals(request.Search) || x.FileName.Contains(request.Search)
-                 && string.IsNullOrWhiteSpace(request.Extensions) || x.Extension != null && x.Extension.Equals(request.Extensions))
+                x => x.CategoryID == request.CategoryID
+                     && (string.IsNullOrWhiteSpace(request.Search)
+                         || x.FileID.Equals(request.Search)
+                         || x.FileName.Contains(request.Search))
+                     && (string.IsNullOrWhiteSpace(request.Extensions)
+                         || (x.Extension != null && x.Extension.Equals(request.Extensions)))
              );
 
             return mediaItems.Select(x => new MediaItemDTO(x));
