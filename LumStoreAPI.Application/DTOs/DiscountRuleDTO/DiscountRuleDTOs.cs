@@ -5,7 +5,7 @@ namespace LumStoreAPI.Application.DTOs.DiscountRuleDTO;
 public class DiscountRuleGetDTO
 {
     public int RuleId { get; set; }
-    public int? ProductId { get; set; }
+    public int[] ProductIds { get; set; } = [];
     public string RuleName { get; set; } = default!;
     public int MinQuantity { get; set; }
     public int? MaxQuantity { get; set; }
@@ -18,7 +18,7 @@ public class DiscountRuleGetDTO
 
 public class DiscountRuleUpsertDTO : IValidatableObject
 {
-    public int? ProductId { get; set; }
+    public int[] ProductIds { get; set; } = [];
 
     [Required, MaxLength(200)]
     public string RuleName { get; set; } = default!;

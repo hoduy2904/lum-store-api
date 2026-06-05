@@ -6,7 +6,7 @@ public interface IDiscountRuleRepository
 {
     Task<DiscountRule?> GetRuleAsync(int ruleId);
     Task<IEnumerable<DiscountRule>> GetRulesAsync(int? productId = null, bool activeOnly = false);
-    Task<DiscountRule> InsertRuleAsync(DiscountRule rule);
+    Task<DiscountRule> InsertRuleAsync(DiscountRule rule, params int[] productIds);
     Task<DiscountRule> UpdateRuleAsync(int ruleId, Action<DiscountRule> update);
     Task<bool> DeleteRuleAsync(int ruleId);
 
