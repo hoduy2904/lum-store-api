@@ -58,7 +58,9 @@ internal class OrderRepository : IOrderRepository
         };
 
         int total = await query.CountAsync();
-        var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync();
+        var data = await query.Skip((page - 1) * pageSize).Take(pageSize)
+            .Include(o => o.OrderItems)
+            .ToArrayAsync();
         return new PagedEnumerable<Order>(data, total);
     }
 
@@ -89,12 +91,11 @@ internal class OrderRepository : IOrderRepository
 
     // ── History ───────────────────────────────────────────────────────────
 
-    public Task<IEnumerable<OrderHistory>> GetOrderHistoriesAsync(int orderId)
-        => Task.FromResult<IEnumerable<OrderHistory>>(
-            _ctx.OrderHistories
+    public async Task<IEnumerable<OrderHistory>> GetOrderHistoriesAsync(int orderId)
+        => await _ctx.OrderHistories
                 .Where(h => h.OrderId == orderId)
                 .OrderByDescending(h => h.CreatedAt)
-                .AsEnumerable());
+                .ToListAsync();
 
     public async Task<OrderHistory> InsertOrderHistoryAsync(OrderHistory history)
     {
@@ -105,12 +106,11 @@ internal class OrderRepository : IOrderRepository
 
     // ── Notes ─────────────────────────────────────────────────────────────
 
-    public Task<IEnumerable<OrderNote>> GetOrderNotesAsync(int orderId)
-        => Task.FromResult<IEnumerable<OrderNote>>(
-            _ctx.OrderNotes
+    public async Task<IEnumerable<OrderNote>> GetOrderNotesAsync(int orderId)
+        => await _ctx.OrderNotes
                 .Where(n => n.OrderId == orderId)
                 .OrderByDescending(n => n.CreatedAt)
-                .AsEnumerable());
+                .ToListAsync();
 
     public async Task<OrderNote> InsertOrderNoteAsync(OrderNote note)
     {
@@ -130,15 +130,14 @@ internal class OrderRepository : IOrderRepository
 
     // ── Returns ───────────────────────────────────────────────────────────
 
-    public Task<IEnumerable<OrderReturn>> GetOrderReturnsAsync(int orderId)
-        => Task.FromResult<IEnumerable<OrderReturn>>(
-            _ctx.OrderReturns
+    public async Task<IEnumerable<OrderReturn>> GetOrderReturnsAsync(int orderId)
+        => await _ctx.OrderReturns
                 .Include(r => r.Order)
                 .Include(r => r.ReviewedBy)
                 .Include(r => r.ReturnItems)
                     .ThenInclude(ri => ri.OrderItem)
                 .Where(r => r.OrderId == orderId)
-                .AsEnumerable());
+                .ToListAsync();
 
     public Task<OrderReturn?> GetOrderReturnAsync(int returnId)
         => _ctx.OrderReturns

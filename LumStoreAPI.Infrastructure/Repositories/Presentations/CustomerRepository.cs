@@ -76,12 +76,11 @@ internal class CustomerRepository : ICustomerRepository
 
     // ── Notes ─────────────────────────────────────────────────────────────
 
-    public Task<IEnumerable<CustomerNote>> GetCustomerNotesAsync(int profileId)
-        => Task.FromResult<IEnumerable<CustomerNote>>(
-            _ctx.CustomerNotes
+    public async Task<IEnumerable<CustomerNote>> GetCustomerNotesAsync(int profileId)
+        => await _ctx.CustomerNotes
                 .Where(n => n.CustomerProfileId == profileId)
                 .OrderByDescending(n => n.CreatedAt)
-                .AsEnumerable());
+                .ToListAsync();
 
     public async Task<CustomerNote> InsertCustomerNoteAsync(CustomerNote note)
     {
@@ -101,12 +100,11 @@ internal class CustomerRepository : ICustomerRepository
 
     // ── Loyalty Points ────────────────────────────────────────────────────
 
-    public Task<IEnumerable<LoyaltyPoint>> GetLoyaltyPointsAsync(int profileId)
-        => Task.FromResult<IEnumerable<LoyaltyPoint>>(
-            _ctx.LoyaltyPoints
+    public async Task<IEnumerable<LoyaltyPoint>> GetLoyaltyPointsAsync(int profileId)
+        => await _ctx.LoyaltyPoints
                 .Where(lp => lp.CustomerProfileId == profileId)
                 .OrderByDescending(lp => lp.CreatedAt)
-                .AsEnumerable());
+                .ToListAsync();
 
     public async Task<LoyaltyPoint> InsertLoyaltyPointAsync(LoyaltyPoint point)
     {
