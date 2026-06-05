@@ -126,8 +126,9 @@ IDiscountRuleService discountRuleService)
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
             {
-                productItem.Price = cp;
+                productItem.Price = cp.TotalPrice;
                 productItem.PriceDiscount = null;
+                productItem.ComboStock = cp.ComboStock;
             }
 
             var product = new DocumentClientGetDTO(productItem, x);
@@ -196,8 +197,9 @@ IDiscountRuleService discountRuleService)
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
             {
-                productItem.Price = cp;
+                productItem.Price = cp.TotalPrice;
                 productItem.PriceDiscount = null;
+                productItem.ComboStock = cp.ComboStock;
             }
 
             var product = new DocumentClientGetDTO(productItem, x);
@@ -236,8 +238,9 @@ IDiscountRuleService discountRuleService)
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
             {
-                productItem.Price = cp;
+                productItem.Price = cp.TotalPrice;
                 productItem.PriceDiscount = null;
+                productItem.ComboStock = cp.ComboStock;
             }
 
             return new DocumentClientGetDTO(productItem, x);
@@ -284,7 +287,8 @@ IDiscountRuleService discountRuleService)
                 .Select(img => img.FileURL)
                 .ToArray();
 
-            decimal price = p.IsCombo && comboPrices.TryGetValue(p.NodeID, out var cp) ? cp : p.Price;
+            var hasComboPrice = p.IsCombo && comboPrices.TryGetValue(p.NodeID, out var cp);
+            decimal price = hasComboPrice ? cp!.TotalPrice : p.Price;
             decimal priceDiscount = p.IsCombo ? 0 : p.PriceDiscount;
 
             var fields = new CategoryProductFieldsDTO
@@ -293,10 +297,12 @@ IDiscountRuleService discountRuleService)
                 ShortDescription = p.ShortDescription,
                 Description = p.Description,
                 IsBestSeller = p.IsBestSeller,
+                IsCombo = p.IsCombo,
                 Price = price,
                 PriceDiscount = priceDiscount,
                 Images = productImageUrls,
                 Stock = variants.Sum(v => v.Stock),
+                ComboStock = hasComboPrice ? cp!.ComboStock : 0,
                 ProductVariants = variants.Select(v => new CategoryProductVariantDTO
                 {
                     VariantId = v.VariantId,
@@ -654,8 +660,9 @@ IDiscountRuleService discountRuleService)
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
             {
-                productItem.Price = cp;
+                productItem.Price = cp.TotalPrice;
                 productItem.PriceDiscount = null;
+                productItem.ComboStock = cp.ComboStock;
             }
 
             return new DocumentClientGetDTO(productItem, x);
@@ -681,16 +688,15 @@ IDiscountRuleService discountRuleService)
     }
 
     /// <summary>
-    /// For a list of products, computes combo price for those with IsCombo = true.
-    /// Returns a dictionary: NodeID -> computed price.
+    /// For a list of products, computes combo price + stock for those with IsCombo = true.
+    /// Returns a dictionary: NodeID -> ComboPriceResult.
     /// Uses a single batch call regardless of how many combo products are present.
     /// </summary>
-    private async Task<Dictionary<int, decimal>> GetComboPricesAsync(IEnumerable<Product> products)
+    private async Task<Dictionary<int, ComboPriceResult>> GetComboPricesAsync(IEnumerable<Product> products)
     {
         var comboIds = products.Where(x => x.IsCombo).Select(x => x.NodeID).Distinct().ToArray();
         if (comboIds.Length == 0) return [];
-        var batchResults = await _discountRuleService.CalculateBatchComboPricesAsync(comboIds);
-        return batchResults.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
+        return await _discountRuleService.CalculateBatchComboPricesAsync(comboIds);
     }
 
     /// <summary>
