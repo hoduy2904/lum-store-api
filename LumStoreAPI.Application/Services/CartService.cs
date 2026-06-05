@@ -79,10 +79,19 @@ internal class CartService : ICartService
         var products = (await _productService.GetProductsByNodeIdsAsync(nodeIds))
             .ToDictionary(p => p.NodeID);
 
-        var prices = await _ctx.Products
-            .Where(p => nodeIds.Contains(p.NodeID))
-            .Select(p => new { p.NodeID, p.Price, p.PriceDiscount, p.IsCombo })
-            .ToDictionaryAsync(p => p.NodeID, ct);
+        // Extract price data from already-loaded products — avoids a redundant DB round-trip
+        var prices = products.ToDictionary(
+            kvp => kvp.Key,
+            kvp =>
+            {
+                var f = kvp.Value.Fields as ProductClientDTO;
+                return new
+                {
+                    Price = f?.Price ?? 0m,
+                    PriceDiscount = f?.PriceDiscount ?? 0m,
+                    IsCombo = f?.IsCombo ?? false
+                };
+            });
 
         var items = cartItems.Select(c =>
         {
@@ -103,14 +112,12 @@ internal class CartService : ICartService
             ? await _discountRuleService.GetDiscountTiersForProductsAsync(nonComboNodeIds)
             : new Dictionary<int, IEnumerable<ProductDiscountTierDTO>>();
 
-        // Deduplicate combo price calls — 1 call per unique combo product, not per cart line
+        // Batch-load combo prices in 2 queries total regardless of combo count
         var comboNodeIds = nodeIds.Where(id => prices.TryGetValue(id, out var p) && p.IsCombo).Distinct().ToArray();
-        var comboPrices = new Dictionary<int, decimal>();
-        foreach (var comboId in comboNodeIds)
-        {
-            var comboResult = await _discountRuleService.CalculateComboPriceAsync(comboId);
-            comboPrices[comboId] = comboResult.TotalPrice;
-        }
+        var comboPrices = comboNodeIds.Length > 0
+            ? (await _discountRuleService.CalculateBatchComboPricesAsync(comboNodeIds))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice)
+            : new Dictionary<int, decimal>();
 
         decimal subtotal = 0;
         foreach (var item in items)
