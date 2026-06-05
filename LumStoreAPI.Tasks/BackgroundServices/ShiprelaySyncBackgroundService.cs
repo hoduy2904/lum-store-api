@@ -70,6 +70,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
         var ctx = scope.ServiceProvider.GetRequiredService<LumStoreContext>();
         var productService = scope.ServiceProvider.GetRequiredService<IShiprelayProductService>();
         var eventLog = scope.ServiceProvider.GetRequiredService<IEventLogService>();
+        var mediaService = scope.ServiceProvider.GetRequiredService<IMediaService>();
 
         // Take up to 20 pending items per cycle
         var pending = await ctx.ShiprelayDataSyncs
@@ -113,7 +114,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                     case EntryActionStatus.INSERT:
                         if (variant is null) { MarkFailed(syncEntry, "Variant not found"); break; }
 
-                        var buildRequest = await BuildRequest(variant);
+                        var buildRequest = await BuildRequest(variant, mediaService);
                         var created = await productService.PostProductAsync(
                             buildRequest, variant.Product?.ProductType ?? ProductType.SIMPLE);
 
@@ -135,7 +136,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                     case EntryActionStatus.UPDATE:
                         if (variant is null) { MarkFailed(syncEntry, "Variant not found"); break; }
 
-                        buildRequest = await BuildRequest(variant);
+                        buildRequest = await BuildRequest(variant, mediaService);
                         if (variant.ShiprelayId == 0)
                         {
                             var upserted = await productService.PostProductAsync(
@@ -223,7 +224,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
         foreach (var variant in productVariants)
         {
-            if (!updateVariantDict.ContainsKey(variant.ShiprelayId)) return;
+            if (!updateVariantDict.ContainsKey(variant.ShiprelayId)) continue;
             variant.Stock = updateVariantDict[variant.ShiprelayId].StockCount ?? 0;
         }
 
@@ -252,10 +253,8 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
-    private async Task<ShiprelayProductUpdateRequest> BuildRequest(Core.Entities.DocumentTypes.ProductVariant variant)
+    private async Task<ShiprelayProductUpdateRequest> BuildRequest(Core.Entities.DocumentTypes.ProductVariant variant, IMediaService mediaService)
     {
-        await using var scope = _serviceProvider.CreateAsyncScope();
-        var mediaService = scope.ServiceProvider.GetRequiredService<IMediaService>();
         var product = variant.Product;
 
         var imageGuids = variant.Images;

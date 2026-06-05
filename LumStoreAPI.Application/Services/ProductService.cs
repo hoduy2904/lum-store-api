@@ -287,8 +287,8 @@ IDiscountRuleService discountRuleService)
                 .Select(img => img.FileURL)
                 .ToArray();
 
-            var hasComboPrice = p.IsCombo && comboPrices.TryGetValue(p.NodeID, out var cp);
-            decimal price = hasComboPrice ? cp!.TotalPrice : p.Price;
+            var cp = p.IsCombo && comboPrices.TryGetValue(p.NodeID, out var cpResult) ? cpResult : null;
+            decimal price = cp?.TotalPrice ?? p.Price;
             decimal priceDiscount = p.IsCombo ? 0 : p.PriceDiscount;
 
             var fields = new CategoryProductFieldsDTO
@@ -302,7 +302,7 @@ IDiscountRuleService discountRuleService)
                 PriceDiscount = priceDiscount,
                 Images = productImageUrls,
                 Stock = variants.Sum(v => v.Stock),
-                ComboStock = hasComboPrice ? cp!.ComboStock : 0,
+                ComboStock = cp?.ComboStock ?? 0,
                 ProductVariants = variants.Select(v => new CategoryProductVariantDTO
                 {
                     VariantId = v.VariantId,
@@ -371,6 +371,7 @@ IDiscountRuleService discountRuleService)
                 p.IsCombo,
                 ParentNodeID = p.Node.ParentNodeID,
             })
+            .Take(200)  // cap DB load before in-memory rerank
             .ToListAsync();
 
         var sorted = raw
@@ -402,7 +403,9 @@ IDiscountRuleService discountRuleService)
 
         return sorted.Select(p =>
         {
-            decimal displayPrice = p.IsCombo && comboPriceMap.TryGetValue(p.NodeID, out var cp) ? cp : p.Price;
+            decimal displayPrice = p.IsCombo
+                ? (comboPriceMap.TryGetValue(p.NodeID, out var cp) ? cp : p.Price)
+                : p.Price;
             decimal? displayPriceDiscount = p.IsCombo ? null : (p.PriceDiscount > 0 ? p.PriceDiscount : null);
 
             return new SearchSuggestionDTO
@@ -425,11 +428,11 @@ IDiscountRuleService discountRuleService)
     {
         var now = DateTimeOffset.UtcNow;
 
+        // Load only the minimal variant data needed for sorting + display
         var matchingVariants = await _lumStoreContext.ProductVariants
-        .Include(x => x.Color)
-        .AsNoTrackingWithIdentityResolution()
+            .AsNoTracking()
             .Where(v => v.VariantName != null && v.ColorId == colorId)
-            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.Color!.ColorValue, v.SKU })
+            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.SKU, ColorValue = v.Color != null ? v.Color.ColorValue : null })
             .ToListAsync();
 
         if (matchingVariants.Count == 0)
@@ -440,14 +443,42 @@ IDiscountRuleService discountRuleService)
             .Select(g => g.OrderByDescending(v => v.Stock).ThenBy(v => v.ItemID).First())
             .ToDictionary(v => v.ProductID);
 
-        var productIds = bestVariantByProduct.Keys.ToList();
+        var allProductIds = bestVariantByProduct.Keys.ToList();
 
-        var products = await _lumStoreContext.Products
+        // Lightweight query: just the fields needed for sorting, filtered to published
+        var sortData = await _lumStoreContext.Products
+            .AsNoTracking()
             .Where(p =>
-                productIds.Contains(p.NodeID) &&
+                allProductIds.Contains(p.NodeID) &&
                 !p.IsDeleted &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now))
+            .Select(p => new { p.NodeID, p.IsBestSeller })
+            .ToListAsync();
+
+        if (sortData.Count == 0)
+            return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(0);
+
+        // Sort and paginate in memory on tiny dataset
+        var sorted = sortData
+            .Where(p => bestVariantByProduct.ContainsKey(p.NodeID))
+            .OrderByDescending(p => p.IsBestSeller)
+            .ThenByDescending(p => bestVariantByProduct[p.NodeID].Stock)
+            .ThenBy(p => p.NodeID)
+            .ToList();
+
+        var totalRecords = sorted.Count;
+
+        var pageNodeIds = sorted
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => p.NodeID)
+            .ToList();
+
+        // Load full product data for ONLY the current page
+        var products = await _lumStoreContext.Products
+            .AsNoTracking()
+            .Where(p => pageNodeIds.Contains(p.NodeID))
             .Select(p => new
             {
                 p.NodeID,
@@ -462,22 +493,10 @@ IDiscountRuleService discountRuleService)
             })
             .ToListAsync();
 
-        if (products.Count == 0)
-            return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(0);
-
-        var joined = products
-            .Where(p => bestVariantByProduct.ContainsKey(p.NodeID))
-            .Select(p => (product: p, variant: bestVariantByProduct[p.NodeID]))
-            .OrderByDescending(x => x.product.IsBestSeller)
-            .ThenByDescending(x => x.variant.Stock)
-            .ThenBy(x => x.product.NodeID)
-            .ToList();
-
-        var totalRecords = joined.Count;
-
-        var pageItems = joined
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+        // Preserve sort order from the sorted list
+        var pageItems = pageNodeIds
+            .Where(id => products.Any(p => p.NodeID == id) && bestVariantByProduct.ContainsKey(id))
+            .Select(id => (product: products.First(p => p.NodeID == id), variant: bestVariantByProduct[id]))
             .ToList();
 
         if (pageItems.Count == 0)
@@ -502,12 +521,12 @@ IDiscountRuleService discountRuleService)
 
         var result2 = pageItems.Select(x =>
         {
-            string? imageUrl = x.product.Images.Length > 0 && mediaMap.TryGetValue(x.product.Images[0], out var url)
-                ? url
+            string? imageUrl = x.product.Images.Length > 0
+                ? (mediaMap.TryGetValue(x.product.Images[0], out var url) ? url : null)
                 : null;
 
-            decimal displayPrice = x.product.IsCombo && comboPriceMap.TryGetValue(x.product.NodeID, out var cp)
-                ? cp
+            decimal displayPrice = x.product.IsCombo
+                ? (comboPriceMap.TryGetValue(x.product.NodeID, out var cp) ? cp : x.product.Price)
                 : x.product.Price;
             decimal displayPriceDiscount = x.product.IsCombo ? 0 : x.product.PriceDiscount;
 

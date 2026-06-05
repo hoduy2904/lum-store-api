@@ -60,6 +60,7 @@ internal class OrderRepository : IOrderRepository
         int total = await query.CountAsync();
         var data = await query.Skip((page - 1) * pageSize).Take(pageSize)
             .Include(o => o.OrderItems)
+            .AsNoTracking()
             .ToArrayAsync();
         return new PagedEnumerable<Order>(data, total);
     }
@@ -80,6 +81,15 @@ internal class OrderRepository : IOrderRepository
         return order;
     }
 
+    public async Task<Order> UpdateOrderAsync(Order order, Action<Order> update, OrderHistory? history = null)
+    {
+        update(order);
+        if (history is not null)
+            _ctx.OrderHistories.Add(history);
+        await _ctx.SaveChangesAsync();
+        return order;
+    }
+
     public async Task<bool> DeleteOrderAsync(int orderId)
     {
         var order = await _ctx.Orders.FindAsync(orderId);
@@ -93,6 +103,7 @@ internal class OrderRepository : IOrderRepository
 
     public async Task<IEnumerable<OrderHistory>> GetOrderHistoriesAsync(int orderId)
         => await _ctx.OrderHistories
+                .AsNoTracking()
                 .Where(h => h.OrderId == orderId)
                 .OrderByDescending(h => h.CreatedAt)
                 .ToListAsync();
@@ -108,6 +119,7 @@ internal class OrderRepository : IOrderRepository
 
     public async Task<IEnumerable<OrderNote>> GetOrderNotesAsync(int orderId)
         => await _ctx.OrderNotes
+                .AsNoTracking()
                 .Where(n => n.OrderId == orderId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
@@ -132,6 +144,7 @@ internal class OrderRepository : IOrderRepository
 
     public async Task<IEnumerable<OrderReturn>> GetOrderReturnsAsync(int orderId)
         => await _ctx.OrderReturns
+                .AsNoTracking()
                 .Include(r => r.Order)
                 .Include(r => r.ReviewedBy)
                 .Include(r => r.ReturnItems)
@@ -150,6 +163,7 @@ internal class OrderRepository : IOrderRepository
     public async Task<IPagedEnumerable<OrderReturn>> GetAllReturnsAsync(int page, int pageSize, ReturnStatus? status, string? search)
     {
         IQueryable<OrderReturn> query = _ctx.OrderReturns
+            .AsNoTracking()
             .Include(r => r.Order)
             .Include(r => r.ReviewedBy)
             .Include(r => r.ReturnItems)

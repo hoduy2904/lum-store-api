@@ -422,9 +422,9 @@ public class ShiprelayService : IShiprelayService
 
     // ── Webhook ───────────────────────────────────────────────────────────
 
-    public bool ValidateWebhookSignature(byte[] payload, string signature)
+    public async Task<bool> ValidateWebhookSignatureAsync(byte[] payload, string signature)
     {
-        var config = _configRepo.GetConfigByTypeAsync(IntegrationType.Shiprelay).GetAwaiter().GetResult();
+        var config = await _configRepo.GetConfigByTypeAsync(IntegrationType.Shiprelay);
         if (string.IsNullOrWhiteSpace(config?.WebhookSecret)) return false;
 
         var key = Encoding.UTF8.GetBytes(config.WebhookSecret);

@@ -26,7 +26,7 @@ public interface IShiprelayService
     Task<bool> RestoreShipmentAsync(string shipmentId);
 
     /// <summary>Validate incoming webhook signature from Shiprelay against the raw request body bytes.</summary>
-    bool ValidateWebhookSignature(byte[] payload, string signature);
+    Task<bool> ValidateWebhookSignatureAsync(byte[] payload, string signature);
 
     /// <summary>Get product stock info from Shiprelay by SKU. Returns null if not found.</summary>
     Task<ShiprelayProductDTO?> GetProductBySkuAsync(string sku);

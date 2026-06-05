@@ -23,7 +23,7 @@ namespace LumStoreAPI.Application.Services
         {
             try
             {
-                string? ipAddress = _httpContextAccessor?.HttpContext?.Connection.RemoteIpAddress.IPAddressString;
+                string? ipAddress = _httpContextAccessor?.HttpContext?.Connection.RemoteIpAddress?.IPAddressString;
                 var eventLog = new EventLog
                 {
                     EventLogType = type,

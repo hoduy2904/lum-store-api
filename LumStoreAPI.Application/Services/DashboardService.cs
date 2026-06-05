@@ -25,12 +25,22 @@ public class DashboardService : IDashboardService
         var today = DateTimeOffset.UtcNow.Date;
         var todayStart = new DateTimeOffset(today, TimeSpan.Zero);
 
-        var ordersByStatus = await _orderRepo.CountOrdersByStatusAsync();
-        var totalRevenue = await _orderRepo.SumRevenueAsync();
-        var revenueToday = await _orderRepo.SumRevenueAsync(todayStart, todayStart.AddDays(1));
-        var totalProducts = await _ctx.Products.CountAsync();
-        var customerStats = await _customerRepo.GetTierDistributionAsync();
-        var totalCustomers = await _customerRepo.CountCustomersAsync();
+        var ordersByStatusTask   = _orderRepo.CountOrdersByStatusAsync();
+        var totalRevenueTask     = _orderRepo.SumRevenueAsync();
+        var revenueTodayTask     = _orderRepo.SumRevenueAsync(todayStart, todayStart.AddDays(1));
+        var totalProductsTask    = _ctx.Products.CountAsync();
+        var customerStatsTask    = _customerRepo.GetTierDistributionAsync();
+        var totalCustomersTask   = _customerRepo.CountCustomersAsync();
+
+        await Task.WhenAll(ordersByStatusTask, totalRevenueTask, revenueTodayTask,
+                           totalProductsTask, customerStatsTask, totalCustomersTask);
+
+        var ordersByStatus  = await ordersByStatusTask;
+        var totalRevenue    = await totalRevenueTask;
+        var revenueToday    = await revenueTodayTask;
+        var totalProducts   = await totalProductsTask;
+        var customerStats   = await customerStatsTask;
+        var totalCustomers  = await totalCustomersTask;
 
         return new DashboardStatsDTO
         {

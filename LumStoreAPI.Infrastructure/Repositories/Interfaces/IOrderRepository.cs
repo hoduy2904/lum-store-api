@@ -20,6 +20,7 @@ public interface IOrderRepository
         bool descending = true);
     Task<Order> InsertOrderAsync(Order order);
     Task<Order> UpdateOrderAsync(int orderId, Action<Order> update);
+    Task<Order> UpdateOrderAsync(Order order, Action<Order> update, OrderHistory? history = null);
     Task<bool> DeleteOrderAsync(int orderId);
 
     // ── History ───────────────────────────────────────────────────────────
