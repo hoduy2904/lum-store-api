@@ -72,6 +72,24 @@ namespace LumStoreAPI.Controllers
             return Ok(PagedResponse<DocumentPageGetDTO>.Success(nodes, request.Page, request.PageSize, ["Success"]));
         }
 
+        [HttpGet("GetNodes")]
+        public async Task<IActionResult> GetNodes([FromQuery] int[] nodeIds)
+        {
+            if (nodeIds.Length == 0) return Ok(APIResponse<DocumentClientGetDTO[]>.Success([], ["Empty nodes"]));
+            var nodes = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
+            {
+                query
+                .Where(x => nodeIds.Contains(x.NodeID));
+            })).Select(x => new DocumentPageGetDTO(x));
+
+            if (nodes == null)
+            {
+                return NotFound(APIResponse<DocumentPageGetDTO>.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Cannot found nodes", string.Join(',', nodeIds)]));
+            }
+
+            return Ok(APIResponse<DocumentPageGetDTO[]>.Success(nodes.ToArray(), ["Success"]));
+        }
+
         [HttpGet("{nodeId}")]
         public async Task<IActionResult> GetNode(int nodeId)
         {

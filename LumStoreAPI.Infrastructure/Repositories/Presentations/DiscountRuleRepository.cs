@@ -14,8 +14,8 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
 
     public async Task<IEnumerable<DiscountRule>> GetRulesAsync(int? productId = null, bool activeOnly = false)
     {
-        IQueryable<DiscountRule> q = _ctx.DiscountRules;
-        if (productId.HasValue) q = q.Where(r => r.ProductId == null || r.ProductId == productId.Value);
+        IQueryable<DiscountRule> q = _ctx.DiscountRules.AsNoTrackingWithIdentityResolution().Include(x => x.DiscountRuleMappings);
+        if (productId.HasValue) q = q.Where(r => r.DiscountRuleMappings.Any(x => x.ProductId == productId.Value));
         if (activeOnly)
         {
             var now = DateTimeOffset.UtcNow;
@@ -26,16 +26,24 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
         return await q.OrderBy(r => r.MinQuantity).ToListAsync();
     }
 
-    public async Task<DiscountRule> InsertRuleAsync(DiscountRule rule)
+    public async Task<DiscountRule> InsertRuleAsync(DiscountRule rule, params int[] productIds)
     {
+        var liveProductIds = await _ctx.Products.AsNoTracking().Select(x => x.NodeID).Where(x => productIds.Contains(x)).ToArrayAsync();
         _ctx.DiscountRules.Add(rule);
         await _ctx.SaveChangesAsync();
+        if (liveProductIds.Any())
+        {
+            var ruleItems = productIds.Select(x => new Core.Entities.DocumentTypes.DiscountRuleMapping { DiscountRuleId = rule.ItemID, ProductId = x });
+            await _ctx.DiscountRuleMappings.AddRangeAsync(ruleItems);
+            await _ctx.SaveChangesAsync();
+            rule.DiscountRuleMappings = ruleItems.ToList();
+        }
         return rule;
     }
 
     public async Task<DiscountRule> UpdateRuleAsync(int ruleId, Action<DiscountRule> update)
     {
-        var rule = await _ctx.DiscountRules.FindAsync(ruleId)
+        var rule = await _ctx.DiscountRules.Include(x => x.DiscountRuleMappings).FirstOrDefaultAsync(x => x.ItemID == ruleId)
             ?? throw new KeyNotFoundException($"DiscountRule {ruleId} not found");
         update(rule);
         await _ctx.SaveChangesAsync();
@@ -55,10 +63,12 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
     {
         var now = DateTimeOffset.UtcNow;
         return await _ctx.DiscountRules
+            .Include(x => x.DiscountRuleMappings)
+            .AsNoTrackingWithIdentityResolution()
             .Where(r => r.IsActive &&
                         (r.StartDate == null || r.StartDate <= now) &&
                         (r.EndDate == null || r.EndDate >= now) &&
-                        (r.ProductId == null || r.ProductId == productId) &&
+                        (r.DiscountRuleMappings.Count == 0 || r.DiscountRuleMappings.Any(d => d.DiscountRuleId == productId)) &&
                         r.MinQuantity <= quantity &&
                         (r.MaxQuantity == null || r.MaxQuantity >= quantity))
             .OrderByDescending(r => r.DiscountPercent + r.DiscountAmount)
@@ -69,10 +79,12 @@ internal class DiscountRuleRepository : IDiscountRuleRepository
     {
         var now = DateTimeOffset.UtcNow;
         return await _ctx.DiscountRules
+            .Include(x => x.DiscountRuleMappings)
+            .AsNoTrackingWithIdentityResolution()
             .Where(r => r.IsActive &&
                         (r.StartDate == null || r.StartDate <= now) &&
                         (r.EndDate == null || r.EndDate >= now) &&
-                        (r.ProductId == null || productNodeIds.Contains(r.ProductId.Value)))
+                        (r.DiscountRuleMappings.Count == 0 || r.DiscountRuleMappings.Any(d => productNodeIds.Contains(d.ProductId))))
             .OrderBy(r => r.MinQuantity)
             .ToListAsync();
     }

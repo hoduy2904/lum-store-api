@@ -18,5 +18,6 @@ namespace LumStoreAPI.Infrastructure
         public DbSet<ColorCategory> ColorCategories { get; set; }
         public DbSet<ColorItem> ColorItems { get; set; }
         public DbSet<ProductCombo> ProductCombos { get; set; }
+        public DbSet<DiscountRuleMapping> DiscountRuleMappings { get; set; }
     }
 }
