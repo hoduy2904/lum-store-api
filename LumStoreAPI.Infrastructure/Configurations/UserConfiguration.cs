@@ -13,22 +13,29 @@ namespace LumStoreAPI.Infrastructure.Configurations
             builder.HasIndex(x => x.Email).IsUnique();
 
             builder.Property(x => x.Email)
-                .HasMaxLength(30);
+                .HasMaxLength(254)
+                .IsUnicode(false);
 
-            builder.Property(x => x.UserPassword)
+            builder.Property(x => x.UserName)
+                .IsUnicode(false)
                 .HasMaxLength(100);
 
+            builder.Property(x => x.UserPassword)
+                .HasMaxLength(150)
+                .IsUnicode(false);
+
             builder.Property(x => x.FirstName)
-               .HasMaxLength(30);
-            builder.Property(x => x.MiddleName)
                .HasMaxLength(50);
+            builder.Property(x => x.MiddleName)
+               .HasMaxLength(70);
             builder.Property(x => x.LastName)
-               .HasMaxLength(30);
+               .HasMaxLength(50);
 
             builder.Property(x => x.Avatar)
                .HasMaxLength(255);
 
             builder.Property(x => x.VerifyCode)
+                .IsUnicode(false)
                .HasMaxLength(7);
 
             builder.HasMany(x => x.UserTokens)
