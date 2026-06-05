@@ -181,6 +181,60 @@ public class OrderService : IOrderService
         return await _shiprelayService.GetTrackingAsync(order.ShiprelayShipmentId);
     }
 
+    public async Task<OrderGetDTO?> SyncOrderFromShiprelayAsync(int orderId)
+    {
+        var order = await _orderRepo.GetOrderAsync(orderId)
+            ?? throw new KeyNotFoundException($"Order {orderId} not found");
+
+        var tracking = await _shiprelayService.GetTrackingAsync(order.ShiprelayShipmentId!);
+        if (tracking == null) return null;
+
+        var newStatus = MapShiprelayStatus(tracking.Status);
+        var prevStatus = order.Status;
+        var statusChanged = newStatus.HasValue && newStatus.Value != prevStatus;
+
+        var updated = await _orderRepo.UpdateOrderAsync(order, o =>
+        {
+            if (statusChanged) o.Status = newStatus!.Value;
+            if (tracking.TrackingNumber is not null) o.TrackingNumber = tracking.TrackingNumber;
+            if (tracking.TrackingUrl is not null) o.TrackingUrl = tracking.TrackingUrl;
+            if (tracking.Carrier is not null) o.ShippingCarrier = tracking.Carrier;
+            if (newStatus == OrderStatus.Shipped) o.ShippedAt ??= DateTimeOffset.UtcNow;
+            if (newStatus == OrderStatus.Delivered) o.DeliveredAt ??= DateTimeOffset.UtcNow;
+        }, statusChanged ? new OrderHistory
+        {
+            OrderId = orderId,
+            FromStatus = prevStatus,
+            ToStatus = newStatus!.Value,
+            Comment = "Synced from ShipRelay",
+            IsSystemAction = true
+        } : null);
+
+        var newStatusLabel = newStatus.HasValue ? newStatus.Value.ToString() : prevStatus.ToString();
+        await _eventLog.LogInformation("OrderService", "ORDER_SYNCED_SHIPRELAY",
+            $"Order {order.OrderCode} synced from ShipRelay. Status: {prevStatus} → {newStatusLabel}");
+
+        return MapToDTO(updated);
+    }
+
+    private static OrderStatus? MapShiprelayStatus(string? status)
+        => status?.ToLowerInvariant() switch
+        {
+            "queued" => OrderStatus.Confirmed,
+            "held" => OrderStatus.Confirmed,
+            "requested" => OrderStatus.Processing,
+            "processing" => OrderStatus.Processing,
+            "shipped" => OrderStatus.Shipped,
+            "in_transit" => OrderStatus.Shipped,
+            "delivered" => OrderStatus.Delivered,
+            "returning" => OrderStatus.ReturnRequested,
+            "returnrequested" => OrderStatus.ReturnRequested,
+            "returned" => OrderStatus.Returned,
+            "inactive" => OrderStatus.Cancelled,
+            "cancelled" => OrderStatus.Cancelled,
+            _ => null
+        };
+
     public async Task<bool> DeleteOrderAsync(int orderId)
         => await _orderRepo.DeleteOrderAsync(orderId);
 

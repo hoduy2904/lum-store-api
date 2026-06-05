@@ -141,6 +141,25 @@ public class IntegrationController : ControllerBase
         return Ok(APIResponse<OrderGetDTO>.Success(updated, ["Shipment restored and order set to Confirmed"]));
     }
 
+    /// <summary>POST /api/integrations/orders/{orderId}/sync-shiprelay — Pull latest shipment status from ShipRelay and update the order.</summary>
+    [HttpPost("orders/{orderId:int}/sync-shiprelay")]
+    public async Task<IActionResult> SyncFromShiprelay(int orderId,
+        [FromServices] IOrderService orderService)
+    {
+        var order = await orderService.GetOrderAsync(orderId);
+        if (order is null)
+            return NotFound(APIResponseBase.Failure("NOT_FOUND", [$"Order {orderId} not found"]));
+
+        if (string.IsNullOrEmpty(order.ShiprelayShipmentId))
+            return BadRequest(APIResponseBase.Failure("NO_SHIPMENT", ["This order has no ShipRelay shipment linked"]));
+
+        var result = await orderService.SyncOrderFromShiprelayAsync(orderId);
+        if (result is null)
+            return BadRequest(APIResponseBase.Failure("SHIPRELAY_ERROR", ["Could not retrieve shipment from ShipRelay"]));
+
+        return Ok(APIResponse<OrderGetDTO>.Success(result, ["Order synced successfully"]));
+    }
+
     /// <summary>POST /api/integrations/orders/{orderId}/rates — Get shipping rate estimates.</summary>
     [HttpPost("orders/{orderId:int}/rates")]
     public async Task<IActionResult> GetRates(int orderId, [FromServices] IShiprelayService shiprelayService,

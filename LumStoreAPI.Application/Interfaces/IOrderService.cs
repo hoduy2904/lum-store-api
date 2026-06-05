@@ -15,6 +15,7 @@ public interface IOrderService
     Task<OrderGetDTO> UpdateOrderStatusAsync(int orderId, OrderUpdateStatusDTO dto, int? operatorUserId = null);
     Task<OrderGetDTO> UpdateOrderTrackingAsync(int orderId, OrderUpdateTrackingDTO dto, int? operatorUserId = null);
     Task<ShiprelayTrackingResult?> GetOrderTrackingAsync(int orderId);
+    Task<OrderGetDTO?> SyncOrderFromShiprelayAsync(int orderId);
     Task<bool> DeleteOrderAsync(int orderId);
 
     // ── History ───────────────────────────────────────────────────────────
