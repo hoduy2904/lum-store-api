@@ -140,6 +140,16 @@ internal class StoreOrderService : IStoreOrderService
             ? await _discountRuleService.CalculateBatchComboPricesAsync(comboNodeIds)
             : new Dictionary<int, ComboPriceResult>();
 
+        // Load ShiprelayIds for combo sub-variants (needed for rate/shipment calculation)
+        var comboSubVariantIds = comboResults.Values
+            .SelectMany(r => r.Items)
+            .Select(i => i.VariantId)
+            .Distinct()
+            .ToArray();
+        var comboSubVariants = comboSubVariantIds.Length > 0
+            ? await _ctx.ProductVariants.AsNoTracking().Where(v => comboSubVariantIds.Contains(v.ItemID)).ToListAsync(ct)
+            : [];
+
         // Build order items
         var orderItems = new List<OrderItem>();
         decimal subTotal = 0;
@@ -211,13 +221,44 @@ internal class StoreOrderService : IStoreOrderService
         if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var parsedThreshold))
             shippingThreshold = parsedThreshold;
 
-        // Build items list once — reused for both GetRates and CreateShipment
-        var shipmentItems = orderItems.Select(i => new ShiprelayItemDTO
+        // Build items list for CreateShipment (one item per order line)
+        //var shipmentItems = orderItems.Select(i => new ShiprelayItemDTO
+        //{
+        //    ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
+        //    Quantity = i.Quantity,
+        //    Price = i.UnitPrice
+        //}).ToList();
+
+        // Build rate items — combo items expanded into their individual sub-variants
+        var rateItems = new List<ShiprelayItemDTO>();
+        foreach (var item in orderItems)
         {
-            ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
-            Quantity = i.Quantity,
-            Price = i.UnitPrice
-        }).ToList();
+            var rateProduct = products.FirstOrDefault(p => p.NodeID == item.ProductId);
+            if (rateProduct?.IsCombo == true)
+            {
+                var comboResult = comboResults.GetValueOrDefault(item.ProductId);
+                if (comboResult?.Items is not null)
+                    foreach (var ci in comboResult.Items)
+                    {
+                        var cv = comboSubVariants.FirstOrDefault(v => v.ItemID == ci.VariantId);
+                        rateItems.Add(new ShiprelayItemDTO
+                        {
+                            ProductId = cv?.ShiprelayId ?? 0,
+                            Quantity = item.Quantity,
+                            Price = ci.DiscountedPrice
+                        });
+                    }
+            }
+            else
+            {
+                rateItems.Add(new ShiprelayItemDTO
+                {
+                    ProductId = variants.FirstOrDefault(v => v.ItemID == item.VariantId)?.ShiprelayId ?? 0,
+                    Quantity = item.Quantity,
+                    Price = item.UnitPrice
+                });
+            }
+        }
 
         // Fetch actual shipping rate BEFORE creating the shipment or saving the order
         var rateResults = await _shiprelayService.GetRatesAsync(new ShiprelayRateRequestDTO
@@ -231,7 +272,7 @@ internal class StoreOrderService : IStoreOrderService
             Zip = address.ZipCode,
             Phone = address.Phone,
             Email = user.Email,
-            Items = shipmentItems
+            Items = rateItems
         });
 
         decimal shippingFee = rateResults.FirstOrDefault(r => r.ServiceCode == request.ShippingServiceCode)?.TotalPrice ?? 9.99m;
@@ -484,6 +525,16 @@ internal class StoreOrderService : IStoreOrderService
             ? await _discountRuleService.CalculateBatchComboPricesAsync(previewComboIds)
             : new Dictionary<int, ComboPriceResult>();
 
+        // Load ShiprelayIds for combo sub-variants (needed for rate calculation)
+        var previewComboSubVariantIds = previewComboResults.Values
+            .SelectMany(r => r.Items)
+            .Select(i => i.VariantId)
+            .Distinct()
+            .ToArray();
+        var previewComboSubVariants = previewComboSubVariantIds.Length > 0
+            ? await _ctx.ProductVariants.AsNoTracking().Where(v => previewComboSubVariantIds.Contains(v.ItemID)).ToListAsync(ct)
+            : [];
+
         var previewItems = new List<StoreCheckoutPreviewItemDTO>();
         decimal subTotal = 0;
 
@@ -542,6 +593,37 @@ internal class StoreOrderService : IStoreOrderService
         if (taxSetting?.SettingValue is not null && decimal.TryParse(taxSetting.SettingValue, out var parsedRate))
             taxRate = parsedRate;
 
+        // Build rate items — combo items expanded into their individual sub-variants
+        var previewRateItems = new List<ShiprelayItemDTO>();
+        foreach (var item in previewItems)
+        {
+            var rateProduct = products.FirstOrDefault(p => p.NodeID == item.NodeId);
+            if (rateProduct?.IsCombo == true)
+            {
+                var comboResult = previewComboResults.GetValueOrDefault(item.NodeId);
+                if (comboResult?.Items is not null)
+                    foreach (var ci in comboResult.Items)
+                    {
+                        var cv = previewComboSubVariants.FirstOrDefault(v => v.ItemID == ci.VariantId);
+                        previewRateItems.Add(new ShiprelayItemDTO
+                        {
+                            ProductId = cv?.ShiprelayId ?? 0,
+                            Quantity = item.Quantity,
+                            Price = ci.DiscountedPrice
+                        });
+                    }
+            }
+            else
+            {
+                previewRateItems.Add(new ShiprelayItemDTO
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    Price = item.UnitPrice
+                });
+            }
+        }
+
         decimal shippingFee = 0;
         var rates = await _shiprelayService.GetRatesAsync(new ShiprelayRateRequestDTO
         {
@@ -554,12 +636,7 @@ internal class StoreOrderService : IStoreOrderService
             Zip = address.ZipCode,
             Phone = address.Phone,
             Email = address.User.Email,
-            Items = previewItems.Select(x => new ShiprelayItemDTO
-            {
-                ProductId = x.ProductId,
-                Quantity = x.Quantity,
-                Price = x.UnitPrice
-            }).ToList()
+            Items = previewRateItems
         });
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
