@@ -222,12 +222,12 @@ internal class StoreOrderService : IStoreOrderService
             shippingThreshold = parsedThreshold;
 
         // Build items list for CreateShipment (one item per order line)
-        //var shipmentItems = orderItems.Select(i => new ShiprelayItemDTO
-        //{
-        //    ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
-        //    Quantity = i.Quantity,
-        //    Price = i.UnitPrice
-        //}).ToList();
+        var shipmentItems = orderItems.Select(i => new ShiprelayItemDTO
+        {
+            ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
+            Quantity = i.Quantity,
+            Price = i.UnitPrice
+        }).ToList();
 
         // Build rate items — combo items expanded into their individual sub-variants
         var rateItems = new List<ShiprelayItemDTO>();
