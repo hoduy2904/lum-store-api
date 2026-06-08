@@ -221,27 +221,19 @@ internal class StoreOrderService : IStoreOrderService
         if (shippingSetting?.SettingValue is not null && decimal.TryParse(shippingSetting.SettingValue, out var parsedThreshold))
             shippingThreshold = parsedThreshold;
 
-        // Build items list for CreateShipment (one item per order line)
-        var shipmentItems = orderItems.Select(i => new ShiprelayItemDTO
-        {
-            ProductId = variants.FirstOrDefault(v => v.ItemID == i.VariantId)?.ShiprelayId ?? 0,
-            Quantity = i.Quantity,
-            Price = i.UnitPrice
-        }).ToList();
-
-        // Build rate items — combo items expanded into their individual sub-variants
-        var rateItems = new List<ShiprelayItemDTO>();
+        // Build items list for CreateShipment — combo items expanded into their sub-variants
+        var shipmentItems = new List<ShiprelayItemDTO>();
         foreach (var item in orderItems)
         {
-            var rateProduct = products.FirstOrDefault(p => p.NodeID == item.ProductId);
-            if (rateProduct?.IsCombo == true)
+            var shipProduct = products.FirstOrDefault(p => p.NodeID == item.ProductId);
+            if (shipProduct?.IsCombo == true)
             {
                 var comboResult = comboResults.GetValueOrDefault(item.ProductId);
                 if (comboResult?.Items is not null)
                     foreach (var ci in comboResult.Items)
                     {
                         var cv = comboSubVariants.FirstOrDefault(v => v.ItemID == ci.VariantId);
-                        rateItems.Add(new ShiprelayItemDTO
+                        shipmentItems.Add(new ShiprelayItemDTO
                         {
                             ProductId = cv?.ShiprelayId ?? 0,
                             Quantity = item.Quantity,
@@ -251,7 +243,7 @@ internal class StoreOrderService : IStoreOrderService
             }
             else
             {
-                rateItems.Add(new ShiprelayItemDTO
+                shipmentItems.Add(new ShiprelayItemDTO
                 {
                     ProductId = variants.FirstOrDefault(v => v.ItemID == item.VariantId)?.ShiprelayId ?? 0,
                     Quantity = item.Quantity,
@@ -259,6 +251,11 @@ internal class StoreOrderService : IStoreOrderService
                 });
             }
         }
+
+        // Guard: all items must be synced to ShipRelay before an order can be placed
+        if (shipmentItems.Any(i => i.ProductId == 0))
+            return APIResponse<StoreOrderSummaryDTO>.Failure(
+                "One or more items in your cart have not been synced for shipping. Please contact support.");
 
         // Fetch actual shipping rate BEFORE creating the shipment or saving the order
         var rateResults = await _shiprelayService.GetRatesAsync(new ShiprelayRateRequestDTO
@@ -272,7 +269,7 @@ internal class StoreOrderService : IStoreOrderService
             Zip = address.ZipCode,
             Phone = address.Phone,
             Email = user.Email,
-            Items = rateItems
+            Items = shipmentItems
         });
 
         decimal shippingFee = rateResults.FirstOrDefault(r => r.ServiceCode == request.ShippingServiceCode)?.TotalPrice ?? 9.99m;
