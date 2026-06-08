@@ -179,7 +179,12 @@ public class ShiprelayService : IShiprelayService
             }
 
             var content = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<JsonElement>(content);
+            var root = JsonSerializer.Deserialize<JsonElement>(content);
+
+            // ShipRelay API v2 wraps single-item GET responses in {"data": {...}}
+            var result = root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object
+                ? data
+                : root;
 
             return new ShiprelayTrackingResult
             {
