@@ -18,9 +18,7 @@ public class ShiprelayWebhookService(
         var startedAt = DateTimeOffset.UtcNow;
         var order = await ctx.Orders
             .Include(o => o.OrderItems)
-            .FirstOrDefaultAsync(o =>
-                o.ShiprelayShipmentId == payload.ShipmentId
-                || o.OrderCode == payload.OrderRef);
+            .FirstOrDefaultAsync(o => o.OrderCode == payload.OrderRef);
 
         if (order == null)
         {
@@ -62,17 +60,23 @@ public class ShiprelayWebhookService(
 
         if (newStatus == OrderStatus.Shipped)
         {
-            order.TrackingNumber = payload.TrackingNumber ?? order.TrackingNumber;
-            order.TrackingUrl = payload.TrackingUrl ?? order.TrackingUrl;
-            order.ShippingCarrier = payload.Carrier ?? order.ShippingCarrier;
-            order.ShippedAt ??= DateTimeOffset.UtcNow;
+            // Prefer nested tracking object (ShipRelay API v2 format):
+            //   tracking.tracking_link + tracking.tracking_number = full URL
+            var trackingNumber = payload.Tracking?.TrackingNumber ?? payload.TrackingNumber;
+            var trackingLink   = payload.Tracking?.TrackingLink;
+            var trackingUrl    = (trackingLink is not null && trackingNumber is not null)
+                ? trackingLink + trackingNumber
+                : (trackingLink ?? payload.TrackingUrl);
+
+            order.TrackingNumber  = trackingNumber ?? order.TrackingNumber;
+            order.TrackingUrl     = trackingUrl ?? order.TrackingUrl;
+            order.ShippingCarrier  = payload.Carrier ?? order.ShippingCarrier;
+            order.ShippingService  = payload.Service ?? order.ShippingService;
+            order.ShippedAt      ??= DateTimeOffset.UtcNow;
         }
 
         if (newStatus == OrderStatus.Delivered)
             order.DeliveredAt ??= DateTimeOffset.UtcNow;
-
-        if (string.IsNullOrEmpty(order.ShiprelayShipmentId) && !string.IsNullOrEmpty(payload.ShipmentId))
-            order.ShiprelayShipmentId = payload.ShipmentId;
 
         if (statusChanged)
         {

@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using LumStoreAPI.SDK.Shiprelay.Interfaces;
 using LumStoreAPI.SDK.Shiprelay.Models;
@@ -27,5 +28,20 @@ internal class ShiprelayAuthService
         });
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<AuthResponse>();
+    }
+
+    public async Task LogoutAsync(string token, string baseUrl)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            await client.PostAsync("logout", null);
+        }
+        catch
+        {
+            // Best-effort logout — failure is ignored to allow re-auth to proceed.
+        }
     }
 }

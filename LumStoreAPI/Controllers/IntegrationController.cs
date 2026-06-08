@@ -108,7 +108,8 @@ public class IntegrationController : ControllerBase
             ShiprelayShipmentId = result.ShipmentId,
             TrackingNumber = result.TrackingNumber,
             TrackingUrl = result.TrackingUrl,
-            ShippingCarrier = result.Carrier
+            ShippingCarrier = result.Carrier,
+            ShippingService = result.Service
         }, operatorId);
 
         return Ok(APIResponse<object>.Success(result, ["Shipment created"]));

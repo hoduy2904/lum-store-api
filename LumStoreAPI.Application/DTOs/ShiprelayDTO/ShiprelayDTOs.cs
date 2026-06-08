@@ -101,6 +101,7 @@ public class ShiprelayShipmentResult
     public string? TrackingNumber { get; set; }
     public string? TrackingUrl { get; set; }
     public string? Carrier { get; set; }
+    public string? Service { get; set; }
     public string Status { get; set; } = default!;
     public decimal? ShippingCost { get; set; }
     public bool Success { get; set; }
@@ -113,6 +114,7 @@ public class ShiprelayTrackingResult
     public string? TrackingNumber { get; set; }
     public string? TrackingUrl { get; set; }
     public string? Carrier { get; set; }
+    public string? Service { get; set; }
     public string Status { get; set; } = default!;
     public string? StatusDescription { get; set; }
     public DateTimeOffset? EstimatedDelivery { get; set; }
@@ -143,6 +145,17 @@ public class ShiprelayShipmentSummaryDTO
     public DateTime? UpdatedAt { get; set; }
 }
 
+// ── Paged Result ──────────────────────────────────────────────────────────
+
+public class ShiprelayPagedResult<T>
+{
+    public List<T> Data { get; set; } = [];
+    public int Total { get; set; }
+    public int CurrentPage { get; set; }
+    public int LastPage { get; set; }
+    public int PerPage { get; set; }
+}
+
 // ── Webhook Payload ───────────────────────────────────────────────────────
 
 public class ShiprelayWebhookPayload
@@ -153,9 +166,17 @@ public class ShiprelayWebhookPayload
     [JsonPropertyName("status")]             public string? Status { get; set; }
     [JsonPropertyName("tracking_number")]    public string? TrackingNumber { get; set; }
     [JsonPropertyName("tracking_url")]       public string? TrackingUrl { get; set; }
+    [JsonPropertyName("tracking")]           public ShiprelayWebhookTracking? Tracking { get; set; }
     [JsonPropertyName("carrier")]            public string? Carrier { get; set; }
     [JsonPropertyName("service")]            public string? Service { get; set; }
     [JsonPropertyName("warehouse")]          public ShiprelayWebhookWarehouse? Warehouse { get; set; }
+}
+
+/// <summary>Nested tracking object sent by ShipRelay API v2 webhooks and shipment responses.</summary>
+public class ShiprelayWebhookTracking
+{
+    [JsonPropertyName("tracking_number")] public string? TrackingNumber { get; set; }
+    [JsonPropertyName("tracking_link")]   public string? TrackingLink { get; set; }
 }
 
 public class ShiprelayWebhookWarehouse

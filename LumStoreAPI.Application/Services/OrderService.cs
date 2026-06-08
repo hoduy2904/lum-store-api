@@ -152,6 +152,7 @@ public class OrderService : IOrderService
             if (dto.TrackingNumber is not null) o.TrackingNumber = dto.TrackingNumber;
             if (dto.TrackingUrl is not null) o.TrackingUrl = dto.TrackingUrl;
             if (dto.ShippingCarrier is not null) o.ShippingCarrier = dto.ShippingCarrier;
+            if (dto.ShippingService is not null) o.ShippingService = dto.ShippingService;
             if (dto.ShiprelayShipmentId is not null) o.ShiprelayShipmentId = dto.ShiprelayShipmentId;
         });
 
@@ -199,6 +200,7 @@ public class OrderService : IOrderService
             if (tracking.TrackingNumber is not null) o.TrackingNumber = tracking.TrackingNumber;
             if (tracking.TrackingUrl is not null) o.TrackingUrl = tracking.TrackingUrl;
             if (tracking.Carrier is not null) o.ShippingCarrier = tracking.Carrier;
+            if (tracking.Service is not null) o.ShippingService = tracking.Service;
             if (newStatus == OrderStatus.Shipped) o.ShippedAt ??= DateTimeOffset.UtcNow;
             if (newStatus == OrderStatus.Delivered) o.DeliveredAt ??= DateTimeOffset.UtcNow;
         }, statusChanged ? new OrderHistory
@@ -406,6 +408,7 @@ public class OrderService : IOrderService
         TrackingNumber = o.TrackingNumber,
         TrackingUrl = o.TrackingUrl,
         ShippingCarrier = o.ShippingCarrier,
+        ShippingService = o.ShippingService,
         ShiprelayShipmentId = o.ShiprelayShipmentId,
         CustomerNote = o.CustomerNote,
         ShippedAt = o.ShippedAt,

@@ -4,6 +4,7 @@ using LumStoreAPI.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    partial class LumStoreContextModelSnapshot : ModelSnapshot
+    [Migration("20260608163135_AddShippingService")]
+    partial class AddShippingService
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -662,9 +665,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<int>("ShiprelayId")
                         .HasColumnType("int");
-
-                    b.Property<bool>("ShiprelayOnceReceived")
-                        .HasColumnType("bit");
 
                     b.Property<int>("Stock")
                         .HasColumnType("int");

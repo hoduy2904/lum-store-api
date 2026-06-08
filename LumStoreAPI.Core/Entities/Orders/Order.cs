@@ -40,6 +40,7 @@ public class Order : BaseClassItem
     public string? TrackingNumber { get; set; }
     public string? TrackingUrl { get; set; }
     public string? ShippingCarrier { get; set; }
+    public string? ShippingService { get; set; }
     public DateTimeOffset? ShippedAt { get; set; }
     public DateTimeOffset? DeliveredAt { get; set; }
 

@@ -6,14 +6,20 @@ namespace LumStoreAPI.SDK.Shiprelay.Models.Product;
 public class ShiprelayProductSetting
 {
     [JsonPropertyName("ship_width")]
-    public double ShipWidth { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? ShipWidth { get; set; }
 
     [JsonPropertyName("ship_length")]
-    public double ShipLength { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? ShipLength { get; set; }
+
     [JsonPropertyName("ship_height")]
-    public double ShipHeight { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? ShipHeight { get; set; }
+
     [JsonPropertyName("ship_weight")]
-    public double ShipWeight { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? ShipWeight { get; set; }
     [JsonPropertyName("tariff_code")]
     public string? TariffCode { get; set; }
     [JsonPropertyName("parent_qty")]

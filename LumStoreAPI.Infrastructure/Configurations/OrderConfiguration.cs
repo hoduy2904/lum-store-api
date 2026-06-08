@@ -26,6 +26,7 @@ internal class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.TrackingNumber).HasMaxLength(100);
         builder.Property(x => x.TrackingUrl).HasMaxLength(500);
         builder.Property(x => x.ShippingCarrier).HasMaxLength(100);
+        builder.Property(x => x.ShippingService).HasMaxLength(100);
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
         builder.Property(x => x.CustomerNote).HasMaxLength(1000);
 

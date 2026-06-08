@@ -333,6 +333,7 @@ internal class StoreOrderService : IStoreOrderService
             TrackingNumber = shipResult.TrackingNumber,
             TrackingUrl = shipResult.TrackingUrl,
             ShippingCarrier = shipResult.Carrier,
+            ShippingService = shipResult.Service,
             OrderItems = orderItems
         };
 
