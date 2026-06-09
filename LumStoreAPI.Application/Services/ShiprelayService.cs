@@ -223,15 +223,14 @@ public class ShiprelayService : IShiprelayService
         try
         {
             var response = await client.GetAsync($"shipments/{shipmentId}");
+            var content = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
                 await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_TRACKING_FAILED",
                     "GET shipments failed",
-                    $"ShipmentId={shipmentId} | HTTP {(int)response.StatusCode}");
+                    $"ShipmentId={shipmentId} | HTTP {(int)response.StatusCode} | {content}");
                 return null;
             }
-
-            var content = await response.Content.ReadAsStringAsync();
             var root = JsonSerializer.Deserialize<JsonElement>(content);
 
             // ShipRelay API v2 wraps single-item GET responses in {"data": {...}}

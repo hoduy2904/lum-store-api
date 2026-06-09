@@ -162,7 +162,7 @@ public class IntegrationController : ControllerBase
 
         var result = await orderService.SyncOrderFromShiprelayAsync(orderId);
         if (result is null)
-            return BadRequest(APIResponseBase.Failure("SHIPRELAY_ERROR", ["Could not retrieve shipment from ShipRelay"]));
+            return BadRequest(APIResponseBase.Failure("SHIPRELAY_ERROR", [$"Could not retrieve shipment '{order.ShiprelayShipmentId}' from ShipRelay. Check EventLog for details."]));
 
         return Ok(APIResponse<OrderGetDTO>.Success(result, ["Order synced successfully"]));
     }
