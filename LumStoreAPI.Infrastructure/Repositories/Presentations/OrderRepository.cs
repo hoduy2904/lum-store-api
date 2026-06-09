@@ -99,6 +99,15 @@ internal class OrderRepository : IOrderRepository
         return true;
     }
 
+    // ── Backfill ──────────────────────────────────────────────────────────
+
+    public Task<List<Order>> GetOrdersMissingRateFieldsAsync(CancellationToken ct = default)
+        => _ctx.Orders
+               .AsNoTracking()
+               .Where(o => o.ShiprelayShipmentId != null && o.ShiprelayShipmentId != "" && o.ShippingServiceName == null)
+               .Select(o => new Order { ItemID = o.ItemID, OrderCode = o.OrderCode, ShiprelayShipmentId = o.ShiprelayShipmentId })
+               .ToListAsync(ct);
+
     // ── History ───────────────────────────────────────────────────────────
 
     public async Task<IEnumerable<OrderHistory>> GetOrderHistoriesAsync(int orderId)

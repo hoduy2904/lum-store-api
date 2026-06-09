@@ -526,6 +526,14 @@ internal class StoreOrderService : IStoreOrderService
             EstimatedDeliveryMax = order.EstimatedDeliveryMax,
             ShippedAt = order.ShippedAt,
             DeliveredAt = order.DeliveredAt,
+            PreviewItems = order.OrderItems.Take(3).Select(i => new OrderPreviewItemDTO
+            {
+                ProductName = i.ProductName,
+                Image = i.ImageUrl,
+                VariantName = i.VariantName,
+                Price = i.UnitPrice,
+                Quantity = i.Quantity
+            }),
             Address = new StoreOrderAddressDTO
             {
                 Address = order.ShippingAddress,
@@ -581,6 +589,14 @@ internal class StoreOrderService : IStoreOrderService
         ShiprelayTrackingResult? live = null;
         try { live = await _shiprelayService.GetTrackingAsync(order.ShiprelayShipmentId); }
         catch { /* non-fatal — use stored data */ }
+
+        // Persist carrier back to DB if it was missing and live fetch returned it
+        if (order.ShippingCarrier is null && live?.Carrier is not null)
+        {
+            await _ctx.Orders
+                .Where(o => o.ItemID == orderId)
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.ShippingCarrier, live.Carrier), ct);
+        }
 
         return APIResponse<StoreOrderTrackingDTO?>.Success(new StoreOrderTrackingDTO
         {

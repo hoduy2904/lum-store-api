@@ -39,6 +39,9 @@ public interface IOrderRepository
     Task<OrderReturn> InsertOrderReturnAsync(OrderReturn orderReturn);
     Task<OrderReturn> UpdateOrderReturnAsync(int returnId, Action<OrderReturn> update);
 
+    // ── Backfill ──────────────────────────────────────────────────────────
+    Task<List<Order>> GetOrdersMissingRateFieldsAsync(CancellationToken ct = default);
+
     // ── Stats ─────────────────────────────────────────────────────────────
     Task<int> CountOrdersAsync(OrderStatus? status = null, DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null);
     Task<Dictionary<OrderStatus, int>> CountOrdersByStatusAsync();

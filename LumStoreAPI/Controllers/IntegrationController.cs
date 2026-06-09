@@ -167,6 +167,18 @@ public class IntegrationController : ControllerBase
         return Ok(APIResponse<OrderGetDTO>.Success(result, ["Order synced successfully"]));
     }
 
+    /// <summary>POST /api/integrations/orders/backfill-rate-fields — Backfill ShippingServiceName and EstimatedDeliveryMin
+    /// for existing orders that have a ShiprelayShipmentId but are missing rate fields.</summary>
+    [HttpPost("orders/backfill-rate-fields")]
+    public async Task<IActionResult> BackfillRateFields(
+        [FromServices] IOrderService orderService,
+        CancellationToken ct)
+    {
+        var (updated, failed, skipped) = await orderService.BackfillRateFieldsAsync(ct);
+        return Ok(APIResponse<object>.Success(new { updated, failed, skipped },
+            [$"Backfill complete: {updated} updated, {failed} failed, {skipped} skipped"]));
+    }
+
     /// <summary>POST /api/integrations/orders/{orderId}/rates — Get shipping rate estimates.</summary>
     [HttpPost("orders/{orderId:int}/rates")]
     public async Task<IActionResult> GetRates(int orderId, [FromServices] IShiprelayService shiprelayService,
