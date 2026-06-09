@@ -72,7 +72,7 @@ namespace LumStoreAPI.Application.Services
                 {
                     ["order_code"] = request.Order.OrderCode
                 },
-                CustomerCreation = request.Order.CustomerName
+                CustomerCreation = "if_required"
             };
 
             var service = new SessionService(_stripeClient);
