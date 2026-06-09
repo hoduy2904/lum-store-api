@@ -11,6 +11,7 @@ namespace LumStoreAPI.Application.Services;
 
 public class ShiprelayWebhookService(
     LumStoreContext ctx,
+    IShiprelayService shiprelayService,
     IEventLogService eventLog) : IShiprelayWebhookService
 {
     public async Task HandleEventAsync(ShiprelayWebhookPayload payload)
@@ -53,27 +54,51 @@ public class ShiprelayWebhookService(
         }
 
         var prevStatus = order.Status;
-        var statusChanged = newStatus.Value != order.Status;
+        // Only allow status to move forward — ignore out-of-order webhooks
+        var statusChanged = newStatus.Value > order.Status;
 
         if (statusChanged)
             order.Status = newStatus.Value;
 
-        if (newStatus == OrderStatus.Shipped)
-        {
-            // Prefer nested tracking object (ShipRelay API v2 format):
-            //   tracking.tracking_link + tracking.tracking_number = full URL
-            var trackingNumber = payload.Tracking?.TrackingNumber ?? payload.TrackingNumber;
-            var trackingLink   = payload.Tracking?.TrackingLink;
-            var trackingUrl    = (trackingLink is not null && trackingNumber is not null)
-                ? trackingLink + trackingNumber
-                : (trackingLink ?? payload.TrackingUrl);
+        // Always capture tracking fields when present in the payload
+        var trackingNumber = payload.Tracking?.TrackingNumber ?? payload.TrackingNumber;
+        var trackingLink   = payload.Tracking?.TrackingLink;
+        var trackingUrl    = (trackingLink is not null && trackingNumber is not null)
+            ? trackingLink + trackingNumber
+            : (trackingLink ?? payload.TrackingUrl);
 
-            order.TrackingNumber  = trackingNumber ?? order.TrackingNumber;
-            order.TrackingUrl     = trackingUrl ?? order.TrackingUrl;
-            order.ShippingCarrier  = payload.Carrier ?? order.ShippingCarrier;
-            order.ShippingService  = payload.Service ?? order.ShippingService;
-            order.ShippedAt      ??= DateTimeOffset.UtcNow;
+        // Fallback: fetch tracking from ShipRelay API if payload is missing tracking data
+        if (newStatus >= OrderStatus.Shipped
+            && (trackingNumber is null || trackingUrl is null)
+            && payload.ShipmentId is not null)
+        {
+            try
+            {
+                var liveTracking = await shiprelayService.GetTrackingAsync(payload.ShipmentId);
+                if (liveTracking is not null)
+                {
+                    trackingNumber ??= liveTracking.TrackingNumber;
+                    trackingUrl    ??= liveTracking.TrackingUrl;
+                    if (payload.Carrier is null && liveTracking.Carrier is not null)
+                        order.ShippingCarrier = liveTracking.Carrier;
+                    if (payload.Service is null && liveTracking.Service is not null)
+                        order.ShippingService = liveTracking.Service;
+                }
+            }
+            catch (Exception ex)
+            {
+                await eventLog.LogWarning("ShiprelayWebhook", "TRACKING_FETCH_FAILED",
+                    $"Could not fetch live tracking for ShipmentId={payload.ShipmentId}: {ex.Message}");
+            }
         }
+
+        if (trackingNumber is not null) order.TrackingNumber = trackingNumber;
+        if (trackingUrl is not null)    order.TrackingUrl    = trackingUrl;
+        if (payload.Carrier is not null) order.ShippingCarrier = payload.Carrier;
+        if (payload.Service is not null) order.ShippingService = payload.Service;
+
+        if (newStatus >= OrderStatus.Shipped)
+            order.ShippedAt ??= DateTimeOffset.UtcNow;
 
         if (newStatus == OrderStatus.Delivered)
             order.DeliveredAt ??= DateTimeOffset.UtcNow;
