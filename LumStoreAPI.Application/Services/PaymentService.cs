@@ -26,7 +26,7 @@ namespace LumStoreAPI.Application.Services
                     {
                         Name = item.ProductName,
                         Description = item.VariantName,
-                    }
+                    },
                 },
                 Quantity = item.Quantity,
             }).ToList();
@@ -68,6 +68,11 @@ namespace LumStoreAPI.Application.Services
                 SuccessUrl = request.SuccessUrl,
                 CancelUrl = request.CancelUrl,
                 ClientReferenceId = request.Order.ItemID + "",
+                Metadata = new Dictionary<string, string>
+                {
+                    ["order_code"] = request.Order.OrderCode
+                },
+                CustomerCreation = request.Order.CustomerName
             };
 
             var service = new SessionService(_stripeClient);
