@@ -48,6 +48,7 @@ namespace LumStoreAPI.Application
                 services.AddScoped<IStoreOrderService, StoreOrderService>();
                 services.AddScoped<IShiprelayWebhookService, ShiprelayWebhookService>();
                 services.AddScoped<IPaymentService, PaymentService>();
+                services.AddScoped<IStripeWebhookService, StripeWebhookService>();
                 services.AddScoped<IContactService, ContactService>();
                 services.AddScoped<ISiteService, SiteService>();
                 services.AddScoped<IColorService, ColorService>();

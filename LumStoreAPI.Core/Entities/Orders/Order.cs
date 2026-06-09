@@ -40,8 +40,15 @@ public class Order : BaseClassItem
     public string? TrackingNumber { get; set; }
     public string? TrackingUrl { get; set; }
     public string? ShippingCarrier { get; set; }
+    public string? ShippingService { get; set; }
     public DateTimeOffset? ShippedAt { get; set; }
     public DateTimeOffset? DeliveredAt { get; set; }
+    /// <summary>
+    /// Set to true when ShipRelay accepted the shipment (HTTP 2xx) but returned
+    /// an unparseable response. A ShiprelayReconciliationLog entry is also written.
+    /// Ops team must resolve manually and reset to false after confirming the ShipmentId.
+    /// </summary>
+    public bool NeedsShiprelayReconciliation { get; set; }
 
     // ── Notes ─────────────────────────────────────────────────────────────
     public string? CustomerNote { get; set; }

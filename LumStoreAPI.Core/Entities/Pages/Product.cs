@@ -13,7 +13,7 @@ namespace LumStoreAPI.Core.Entities.Pages
 
         public bool IsCombo { get; set; }
         public ProductType ProductType { get; set; } = ProductType.SIMPLE;
-        public ProductGroup ProductGroup { get; set; } = ProductGroup.COMODITY;
+        public ProductGroup ProductGroup { get; set; } = ProductGroup.COMMODITY;
 
         [DocumentName]
         [DisplayName("Product name")]

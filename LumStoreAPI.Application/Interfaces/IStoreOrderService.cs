@@ -13,8 +13,11 @@ public interface IStoreOrderService
     // ── Checkout Preview ──────────────────────────────────────────────────
     Task<APIResponse<StoreCheckoutPreviewDTO>> GetCheckoutPreviewAsync(StoreCheckoutPreviewRequest request, CancellationToken ct = default);
 
+    // ── Tracking ──────────────────────────────────────────────────────────
+    Task<APIResponse<StoreOrderTrackingDTO?>> GetTrackingAsync(int orderId, CancellationToken ct = default);
+
     // ── Cancel ────────────────────────────────────────────────────────────
-    Task<APIResponse<bool>> CancelOrderAsync(int orderId, StoreCancelOrderRequest request, CancellationToken ct = default);
+    Task<APIResponse<StoreOrderSummaryDTO>> CancelOrderAsync(int orderId, StoreCancelOrderRequest request, CancellationToken ct = default);
 
     // ── Returns ───────────────────────────────────────────────────────────
     Task<APIResponse<IEnumerable<OrderReturnGetDTO>>> GetOrderReturnsAsync(int orderId, CancellationToken ct = default);

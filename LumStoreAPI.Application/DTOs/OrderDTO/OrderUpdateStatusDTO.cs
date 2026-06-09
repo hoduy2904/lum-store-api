@@ -25,6 +25,9 @@ public class OrderUpdateTrackingDTO
     [MaxLength(100)]
     public string? ShippingCarrier { get; set; }
 
+    [MaxLength(100)]
+    public string? ShippingService { get; set; }
+
     [MaxLength(200)]
     public string? ShiprelayShipmentId { get; set; }
 }

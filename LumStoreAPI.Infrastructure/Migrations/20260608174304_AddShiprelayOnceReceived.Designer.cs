@@ -4,6 +4,7 @@ using LumStoreAPI.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    partial class LumStoreContextModelSnapshot : ModelSnapshot
+    [Migration("20260608174304_AddShiprelayOnceReceived")]
+    partial class AddShiprelayOnceReceived
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -766,27 +769,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("ShiprelayDataSyncs");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.ShiprelayReconciliationLog", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<bool>("IsResolved")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("OrderCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RawResponse")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.ToTable("ShiprelayReconciliationLogs");
-                });
-
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.SyncLog", b =>
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
@@ -859,9 +841,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<decimal>("Discount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("NeedsShiprelayReconciliation")
-                        .HasColumnType("bit");
 
                     b.Property<string>("OrderCode")
                         .IsRequired()

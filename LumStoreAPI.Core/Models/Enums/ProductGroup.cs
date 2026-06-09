@@ -7,8 +7,8 @@ namespace LumStoreAPI.Core.Models.Enums
     public enum ProductGroup
     {
         HARD_GOODS,
-        SORT_GOODS,
-        COMODITY,
+        SOFT_GOODS,
+        COMMODITY,
         GLASS,
         MEDIA,
         BOXING,

@@ -31,7 +31,7 @@ public class ShiprelayClientHandler : DelegatingHandler
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         if (request.RequestUri?.IsAbsoluteUri is false)
         {
-            request.RequestUri = new Uri(new Uri(shiprelayConfiguration?.BaseUrl ?? ""), request.RequestUri);
+            request.RequestUri = new Uri(new Uri((shiprelayConfiguration?.BaseUrl ?? "").TrimEnd('/') + "/"), request.RequestUri);
         }
         var response = await base.SendAsync(request, cancellationToken);
         if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -44,11 +44,24 @@ public class ShiprelayClientHandler : DelegatingHandler
             }
             if (retryCount >= 3) return response;
             var authService = scope.ServiceProvider.GetRequiredService<IShiprelayAuthService>();
-            var shiprelayCredentials = new ShiprelayCredentials(shiprelayConfiguration?.BaseUrl ?? "", shiprelayConfiguration?.ApiKey ?? "", shiprelayConfiguration?.ApiSecret ?? "");
+            var baseUrl = shiprelayConfiguration?.BaseUrl ?? "";
+
+            // Best-effort logout of the stale token before fetching a new one.
+            var staleToken = _cache.Get<string>(SHIPRELAY_TOKEN_CACHE);
+            if (!string.IsNullOrEmpty(staleToken))
+            {
+                // Best-effort logout — failure is ignored to allow re-auth to proceed.
+                _ = authService.LogoutAsync(staleToken, baseUrl);
+                _cache.Remove(SHIPRELAY_TOKEN_CACHE);
+            }
+
+            var shiprelayCredentials = new ShiprelayCredentials(baseUrl, shiprelayConfiguration?.ApiKey ?? "", shiprelayConfiguration?.ApiSecret ?? "");
             var tokenResponse = await authService.LoginAsync(shiprelayCredentials);
             if (tokenResponse != null)
             {
-                _cache.Set<string>(SHIPRELAY_TOKEN_CACHE, tokenResponse.AccessToken);
+                // ShipRelay token TTL unknown; using 23h as safe default. Reduce if API returns 401s before expiry.
+                _cache.Set<string>(SHIPRELAY_TOKEN_CACHE, tokenResponse.AccessToken,
+                    new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(23) });
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenResponse.AccessToken);
                 request.Headers.Remove(RETRY_HEADER);
                 request.Headers.Add(RETRY_HEADER, (retryCount + 1).ToString());

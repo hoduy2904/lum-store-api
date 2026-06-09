@@ -64,6 +64,7 @@ namespace LumStoreAPI.Infrastructure
         // ── Integrations ──────────────────────────────────────────────────────
         public DbSet<IntegrationConfig> IntegrationConfigs { get; set; }
         public DbSet<SyncLog> SyncLogs { get; set; }
+        public DbSet<ShiprelayReconciliationLog> ShiprelayReconciliationLogs { get; set; }
 
         // ── Wishlist ───────────────────────────────────────────────────────────
         public DbSet<UserWishlist> UserWishlists { get; set; }

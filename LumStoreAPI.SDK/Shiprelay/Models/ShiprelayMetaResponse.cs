@@ -1,4 +1,3 @@
-using System;
 using System.Text.Json.Serialization;
 
 namespace LumStoreAPI.SDK.Shiprelay.Models;
@@ -19,10 +18,4 @@ public class ShiprelayMetaResponse
     public int? To { get; set; }
     [JsonPropertyName("total")]
     public int Total { get; set; }
-
-    [JsonPropertyName("session")]
-    public Guid Session { get; set; }
-
-    [JsonPropertyName("expired_at")]
-    public DateTime? ExpiredAt { get; set; }
 }

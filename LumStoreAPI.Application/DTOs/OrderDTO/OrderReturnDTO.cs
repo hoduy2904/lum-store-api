@@ -33,6 +33,8 @@ public class OrderReturnGetDTO
     public int ReturnId { get; set; }
     public int OrderId { get; set; }
     public string OrderCode { get; set; } = default!;
+    public string? CustomerName { get; set; }
+    public string? CustomerEmail { get; set; }
     public string Reason { get; set; } = default!;
     public ReturnStatus Status { get; set; }
     public string StatusName => Status.ToString();

@@ -4,7 +4,9 @@ using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.DTOs.StoreOrderDTO;
+using LumStoreAPI.Application.Exceptions;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Entities.Integrations;
 using LumStoreAPI.Core.Entities.Orders;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
@@ -272,7 +274,7 @@ internal class StoreOrderService : IStoreOrderService
             Items = shipmentItems
         });
 
-        decimal shippingFee = rateResults.FirstOrDefault(r => r.ServiceCode == request.ShippingServiceCode)?.TotalPrice ?? 9.99m;
+        decimal shippingFee = rateResults.FirstOrDefault(r => r.CarrierId == request.ShippingServiceCode)?.Price ?? 9.99m;
         if (shippingThreshold > 0 && subTotal >= shippingThreshold) shippingFee = 0;
 
         var tax = Math.Round(subTotal * taxRate, 2);
@@ -303,7 +305,22 @@ internal class StoreOrderService : IStoreOrderService
             Items = shipmentItems
         };
 
-        var shipResult = await _shiprelayService.CreateShipmentAsync(shipmentDto);
+        ShiprelayShipmentResult shipResult;
+        bool needsReconciliation = false;
+        string? reconciliationRawResponse = null;
+        try
+        {
+            shipResult = await _shiprelayService.CreateShipmentAsync(shipmentDto);
+        }
+        catch (ShiprelayIntegrationException ex) when (ex.ShipmentMayExistOnRemote)
+        {
+            // ShipRelay returned HTTP 2xx but unparseable JSON — shipment may exist remotely.
+            // Save the order and a reconciliation record instead of aborting.
+            shipResult = new ShiprelayShipmentResult { Success = true, ShipmentId = "" };
+            needsReconciliation = true;
+            reconciliationRawResponse = ex.RawResponse ?? ex.Message;
+        }
+
         if (!shipResult.Success)
             return APIResponse<StoreOrderSummaryDTO>.Failure(
                 shipResult.ErrorMessage ?? "Unable to create shipment. Please try again.");
@@ -333,11 +350,25 @@ internal class StoreOrderService : IStoreOrderService
             TrackingNumber = shipResult.TrackingNumber,
             TrackingUrl = shipResult.TrackingUrl,
             ShippingCarrier = shipResult.Carrier,
+            ShippingService = shipResult.Service,
+            NeedsShiprelayReconciliation = needsReconciliation,
             OrderItems = orderItems
         };
 
         _ctx.Orders.Add(order);
         await _ctx.SaveChangesAsync(ct);  // save to get order.ItemID for payment + history
+
+        if (needsReconciliation)
+        {
+            _ctx.ShiprelayReconciliationLogs.Add(new ShiprelayReconciliationLog
+            {
+                OrderId = order.ItemID,
+                OrderCode = order.OrderCode,
+                RawResponse = reconciliationRawResponse ?? string.Empty,
+                IsResolved = false
+            });
+            await _ctx.SaveChangesAsync(ct);
+        }
 
         var paymentUrl = await _paymentService.PaymentCheckoutAsync(new() { Order = order, SuccessUrl = request.SuccessUrl, CancelUrl = request.CancelUrl, ShippingFee = shippingFee });
 
@@ -346,7 +377,9 @@ internal class StoreOrderService : IStoreOrderService
         {
             OrderId = order.ItemID,
             ToStatus = OrderStatus.Confirmed,
-            Comment = "Order confirmed via ShipRelay",
+            Comment = needsReconciliation
+                ? "Order confirmed — ShipRelay response unparseable, manual reconciliation required"
+                : "Order confirmed via ShipRelay",
             IsSystemAction = true
         });
         await _ctx.SaveChangesAsync(ct);
@@ -361,6 +394,23 @@ internal class StoreOrderService : IStoreOrderService
         // Clear cart
         await _ctx.UserCarts.Where(c => c.UserId == userId).ExecuteDeleteAsync(ct);
 
+        // Build preview snapshot for the summary (max 3 items)
+        var previewItemsSnapshot = orderItems.Take(3).Select(i =>
+        {
+            var p = products.FirstOrDefault(x => x.NodeID == i.ProductId);
+            string? imgUrl = null;
+            if (p?.Images.Length > 0 && mediaByGuid.TryGetValue(p.Images[0], out var m))
+                imgUrl = MediaLibraryHelper.GetFileURL(m);
+            return new OrderPreviewItemDTO
+            {
+                ProductName = i.ProductName,
+                Image = imgUrl,
+                VariantName = i.VariantName,
+                Price = i.UnitPrice,
+                Quantity = i.Quantity
+            };
+        }).ToList();
+
         return APIResponse<StoreOrderSummaryDTO>.Success(new StoreOrderSummaryDTO
         {
             OrderId = order.ItemID,
@@ -370,7 +420,8 @@ internal class StoreOrderService : IStoreOrderService
             Total = order.Total,
             ItemCount = orderItems.Sum(i => i.Quantity),
             CreatedAt = order.CreatedAt,
-            PaymentURL = paymentUrl
+            PaymentURL = paymentUrl,
+            PreviewItems = previewItemsSnapshot
         }, ["Order placed and confirmed"]);
 
     }
@@ -470,6 +521,43 @@ internal class StoreOrderService : IStoreOrderService
         };
 
         return APIResponse<StoreOrderDetailDTO>.Success(detail);
+    }
+
+    // ── Tracking ──────────────────────────────────────────────────────────────
+
+    public async Task<APIResponse<StoreOrderTrackingDTO?>> GetTrackingAsync(int orderId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
+
+        var order = await _ctx.Orders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.ItemID == orderId, ct);
+
+        if (order is null)
+            return APIResponse<StoreOrderTrackingDTO?>.Failure("Order not found");
+
+        if (order.CustomerId != profileDto.ProfileId)
+            return APIResponse<StoreOrderTrackingDTO?>.Failure("Forbidden");
+
+        // Order not yet shipped — return null data (not an error)
+        if (string.IsNullOrEmpty(order.ShiprelayShipmentId))
+            return APIResponse<StoreOrderTrackingDTO?>.Success(null);
+
+        // Try live tracking from ShipRelay; fall back to stored fields on failure
+        ShiprelayTrackingResult? live = null;
+        try { live = await _shiprelayService.GetTrackingAsync(order.ShiprelayShipmentId); }
+        catch { /* non-fatal — use stored data */ }
+
+        return APIResponse<StoreOrderTrackingDTO?>.Success(new StoreOrderTrackingDTO
+        {
+            TrackingNumber = live?.TrackingNumber ?? order.TrackingNumber,
+            TrackingUrl = live?.TrackingUrl ?? order.TrackingUrl,
+            Carrier = live?.Carrier ?? order.ShippingCarrier,
+            Status = live?.StatusDescription ?? live?.Status ?? order.Status.ToString(),
+            ShippedAt = order.ShippedAt,
+            DeliveredAt = order.DeliveredAt ?? live?.DeliveredAt
+        });
     }
 
     // ── Checkout Preview ──────────────────────────────────────────────────────
@@ -652,21 +740,23 @@ internal class StoreOrderService : IStoreOrderService
 
     // ── Cancel ────────────────────────────────────────────────────────────────
 
-    public async Task<APIResponse<bool>> CancelOrderAsync(int orderId, StoreCancelOrderRequest request, CancellationToken ct = default)
+    public async Task<APIResponse<StoreOrderSummaryDTO>> CancelOrderAsync(int orderId, StoreCancelOrderRequest request, CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
         var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
 
-        var order = await _ctx.Orders.FirstOrDefaultAsync(o => o.ItemID == orderId, ct);
+        var order = await _ctx.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.ItemID == orderId, ct);
         if (order is null)
-            return APIResponse<bool>.Failure("Order not found");
+            return APIResponse<StoreOrderSummaryDTO>.Failure("Order not found");
 
         if (order.CustomerId != profileDto.ProfileId)
-            return APIResponse<bool>.Failure("Forbidden");
+            return APIResponse<StoreOrderSummaryDTO>.Failure("Forbidden");
 
         var cancellableStatuses = new[] { OrderStatus.Pending, OrderStatus.Confirmed };
         if (!cancellableStatuses.Contains(order.Status))
-            return APIResponse<bool>.Failure("Order cannot be cancelled at this stage");
+            return APIResponse<StoreOrderSummaryDTO>.Failure("Order cannot be cancelled at this stage");
 
         await _orderService.UpdateOrderStatusAsync(orderId, new OrderUpdateStatusDTO
         {
@@ -674,7 +764,24 @@ internal class StoreOrderService : IStoreOrderService
             Comment = request.Reason ?? "Cancelled by customer"
         });
 
-        return APIResponse<bool>.Success(true, ["Order cancelled successfully"]);
+        return APIResponse<StoreOrderSummaryDTO>.Success(new StoreOrderSummaryDTO
+        {
+            OrderId = order.ItemID,
+            OrderCode = order.OrderCode,
+            Status = OrderStatus.Cancelled.ToString().ToLower(),
+            PaymentStatus = order.PaymentStatus.ToString().ToLower(),
+            Total = order.Total,
+            ItemCount = order.OrderItems.Sum(i => i.Quantity),
+            CreatedAt = order.CreatedAt,
+            PreviewItems = order.OrderItems.Take(3).Select(i => new OrderPreviewItemDTO
+            {
+                ProductName = i.ProductName,
+                Image = i.ImageUrl,
+                VariantName = i.VariantName,
+                Price = i.UnitPrice,
+                Quantity = i.Quantity
+            })
+        }, ["Order cancelled successfully"]);
     }
 
     // ── Returns ───────────────────────────────────────────────────────────────

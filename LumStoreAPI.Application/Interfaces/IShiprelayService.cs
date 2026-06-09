@@ -14,7 +14,7 @@ public interface IShiprelayService
     Task<ShiprelayTrackingResult?> GetTrackingAsync(string shipmentId);
 
     /// <summary>Get a paginated list of shipments from ShipRelay.</summary>
-    Task<IEnumerable<ShiprelayShipmentSummaryDTO>> GetShipmentsAsync(ShiprelayGetShipmentsRequest request);
+    Task<ShiprelayPagedResult<ShiprelayShipmentSummaryDTO>> GetShipmentsAsync(ShiprelayGetShipmentsRequest request);
 
     /// <summary>Get shipping rate estimates for an order.</summary>
     Task<IEnumerable<ShiprelayRateResult>> GetRatesAsync(ShiprelayRateRequestDTO dto);

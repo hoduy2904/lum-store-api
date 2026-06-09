@@ -101,6 +101,7 @@ public class ShiprelayShipmentResult
     public string? TrackingNumber { get; set; }
     public string? TrackingUrl { get; set; }
     public string? Carrier { get; set; }
+    public string? Service { get; set; }
     public string Status { get; set; } = default!;
     public decimal? ShippingCost { get; set; }
     public bool Success { get; set; }
@@ -113,6 +114,7 @@ public class ShiprelayTrackingResult
     public string? TrackingNumber { get; set; }
     public string? TrackingUrl { get; set; }
     public string? Carrier { get; set; }
+    public string? Service { get; set; }
     public string Status { get; set; } = default!;
     public string? StatusDescription { get; set; }
     public DateTimeOffset? EstimatedDelivery { get; set; }
@@ -121,14 +123,25 @@ public class ShiprelayTrackingResult
 
 public class ShiprelayRateResult
 {
-    public string ServiceCode { get; set; } = default!;
-    public string ServiceName { get; set; } = default!;
-    public decimal TotalPrice { get; set; }
+    [JsonPropertyName("serviceCode")]
+    public string CarrierId { get; set; } = default!;
+
+    [JsonPropertyName("serviceName")]
+    public string CarrierName { get; set; } = default!;
+
+    [JsonPropertyName("totalPrice")]
+    public decimal Price { get; set; }
+
     public string? Description { get; set; }
     public string Currency { get; set; } = "USD";
     public DateTime? MinDeliveryDate { get; set; }
     public DateTime? MaxDeliveryDate { get; set; }
     public bool PhoneRequired { get; set; }
+
+    /// <summary>Estimated business days derived from MinDeliveryDate relative to today.</summary>
+    public int? EstimatedDays => MinDeliveryDate.HasValue
+        ? Math.Max(0, (int)Math.Ceiling((MinDeliveryDate.Value.Date - DateTime.UtcNow.Date).TotalDays))
+        : null;
 }
 
 public class ShiprelayShipmentSummaryDTO
@@ -143,6 +156,17 @@ public class ShiprelayShipmentSummaryDTO
     public DateTime? UpdatedAt { get; set; }
 }
 
+// ── Paged Result ──────────────────────────────────────────────────────────
+
+public class ShiprelayPagedResult<T>
+{
+    public List<T> Data { get; set; } = [];
+    public int Total { get; set; }
+    public int CurrentPage { get; set; }
+    public int LastPage { get; set; }
+    public int PerPage { get; set; }
+}
+
 // ── Webhook Payload ───────────────────────────────────────────────────────
 
 public class ShiprelayWebhookPayload
@@ -153,9 +177,17 @@ public class ShiprelayWebhookPayload
     [JsonPropertyName("status")]             public string? Status { get; set; }
     [JsonPropertyName("tracking_number")]    public string? TrackingNumber { get; set; }
     [JsonPropertyName("tracking_url")]       public string? TrackingUrl { get; set; }
+    [JsonPropertyName("tracking")]           public ShiprelayWebhookTracking? Tracking { get; set; }
     [JsonPropertyName("carrier")]            public string? Carrier { get; set; }
     [JsonPropertyName("service")]            public string? Service { get; set; }
     [JsonPropertyName("warehouse")]          public ShiprelayWebhookWarehouse? Warehouse { get; set; }
+}
+
+/// <summary>Nested tracking object sent by ShipRelay API v2 webhooks and shipment responses.</summary>
+public class ShiprelayWebhookTracking
+{
+    [JsonPropertyName("tracking_number")] public string? TrackingNumber { get; set; }
+    [JsonPropertyName("tracking_link")]   public string? TrackingLink { get; set; }
 }
 
 public class ShiprelayWebhookWarehouse

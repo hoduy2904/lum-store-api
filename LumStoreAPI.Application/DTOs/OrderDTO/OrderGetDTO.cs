@@ -26,6 +26,7 @@ public class OrderGetDTO
     public string? TrackingNumber { get; set; }
     public string? TrackingUrl { get; set; }
     public string? ShippingCarrier { get; set; }
+    public string? ShippingService { get; set; }
     public string? ShiprelayShipmentId { get; set; }
     public string? CustomerNote { get; set; }
     public DateTimeOffset? ShippedAt { get; set; }

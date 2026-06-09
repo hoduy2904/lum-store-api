@@ -14,6 +14,7 @@ namespace LumStoreAPI.Core.Entities.DocumentTypes
         public int? ColorId { get; set; }
         public string VariantName { get; set; } = default!;
         public int ShiprelayId { get; set; }
+        public bool ShiprelayOnceReceived { get; set; }
         public int? ParentId { get; set; }
 
         public virtual Product? Product { get; set; }

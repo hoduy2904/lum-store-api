@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http.Json;
+using System.Text.Json;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Libraries.Extensions;
 using LumStoreAPI.SDK.Extensions;
@@ -22,15 +23,33 @@ internal class ShiprelayProductService(
         var products = await client.GetFromJsonAsync<ShiprelayPagedResponse<ShiprelayProduct>>($"products{request.ToQueryString()}");
         return products;
     }
-    public async Task<bool> IsExistsProductAsync(int id)
+    public async Task<ShiprelayProduct?> GetProductByIdAsync(int id)
     {
         var client = _httpClientFactory.CreateShiprelayClient();
         var response = await client.GetAsync($"{PRODUCT_URLS}/{id}");
-        return response.IsSuccessStatusCode;
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(content);
+        var root = doc.RootElement;
+
+        // ShipRelay API v2 wraps single-item GET responses in {"data": {...}}
+        var element = root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object
+            ? data
+            : root;
+
+        return JsonSerializer.Deserialize<ShiprelayProduct>(element.GetRawText());
     }
+
+    public async Task<bool> IsExistsProductAsync(int id)
+        => (await GetProductByIdAsync(id)) != null;
 
     public async Task<ShiprelayProduct?> UpdateProductAsync(int id, ShiprelayProductUpdateRequest request, ProductType productType, bool ensureSuccess = true)
     {
+        if (productType == ProductType.BUNDLE)
+            throw new NotSupportedException("BUNDLE products are not supported by ShipRelay. Map the variant to SIMPLE, PACKING, or CASEPACK before syncing.");
+
         var client = _httpClientFactory.CreateShiprelayClient();
         var response = await client.PutAsJsonAsync($"{PRODUCT_URLS}/{Enum.GetName(productType)?.ToLower() ?? "simple"}/{id}", request);
         ShiprelayProduct? shiprelayProduct = null;
@@ -52,6 +71,9 @@ internal class ShiprelayProductService(
 
     public async Task<ShiprelayProduct?> PostProductAsync(ShiprelayProductUpdateRequest request, ProductType productType)
     {
+        if (productType == ProductType.BUNDLE)
+            throw new NotSupportedException("BUNDLE products are not supported by ShipRelay. Map the variant to SIMPLE, PACKING, or CASEPACK before syncing.");
+
         var client = _httpClientFactory.CreateShiprelayClient();
         var response = await client.PostAsJsonAsync($"{PRODUCT_URLS}/{Enum.GetName(productType)?.ToLower() ?? "simple"}", request);
         if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableContent)

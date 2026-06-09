@@ -114,7 +114,28 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                     case EntryActionStatus.INSERT:
                         if (variant is null) { MarkFailed(syncEntry, "Variant not found"); break; }
 
-                        var buildRequest = await BuildRequest(variant, mediaService);
+                        if ((variant.Product?.ProductType ?? ProductType.SIMPLE) == ProductType.BUNDLE)
+                        {
+                            _logger.LogWarning("Skipping ShipRelay sync for variant {VariantId} (SKU={SKU}): BUNDLE type is not supported by ShipRelay. Assign a SIMPLE, PACKING, or CASEPACK ProductType before syncing.", variant.ItemID, variant.SKU);
+                            await eventLog.LogWarning("ShiprelaySyncService", "SHIPRELAY_BUNDLE_SKIPPED",
+                                $"Skipping sync for VariantId={variant.ItemID} SKU={variant.SKU}: BUNDLE products cannot be synced to ShipRelay.");
+                            syncEntry.Message = "Skipped: BUNDLE products are not supported by ShipRelay.";
+                            break;
+                        }
+
+                        ShiprelayProductUpdateRequest buildRequest = default!;
+                        try
+                        {
+                            buildRequest = await BuildRequest(variant, mediaService, onceReceived: false);
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            _logger.LogWarning("Skipping ShipRelay sync for variant {VariantId} (SKU={SKU}): {Error}", variant.ItemID, variant.SKU, ex.Message);
+                            await eventLog.LogWarning("ShiprelaySyncService", "SHIPRELAY_INVALID_CATEGORY",
+                                $"Skipping sync for VariantId={variant.ItemID} SKU={variant.SKU}: {ex.Message}");
+                            syncEntry.Message = $"Skipped: {ex.Message}";
+                            break;
+                        }
                         var created = await productService.PostProductAsync(
                             buildRequest, variant.Product?.ProductType ?? ProductType.SIMPLE);
 
@@ -136,7 +157,30 @@ public class ShiprelaySyncBackgroundService : BackgroundService
                     case EntryActionStatus.UPDATE:
                         if (variant is null) { MarkFailed(syncEntry, "Variant not found"); break; }
 
-                        buildRequest = await BuildRequest(variant, mediaService);
+                        if ((variant.Product?.ProductType ?? ProductType.SIMPLE) == ProductType.BUNDLE)
+                        {
+                            _logger.LogWarning("Skipping ShipRelay sync for variant {VariantId} (SKU={SKU}): BUNDLE type is not supported by ShipRelay. Assign a SIMPLE, PACKING, or CASEPACK ProductType before syncing.", variant.ItemID, variant.SKU);
+                            await eventLog.LogWarning("ShiprelaySyncService", "SHIPRELAY_BUNDLE_SKIPPED",
+                                $"Skipping sync for VariantId={variant.ItemID} SKU={variant.SKU}: BUNDLE products cannot be synced to ShipRelay.");
+                            syncEntry.Message = "Skipped: BUNDLE products are not supported by ShipRelay.";
+                            break;
+                        }
+
+                        if (variant.ShiprelayOnceReceived)
+                            _logger.LogInformation("Product {SKU}: once_received=true, skipping dimension fields in update request", variant.SKU);
+
+                        try
+                        {
+                            buildRequest = await BuildRequest(variant, mediaService, onceReceived: variant.ShiprelayOnceReceived);
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            _logger.LogWarning("Skipping ShipRelay sync for variant {VariantId} (SKU={SKU}): {Error}", variant.ItemID, variant.SKU, ex.Message);
+                            await eventLog.LogWarning("ShiprelaySyncService", "SHIPRELAY_INVALID_CATEGORY",
+                                $"Skipping sync for VariantId={variant.ItemID} SKU={variant.SKU}: {ex.Message}");
+                            syncEntry.Message = $"Skipped: {ex.Message}";
+                            break;
+                        }
                         if (variant.ShiprelayId == 0)
                         {
                             var upserted = await productService.PostProductAsync(
@@ -205,12 +249,22 @@ public class ShiprelaySyncBackgroundService : BackgroundService
         var keySettingService = scope.ServiceProvider.GetRequiredService<ISettingKeyValueRepository>();
 
         var lastSyncedData = await keySettingService.GetSettingKeyAsync("SHIPRELAY_STOCK_LAST_SYNC");
-        if (!DateTime.TryParse(lastSyncedData?.SettingValue, out DateTime lastSynced))
+
+        // Primary path: "o" format (written by current code) preserves Kind=Utc via RoundtripKind.
+        // Fallback: legacy values stored with plain .ToString() have no timezone info.
+        //   SpecifyKind(Utc) treats them as UTC so ToUniversalTime() below is a no-op and does not
+        //   shift the value by the server's local offset (would be 7 h wrong on UTC+7).
+        if (!DateTime.TryParse(lastSyncedData?.SettingValue, null,
+                System.Globalization.DateTimeStyles.RoundtripKind, out DateTime lastSynced))
         {
-            lastSynced = new DateTime(2026, 01, 01).ToUniversalTime();
+            if (!DateTime.TryParse(lastSyncedData?.SettingValue, out lastSynced))
+                lastSynced = new DateTime(2026, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+            else
+                lastSynced = DateTime.SpecifyKind(lastSynced, DateTimeKind.Utc);
         }
+
         var updateVariants = await productService.GetShiprelayProductsAsync(
-            new ShiprelayProductGetRequest { Page = 1, PerPage = 10000, UpdatedAtFrom = lastSynced }
+            new ShiprelayProductGetRequest { Page = 1, PerPage = 10000, UpdatedAtFrom = lastSynced.ToUniversalTime() }
         );
 
         if (updateVariants is null || !updateVariants.Data.Any()) return;
@@ -226,6 +280,7 @@ public class ShiprelaySyncBackgroundService : BackgroundService
         {
             if (!updateVariantDict.ContainsKey(variant.ShiprelayId)) continue;
             variant.Stock = updateVariantDict[variant.ShiprelayId].StockCount ?? 0;
+            variant.ShiprelayOnceReceived = updateVariantDict[variant.ShiprelayId].OnceReceived;
         }
 
         int changeCounter = 0;
@@ -239,12 +294,12 @@ public class ShiprelaySyncBackgroundService : BackgroundService
             {
                 SettingCode = "SHIPRELAY_STOCK_LAST_SYNC",
                 SettingName = "Shiprelay stock last synced",
-                SettingValue = DateTime.UtcNow.ToString()
+                SettingValue = DateTime.UtcNow.ToString("o")
             });
         }
         else
         {
-            lastSyncedData.SettingValue = currentTime.ToString();
+            lastSyncedData.SettingValue = currentTime.ToString("o");
             await keySettingService.UpdateSettingKeyAsync("SHIPRELAY_STOCK_LAST_SYNC", lastSyncedData);
         }
 
@@ -253,7 +308,10 @@ public class ShiprelaySyncBackgroundService : BackgroundService
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
-    private async Task<ShiprelayProductUpdateRequest> BuildRequest(Core.Entities.DocumentTypes.ProductVariant variant, IMediaService mediaService)
+    private async Task<ShiprelayProductUpdateRequest> BuildRequest(
+        Core.Entities.DocumentTypes.ProductVariant variant,
+        IMediaService mediaService,
+        bool onceReceived = false)
     {
         var product = variant.Product;
 
@@ -272,13 +330,14 @@ public class ShiprelaySyncBackgroundService : BackgroundService
             Name = product is not null
                 ? $"{product.ProductName} - {variant.VariantName}"
                 : variant.VariantName,
-            Category = Enum.GetName(product?.ProductGroup ?? ProductGroup.HARD_GOODS)?.ToLowerInvariant().Replace('_', '-')!,
+            Category = MapToShiprelayCategory(product?.ProductGroup ?? ProductGroup.HARD_GOODS),
             Settings = new ShiprelayProductSetting
             {
-                ShipWeight = product?.Weight ?? 0,
-                ShipLength = product?.Length ?? 0,
-                ShipWidth = product?.Width ?? 0,
-                ShipHeight = product?.Height ?? 0,
+                // Dimension fields are omitted (null) when once_received=true — ShipRelay rejects changes after first stock receipt.
+                ShipWeight = onceReceived ? null : product?.Weight ?? 0,
+                ShipLength = onceReceived ? null : product?.Length ?? 0,
+                ShipWidth  = onceReceived ? null : product?.Width ?? 0,
+                ShipHeight = onceReceived ? null : product?.Height ?? 0,
                 IsFragile = product?.IsFragile ?? false,
                 IsFoldable = product?.IsFoldable ?? false,
                 IsAlcoholic = product?.IsAlcoholic ?? false,
@@ -290,6 +349,17 @@ public class ShiprelaySyncBackgroundService : BackgroundService
             ParentId = variant.CasePack?.ShiprelayId,
         };
     }
+
+    private static string MapToShiprelayCategory(ProductGroup group) => group switch
+    {
+        ProductGroup.HARD_GOODS => "hard-goods",
+        ProductGroup.SOFT_GOODS => "soft-goods",
+        ProductGroup.COMMODITY  => "commodity",
+        ProductGroup.GLASS      => "glass",
+        ProductGroup.MEDIA      => "media",
+        _ => throw new InvalidOperationException(
+            $"ProductGroup '{group}' is not supported by ShipRelay /products/simple endpoint. Supported: hard-goods, soft-goods, commodity, media, glass.")
+    };
 
     private void MarkSuccess(Core.Entities.Integrations.ShiprelayDataSync entry)
         => entry.Status = EmailStatus.Success;

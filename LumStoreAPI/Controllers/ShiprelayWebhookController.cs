@@ -112,11 +112,8 @@ public class ShiprelayWebhookController(
 
     private static IEnumerable<string> ValidatePayload(ShiprelayWebhookPayload payload)
     {
-        if (string.IsNullOrWhiteSpace(payload.SourceOrderId))
-            yield return "source_order_id is required";
-
-        if (string.IsNullOrWhiteSpace(payload.ShipmentId))
-            yield return "source_shipment_id is required";
+        if (string.IsNullOrWhiteSpace(payload.OrderRef))
+            yield return "order_ref is required";
 
         if (string.IsNullOrWhiteSpace(payload.Status))
         {

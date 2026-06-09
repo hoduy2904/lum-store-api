@@ -8,6 +8,7 @@ using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure.Extensions;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace LumStoreAPI.Application.Services;
 
@@ -16,12 +17,14 @@ public class OrderService : IOrderService
     private readonly IOrderRepository _orderRepo;
     private readonly IEventLogService _eventLog;
     private readonly IShiprelayService _shiprelayService;
+    private readonly ILogger<OrderService> _logger;
 
-    public OrderService(IOrderRepository orderRepo, IEventLogService eventLog, IShiprelayService shiprelayService)
+    public OrderService(IOrderRepository orderRepo, IEventLogService eventLog, IShiprelayService shiprelayService, ILogger<OrderService> logger)
     {
         _orderRepo = orderRepo;
         _eventLog = eventLog;
         _shiprelayService = shiprelayService;
+        _logger = logger;
     }
 
     public async Task<PagedResponse<OrderGetDTO>> GetOrdersAsync(OrderListRequest request)
@@ -152,6 +155,7 @@ public class OrderService : IOrderService
             if (dto.TrackingNumber is not null) o.TrackingNumber = dto.TrackingNumber;
             if (dto.TrackingUrl is not null) o.TrackingUrl = dto.TrackingUrl;
             if (dto.ShippingCarrier is not null) o.ShippingCarrier = dto.ShippingCarrier;
+            if (dto.ShippingService is not null) o.ShippingService = dto.ShippingService;
             if (dto.ShiprelayShipmentId is not null) o.ShiprelayShipmentId = dto.ShiprelayShipmentId;
         });
 
@@ -199,6 +203,7 @@ public class OrderService : IOrderService
             if (tracking.TrackingNumber is not null) o.TrackingNumber = tracking.TrackingNumber;
             if (tracking.TrackingUrl is not null) o.TrackingUrl = tracking.TrackingUrl;
             if (tracking.Carrier is not null) o.ShippingCarrier = tracking.Carrier;
+            if (tracking.Service is not null) o.ShippingService = tracking.Service;
             if (newStatus == OrderStatus.Shipped) o.ShippedAt ??= DateTimeOffset.UtcNow;
             if (newStatus == OrderStatus.Delivered) o.DeliveredAt ??= DateTimeOffset.UtcNow;
         }, statusChanged ? new OrderHistory
@@ -215,6 +220,57 @@ public class OrderService : IOrderService
             $"Order {order.OrderCode} synced from ShipRelay. Status: {prevStatus} → {newStatusLabel}");
 
         return MapToDTO(updated);
+    }
+
+    public async Task<(int Synced, int Failed)> BulkUpdateFromShipmentsAsync(IEnumerable<ShiprelayShipmentSummaryDTO> shipments)
+    {
+        int synced = 0, failed = 0;
+
+        foreach (var shipment in shipments)
+        {
+            if (string.IsNullOrEmpty(shipment.OrderRef)) continue;
+
+            try
+            {
+                var order = await _orderRepo.GetOrderByCodeAsync(shipment.OrderRef);
+                if (order == null) { failed++; continue; }
+
+                var newStatus = MapShiprelayStatus(shipment.Status);
+                var prevStatus = order.Status;
+                var statusChanged = newStatus.HasValue && newStatus.Value != prevStatus;
+
+                await _orderRepo.UpdateOrderAsync(order, o =>
+                {
+                    if (statusChanged) o.Status = newStatus!.Value;
+                    if (shipment.TrackingNumber is not null) o.TrackingNumber = shipment.TrackingNumber;
+                    if (shipment.TrackingUrl is not null) o.TrackingUrl = shipment.TrackingUrl;
+                    if (shipment.Carrier is not null) o.ShippingCarrier = shipment.Carrier;
+                    if (!string.IsNullOrEmpty(shipment.Id)) o.ShiprelayShipmentId ??= shipment.Id;
+                    if (newStatus == OrderStatus.Shipped) o.ShippedAt ??= DateTimeOffset.UtcNow;
+                    if (newStatus == OrderStatus.Delivered) o.DeliveredAt ??= DateTimeOffset.UtcNow;
+                }, statusChanged ? new OrderHistory
+                {
+                    OrderId = order.ItemID,
+                    FromStatus = prevStatus,
+                    ToStatus = newStatus!.Value,
+                    Comment = "Synced from ShipRelay",
+                    IsSystemAction = true
+                } : null);
+
+                synced++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "BulkUpdateFromShipments: failed to update order for OrderRef={OrderRef}", shipment.OrderRef);
+                failed++;
+            }
+        }
+
+        if (synced > 0)
+            await _eventLog.LogInformation("OrderService", "ORDERS_BULK_SYNCED",
+                $"Bulk ShipRelay sync: {synced} updated, {failed} failed");
+
+        return (synced, failed);
     }
 
     private static OrderStatus? MapShiprelayStatus(string? status)
@@ -359,12 +415,17 @@ public class OrderService : IOrderService
             r.ReviewedAt = DateTimeOffset.UtcNow;
         });
 
-        // Update order status
+        // Update order status (and payment status when refunded)
         var newOrderStatus = dto.Decision == ReturnStatus.Approved || dto.Decision == ReturnStatus.Refunded
             ? OrderStatus.Returned
             : OrderStatus.Completed;
 
-        await _orderRepo.UpdateOrderAsync(ret.OrderId, o => o.Status = newOrderStatus);
+        await _orderRepo.UpdateOrderAsync(ret.OrderId, o =>
+        {
+            o.Status = newOrderStatus;
+            if (dto.Decision == ReturnStatus.Refunded)
+                o.PaymentStatus = PaymentStatus.Refunded;
+        });
         await _orderRepo.InsertOrderHistoryAsync(new OrderHistory
         {
             OrderId = ret.OrderId,
@@ -406,6 +467,7 @@ public class OrderService : IOrderService
         TrackingNumber = o.TrackingNumber,
         TrackingUrl = o.TrackingUrl,
         ShippingCarrier = o.ShippingCarrier,
+        ShippingService = o.ShippingService,
         ShiprelayShipmentId = o.ShiprelayShipmentId,
         CustomerNote = o.CustomerNote,
         ShippedAt = o.ShippedAt,
@@ -433,6 +495,8 @@ public class OrderService : IOrderService
         ReturnId = r.ItemID,
         OrderId = r.OrderId,
         OrderCode = r.Order?.OrderCode ?? "",
+        CustomerName = r.Order?.CustomerName,
+        CustomerEmail = r.Order?.CustomerEmail,
         Reason = r.Reason,
         Status = r.Status,
         RefundAmount = r.RefundAmount,

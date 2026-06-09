@@ -16,6 +16,10 @@ public interface IOrderService
     Task<OrderGetDTO> UpdateOrderTrackingAsync(int orderId, OrderUpdateTrackingDTO dto, int? operatorUserId = null);
     Task<ShiprelayTrackingResult?> GetOrderTrackingAsync(int orderId);
     Task<OrderGetDTO?> SyncOrderFromShiprelayAsync(int orderId);
+    /// <summary>Bulk-update orders from a list of ShipRelay shipment summaries (manual/scheduled sync).
+    /// Looks up each order by OrderRef (= OrderCode), applies status/tracking changes, writes OrderHistory.
+    /// Returns (synced, failed) counts.</summary>
+    Task<(int Synced, int Failed)> BulkUpdateFromShipmentsAsync(IEnumerable<ShiprelayShipmentSummaryDTO> shipments);
     Task<bool> DeleteOrderAsync(int orderId);
 
     // ── History ───────────────────────────────────────────────────────────
