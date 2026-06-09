@@ -222,6 +222,43 @@ public class OrderService : IOrderService
         return MapToDTO(updated);
     }
 
+    public async Task<(int Updated, int Failed, int Skipped)> BackfillRateFieldsAsync(CancellationToken ct = default)
+    {
+        var orders = await _orderRepo.GetOrdersMissingRateFieldsAsync(ct);
+
+        int updated = 0, failed = 0, skipped = 0;
+
+        foreach (var o in orders)
+        {
+            try
+            {
+                var tracking = await _shiprelayService.GetTrackingAsync(o.ShiprelayShipmentId!);
+                if (tracking == null) { skipped++; continue; }
+
+                if (tracking.Service == null && tracking.EstimatedDelivery == null) { skipped++; continue; }
+
+                await _orderRepo.UpdateOrderAsync(o.ItemID, order =>
+                {
+                    if (tracking.Service != null) order.ShippingServiceName = tracking.Service;
+                    if (tracking.EstimatedDelivery.HasValue) order.EstimatedDeliveryMin = tracking.EstimatedDelivery;
+                });
+
+                updated++;
+            }
+            catch (Exception ex)
+            {
+                await _eventLog.LogWarning("OrderService", "BACKFILL_RATE_FIELDS_FAILED",
+                    $"Order {o.OrderCode} backfill failed: {ex.Message}");
+                failed++;
+            }
+        }
+
+        await _eventLog.LogInformation("OrderService", "BACKFILL_RATE_FIELDS_COMPLETE",
+            $"Backfill complete: {updated} updated, {failed} failed, {skipped} skipped out of {orders.Count} candidates");
+
+        return (updated, failed, skipped);
+    }
+
     public async Task<(int Synced, int Failed)> BulkUpdateFromShipmentsAsync(IEnumerable<ShiprelayShipmentSummaryDTO> shipments)
     {
         int synced = 0, failed = 0;

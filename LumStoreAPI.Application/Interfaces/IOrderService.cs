@@ -20,6 +20,11 @@ public interface IOrderService
     /// Looks up each order by OrderRef (= OrderCode), applies status/tracking changes, writes OrderHistory.
     /// Returns (synced, failed) counts.</summary>
     Task<(int Synced, int Failed)> BulkUpdateFromShipmentsAsync(IEnumerable<ShiprelayShipmentSummaryDTO> shipments);
+
+    /// <summary>Backfill ShippingServiceName and EstimatedDeliveryMin for existing orders that have a
+    /// ShiprelayShipmentId but are missing rate fields (populated only after rate flow was added).
+    /// Calls GET /shipments/{id} for each qualifying order.</summary>
+    Task<(int Updated, int Failed, int Skipped)> BackfillRateFieldsAsync(CancellationToken ct = default);
     Task<bool> DeleteOrderAsync(int orderId);
 
     // ── History ───────────────────────────────────────────────────────────
