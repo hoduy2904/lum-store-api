@@ -12,6 +12,16 @@ public class StoreOrderSummaryDTO
     public int ItemCount { get; set; }
     public string? PaymentURL { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public string? TrackingNumber { get; set; }
+    public string? TrackingUrl { get; set; }
+    public string? ShippingCarrier { get; set; }
+    public string? ShippingService { get; set; }
+    public string? ShippingServiceName { get; set; }
+    public string? ShippingServiceDescription { get; set; }
+    public DateTimeOffset? EstimatedDeliveryMin { get; set; }
+    public DateTimeOffset? EstimatedDeliveryMax { get; set; }
+    public DateTimeOffset? ShippedAt { get; set; }
+    public DateTimeOffset? DeliveredAt { get; set; }
     public IEnumerable<OrderPreviewItemDTO> PreviewItems { get; set; } = [];
 }
 
@@ -27,8 +37,6 @@ public class OrderPreviewItemDTO
 public class StoreOrderDetailDTO : StoreOrderSummaryDTO
 {
     public string? Note { get; set; }
-    public string? TrackingNumber { get; set; }
-    public string? TrackingUrl { get; set; }
     public StoreOrderAddressDTO Address { get; set; } = default!;
     public IEnumerable<StoreOrderLineItemDTO> Items { get; set; } = [];
     public decimal Subtotal { get; set; }

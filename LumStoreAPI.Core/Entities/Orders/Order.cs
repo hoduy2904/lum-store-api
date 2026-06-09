@@ -41,6 +41,10 @@ public class Order : BaseClassItem
     public string? TrackingUrl { get; set; }
     public string? ShippingCarrier { get; set; }
     public string? ShippingService { get; set; }
+    public string? ShippingServiceName { get; set; }
+    public string? ShippingServiceDescription { get; set; }
+    public DateTimeOffset? EstimatedDeliveryMin { get; set; }
+    public DateTimeOffset? EstimatedDeliveryMax { get; set; }
     public DateTimeOffset? ShippedAt { get; set; }
     public DateTimeOffset? DeliveredAt { get; set; }
     /// <summary>

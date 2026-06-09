@@ -274,7 +274,8 @@ internal class StoreOrderService : IStoreOrderService
             Items = shipmentItems
         });
 
-        decimal shippingFee = rateResults.FirstOrDefault(r => r.CarrierId == request.ShippingServiceCode)?.Price ?? 9.99m;
+        var selectedRate = rateResults.FirstOrDefault(r => r.CarrierId == request.ShippingServiceCode);
+        decimal shippingFee = selectedRate?.Price ?? 9.99m;
         if (shippingThreshold > 0 && subTotal >= shippingThreshold) shippingFee = 0;
 
         var tax = Math.Round(subTotal * taxRate, 2);
@@ -351,6 +352,14 @@ internal class StoreOrderService : IStoreOrderService
             TrackingUrl = shipResult.TrackingUrl,
             ShippingCarrier = shipResult.Carrier,
             ShippingService = shipResult.Service,
+            ShippingServiceName = selectedRate?.CarrierName,
+            ShippingServiceDescription = selectedRate?.Description,
+            EstimatedDeliveryMin = selectedRate?.MinDeliveryDate.HasValue == true
+                ? new DateTimeOffset(selectedRate.MinDeliveryDate.Value, TimeSpan.Zero)
+                : null,
+            EstimatedDeliveryMax = selectedRate?.MaxDeliveryDate.HasValue == true
+                ? new DateTimeOffset(selectedRate.MaxDeliveryDate.Value, TimeSpan.Zero)
+                : null,
             NeedsShiprelayReconciliation = needsReconciliation,
             OrderItems = orderItems
         };
@@ -453,6 +462,16 @@ internal class StoreOrderService : IStoreOrderService
             Total = o.Total,
             ItemCount = o.OrderItems.Sum(i => i.Quantity),
             CreatedAt = o.CreatedAt,
+            TrackingNumber = o.TrackingNumber,
+            TrackingUrl = o.TrackingUrl,
+            ShippingCarrier = o.ShippingCarrier,
+            ShippingService = o.ShippingService,
+            ShippingServiceName = o.ShippingServiceName,
+            ShippingServiceDescription = o.ShippingServiceDescription,
+            EstimatedDeliveryMin = o.EstimatedDeliveryMin,
+            EstimatedDeliveryMax = o.EstimatedDeliveryMax,
+            ShippedAt = o.ShippedAt,
+            DeliveredAt = o.DeliveredAt,
             PreviewItems = o.OrderItems.Take(3).Select(i => new OrderPreviewItemDTO
             {
                 ProductName = i.ProductName,
@@ -493,6 +512,14 @@ internal class StoreOrderService : IStoreOrderService
             Note = order.CustomerNote,
             TrackingNumber = order.TrackingNumber,
             TrackingUrl = order.TrackingUrl,
+            ShippingCarrier = order.ShippingCarrier,
+            ShippingService = order.ShippingService,
+            ShippingServiceName = order.ShippingServiceName,
+            ShippingServiceDescription = order.ShippingServiceDescription,
+            EstimatedDeliveryMin = order.EstimatedDeliveryMin,
+            EstimatedDeliveryMax = order.EstimatedDeliveryMax,
+            ShippedAt = order.ShippedAt,
+            DeliveredAt = order.DeliveredAt,
             Address = new StoreOrderAddressDTO
             {
                 Address = order.ShippingAddress,
