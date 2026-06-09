@@ -53,7 +53,7 @@ internal class StripeWebhookService : IStripeWebhookService
         }
         catch (StripeException)
         {
-            return false;
+            throw;
         }
     }
 
@@ -108,18 +108,13 @@ internal class StripeWebhookService : IStripeWebhookService
         if (order.PaymentStatus == PaymentStatus.Paid) return;
 
         // Resolve payment method label from PaymentIntent (best-effort)
-        string paymentMethod = "stripe";
-        try
-        {
-            var piService = new PaymentIntentService(_stripeClient);
-            var intent = await piService.GetAsync(session.PaymentIntentId);
-            paymentMethod = intent.PaymentMethod?.Type ?? "stripe";
-        }
-        catch { /* non-fatal — PaymentIntent is informational only */ }
+        var piService = new PaymentIntentService(_stripeClient);
+        var intent = await piService.GetAsync(session.PaymentIntentId);
+        var paymentMethod = string.Join(',', intent.PaymentMethodTypes ?? ["stripe"]);
 
         long amountRaw = session.AmountTotal ?? 0;
         string currency = session.Currency?.ToUpper() ?? "USD";
-        string note = $"Paid via Stripe ({paymentMethod}): {amountRaw / 100m:F2} {currency}";
+        string note = $"Paid via Stripe (payment: {session.PaymentIntentId}) ({paymentMethod}): {amountRaw / 100m:F2} {currency}";
 
         await _orderService.UpdateOrderStatusAsync(orderId, new OrderUpdateStatusDTO
         {
