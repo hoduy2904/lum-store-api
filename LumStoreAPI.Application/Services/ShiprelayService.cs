@@ -247,8 +247,8 @@ public class ShiprelayService : IShiprelayService
                 Service = ExtractServiceName(result),
                 Status = GetString(result, "status") ?? "unknown",
                 StatusDescription = GetString(result, "status_description"),
-                EstimatedDelivery = result.TryGetProperty("estimated_delivery_date", out var edd) && edd.TryGetDateTimeOffset(out var ed) ? ed : null,
-                DeliveredAt = result.TryGetProperty("delivered_at", out var da) && da.TryGetDateTimeOffset(out var dat) ? dat : null
+                EstimatedDelivery = result.TryGetProperty("estimated_delivery_date", out var edd) && edd.ValueKind == JsonValueKind.String && edd.TryGetDateTimeOffset(out var ed) ? ed : null,
+                DeliveredAt = result.TryGetProperty("delivered_at", out var da) && da.ValueKind == JsonValueKind.String && da.TryGetDateTimeOffset(out var dat) ? dat : null
             };
         }
         catch (Exception ex)
@@ -291,7 +291,7 @@ public class ShiprelayService : IShiprelayService
                 TrackingNumber = GetTrackingNumberFrom(s),
                 TrackingUrl = BuildTrackingUrl(s),
                 Carrier = ExtractCarrierName(s),
-                UpdatedAt = s.TryGetProperty("updated_at", out var ua) && ua.TryGetDateTime(out var dt) ? dt : null
+                UpdatedAt = s.TryGetProperty("updated_at", out var ua) && ua.ValueKind == JsonValueKind.String && ua.TryGetDateTime(out var dt) ? dt : null
             }).ToList();
 
             var pagedResult = new ShiprelayPagedResult<ShiprelayShipmentSummaryDTO> { Data = items };
