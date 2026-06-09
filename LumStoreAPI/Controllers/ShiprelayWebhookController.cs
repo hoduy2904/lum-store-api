@@ -72,10 +72,10 @@ public class ShiprelayWebhookController(
             return Unauthorized();
         }
 
-        ShiprelayWebhookPayload? payload;
+        ShiprelayWebhookRequest? payload;
         try
         {
-            payload = JsonSerializer.Deserialize<ShiprelayWebhookPayload>(rawBody, WebhookJsonOptions);
+            payload = JsonSerializer.Deserialize<ShiprelayWebhookRequest>(rawBody, WebhookJsonOptions);
         }
         catch (JsonException)
         {
@@ -92,7 +92,7 @@ public class ShiprelayWebhookController(
             return BadRequest("Empty payload");
         }
 
-        var validationErrors = ValidatePayload(payload).ToArray();
+        var validationErrors = ValidatePayload(payload.Payload).ToArray();
         if (validationErrors.Length > 0)
         {
             await WriteWebhookSyncLogAsync(SyncStatus.Failed,
@@ -101,7 +101,7 @@ public class ShiprelayWebhookController(
             return BadRequest(new { errors = validationErrors });
         }
 
-        await webhookService.HandleEventAsync(payload);
+        await webhookService.HandleEventAsync(payload.Payload);
         return Ok(new { received = true });
     }
 
