@@ -31,7 +31,7 @@ public class ShiprelayClientHandler : DelegatingHandler
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         if (request.RequestUri?.IsAbsoluteUri is false)
         {
-            request.RequestUri = new Uri(new Uri(shiprelayConfiguration?.BaseUrl ?? ""), request.RequestUri);
+            request.RequestUri = new Uri(new Uri((shiprelayConfiguration?.BaseUrl ?? "").TrimEnd('/') + "/"), request.RequestUri);
         }
         var response = await base.SendAsync(request, cancellationToken);
         if (response.StatusCode == HttpStatusCode.Unauthorized)

@@ -123,14 +123,25 @@ public class ShiprelayTrackingResult
 
 public class ShiprelayRateResult
 {
-    public string ServiceCode { get; set; } = default!;
-    public string ServiceName { get; set; } = default!;
-    public decimal TotalPrice { get; set; }
+    [JsonPropertyName("serviceCode")]
+    public string CarrierId { get; set; } = default!;
+
+    [JsonPropertyName("serviceName")]
+    public string CarrierName { get; set; } = default!;
+
+    [JsonPropertyName("totalPrice")]
+    public decimal Price { get; set; }
+
     public string? Description { get; set; }
     public string Currency { get; set; } = "USD";
     public DateTime? MinDeliveryDate { get; set; }
     public DateTime? MaxDeliveryDate { get; set; }
     public bool PhoneRequired { get; set; }
+
+    /// <summary>Estimated business days derived from MinDeliveryDate relative to today.</summary>
+    public int? EstimatedDays => MinDeliveryDate.HasValue
+        ? Math.Max(0, (int)Math.Ceiling((MinDeliveryDate.Value.Date - DateTime.UtcNow.Date).TotalDays))
+        : null;
 }
 
 public class ShiprelayShipmentSummaryDTO

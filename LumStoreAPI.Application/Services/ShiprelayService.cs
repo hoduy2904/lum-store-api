@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
+using LumStoreAPI.Application.Exceptions;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Sytems;
@@ -90,7 +91,30 @@ public class ShiprelayService : IShiprelayService
                 return new ShiprelayShipmentResult { Success = false, ErrorMessage = content };
             }
 
-            var result = JsonSerializer.Deserialize<JsonElement>(content);
+            JsonElement result;
+            try
+            {
+                result = JsonSerializer.Deserialize<JsonElement>(content);
+            }
+            catch (JsonException jsonEx)
+            {
+                // ShipRelay accepted the shipment (HTTP 2xx) but returned unparseable JSON.
+                // The shipment EXISTS remotely — aborting the order would lose it permanently.
+                // Caller must catch ShiprelayIntegrationException.ShipmentMayExistOnRemote
+                // and save a reconciliation record rather than aborting the order.
+                _logger.LogError(jsonEx,
+                    "ShipRelay returned HTTP {StatusCode} but unparseable JSON for OrderRef={OrderRef}. Raw={Raw}",
+                    (int)response.StatusCode, dto.OrderRef, content);
+                throw new ShiprelayIntegrationException(
+                    "ShipRelay accepted shipment (HTTP 200) but returned unparseable response. " +
+                    "Shipment may exist on ShipRelay side. Manual reconciliation required. Raw response logged.",
+                    jsonEx,
+                    shipmentMayExistOnRemote: true)
+                {
+                    RawResponse = content
+                };
+            }
+
             var shipmentResult = new ShiprelayShipmentResult
             {
                 Success = true,
@@ -108,8 +132,10 @@ public class ShiprelayService : IShiprelayService
 
             return shipmentResult;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not ShiprelayIntegrationException)
         {
+            // ShiprelayIntegrationException must propagate to caller for reconciliation handling.
+            // All other exceptions are swallowed here and returned as a failure result.
             _logger.LogError(ex, "Shiprelay CreateShipment error for OrderRef={OrderRef}", dto.OrderRef);
             await _eventLog.LogWarning("ShiprelayService", "SHIPRELAY_CREATE_EXCEPTION",
                 "POST shipments exception",
@@ -417,9 +443,9 @@ public class ShiprelayService : IShiprelayService
 
             var rates = dataEl.EnumerateArray().Select(r => new ShiprelayRateResult
             {
-                ServiceCode = GetString(r, "service_code") ?? "",
-                ServiceName = GetString(r, "service_name") ?? "",
-                TotalPrice = r.TryGetProperty("total_price", out var tp) ? tp.GetDecimal() : 0,
+                CarrierId = GetString(r, "service_code") ?? "",
+                CarrierName = GetString(r, "service_name") ?? "",
+                Price = r.TryGetProperty("total_price", out var tp) ? tp.GetDecimal() : 0,
                 Description = GetString(r, "description"),
                 Currency = GetString(r, "currency") ?? "USD",
                 MinDeliveryDate = r.TryGetProperty("min_delivery_date", out var minD) && minD.TryGetDateTime(out var min) ? min : null,

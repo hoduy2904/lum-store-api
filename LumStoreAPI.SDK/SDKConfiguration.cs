@@ -18,7 +18,7 @@ public static class SDKConfiguration
             {
                 using var scope = sp.CreateScope();
                 var config = scope.ServiceProvider.GetRequiredService<IIntegrationConfigRepository>().GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Shiprelay).GetAwaiter().GetResult();
-                client.BaseAddress = new Uri(config?.BaseUrl ?? "");
+                client.BaseAddress = new Uri((config?.BaseUrl ?? "").TrimEnd('/') + "/");
             }).AddHttpMessageHandler<ShiprelayClientHandler>();
 
             services.AddSingleton<IShiprelayAuthService, ShiprelayAuthService>();

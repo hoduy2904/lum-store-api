@@ -10,7 +10,7 @@ public class StoreOrderSummaryDTO
     public string PaymentStatus { get; set; } = default!;
     public decimal Total { get; set; }
     public int ItemCount { get; set; }
-    public string PaymentURL { get; set; } = default!;
+    public string? PaymentURL { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public IEnumerable<OrderPreviewItemDTO> PreviewItems { get; set; } = [];
 }

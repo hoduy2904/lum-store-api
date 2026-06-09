@@ -101,7 +101,7 @@ public class IntegrationController : ControllerBase
         if (!result.Success)
             return BadRequest(APIResponseBase.Failure("SHIPRELAY_ERROR", [result.ErrorMessage ?? "Failed to create shipment"]));
 
-        // Persist ShipmentId + tracking back to the Order
+        // Persist ShipmentId + tracking back to the Order, then transition to Shipped
         int? operatorId = int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "id")?.Value, out int uid) ? uid : null;
         await orderService.UpdateOrderTrackingAsync(orderId, new()
         {
@@ -110,6 +110,12 @@ public class IntegrationController : ControllerBase
             TrackingUrl = result.TrackingUrl,
             ShippingCarrier = result.Carrier,
             ShippingService = result.Service
+        }, operatorId);
+
+        await orderService.UpdateOrderStatusAsync(orderId, new OrderUpdateStatusDTO
+        {
+            NewStatus = Core.Models.Enums.OrderStatus.Shipped,
+            Comment = $"Shipment {result.ShipmentId} created on ShipRelay"
         }, operatorId);
 
         return Ok(APIResponse<object>.Success(result, ["Shipment created"]));

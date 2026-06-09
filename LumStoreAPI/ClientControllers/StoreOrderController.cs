@@ -41,7 +41,16 @@ public class StoreOrderController(IStoreOrderService storeOrderService) : Contro
     public async Task<IActionResult> CancelOrder(int orderId, [FromBody] StoreCancelOrderRequest request, CancellationToken ct)
     {
         var result = await _storeOrderService.CancelOrderAsync(orderId, request, ct);
-        if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : BadRequest(result);
+        if (!result.IsSuccess) return result.Error is "Forbidden" ? Forbid() : BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>GET /api/store/orders/{orderId}/tracking — Live tracking info for an order.</summary>
+    [HttpGet("{orderId:int}/tracking")]
+    public async Task<IActionResult> GetTracking(int orderId, CancellationToken ct)
+    {
+        var result = await _storeOrderService.GetTrackingAsync(orderId, ct);
+        if (!result.IsSuccess) return result.Error is "Forbidden" ? Forbid() : NotFound(result);
         return Ok(result);
     }
 

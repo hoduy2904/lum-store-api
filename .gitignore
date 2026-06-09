@@ -51,5 +51,10 @@ package.json
 appsettings.Development.json
 wwwroot/
 LumStoreAPI/logs
+# Claude Code - KHÔNG commit lên Git
+.claude.json
+.claude/
+*.credentials.json
 CLAUDE.md
-.claude
+docs/
+LumStoreAPI.Tests/

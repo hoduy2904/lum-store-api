@@ -72,6 +72,15 @@ internal class IntegrationConfigRepository : IIntegrationConfigRepository
         return true;
     }
 
+    public async Task UpdateLastSyncAtAsync(IntegrationType type, DateTimeOffset syncedAt)
+    {
+        await _ctx.IntegrationConfigs
+            .Where(c => c.IntegrationType == type)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.LastSyncAt, syncedAt));
+        var cacheDependency = new CacheDependency().SettingKey(Enum.GetName(type) ?? "");
+        _cacheService.TouchKey(cacheDependency.GetDependencies().ToArray());
+    }
+
     public async Task<SyncLog> InsertSyncLogAsync(SyncLog syncLog)
     {
         _ctx.SyncLogs.Add(syncLog);

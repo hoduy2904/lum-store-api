@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.IntegrationDTO;
+using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Integrations;
 using LumStoreAPI.Core.Interfaces.Repositories;
@@ -11,11 +12,19 @@ public class IntegrationConfigService : IIntegrationConfigService
 {
     private readonly IIntegrationConfigRepository _configRepo;
     private readonly IEventLogService _eventLog;
+    private readonly IShiprelayService _shiprelayService;
+    private readonly IOrderService _orderService;
 
-    public IntegrationConfigService(IIntegrationConfigRepository configRepo, IEventLogService eventLog)
+    public IntegrationConfigService(
+        IIntegrationConfigRepository configRepo,
+        IEventLogService eventLog,
+        IShiprelayService shiprelayService,
+        IOrderService orderService)
     {
         _configRepo = configRepo;
         _eventLog = eventLog;
+        _shiprelayService = shiprelayService;
+        _orderService = orderService;
     }
 
     public async Task<IEnumerable<IntegrationConfigGetDTO>> GetConfigsAsync()
@@ -70,23 +79,77 @@ public class IntegrationConfigService : IIntegrationConfigService
     public async Task<SyncLogGetDTO> TriggerSyncAsync(IntegrationType type, int? triggeredByUserId = null)
     {
         var started = DateTimeOffset.UtcNow;
+        int synced = 0, failed = 0;
+        string? errorDetail = null;
+        var status = SyncStatus.Success;
+
+        if (type == IntegrationType.Shiprelay)
+        {
+            try
+            {
+                var config = await _configRepo.GetConfigByTypeAsync(type);
+
+                // Default window: last 7 days when no previous sync recorded
+                var fromDate = config?.LastSyncAt ?? DateTimeOffset.UtcNow.AddDays(-7);
+                var fromDateStr = fromDate.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+                // Paginate through all shipments updated since the last sync
+                const int perPage = 50;
+                int page = 1;
+                bool hasMore = true;
+
+                while (hasMore)
+                {
+                    var result = await _shiprelayService.GetShipmentsAsync(new ShiprelayGetShipmentsRequest
+                    {
+                        Page = page,
+                        PerPage = perPage,
+                        UpdatedAtFrom = fromDateStr
+                    });
+
+                    if (result.Data.Count == 0) break;
+
+                    var (pageSynced, pageFailed) = await _orderService.BulkUpdateFromShipmentsAsync(result.Data);
+                    synced += pageSynced;
+                    failed += pageFailed;
+
+                    hasMore = page < result.LastPage;
+                    page++;
+                }
+
+                // Only advance lastSyncAt when at least partially successful
+                if (synced > 0 || failed == 0)
+                    await _configRepo.UpdateLastSyncAtAsync(type, started);
+            }
+            catch (Exception ex)
+            {
+                status = SyncStatus.Failed;
+                errorDetail = ex.Message;
+            }
+        }
+
+        if (status != SyncStatus.Failed)
+        {
+            if (synced > 0 && failed > 0) status = SyncStatus.Partial;
+            else if (synced == 0 && failed > 0) status = SyncStatus.Failed;
+        }
+
         var syncLog = new SyncLog
         {
             IntegrationType = type,
             SyncMode = SyncMode.Manual,
-            Status = SyncStatus.Success,
-            Summary = $"Manual sync triggered for {type}",
+            Status = status,
+            Summary = $"Manual sync for {type}: {synced} updated, {failed} failed",
+            ErrorDetail = errorDetail,
             StartedAt = started,
             CompletedAt = DateTimeOffset.UtcNow,
-            RecordsSynced = 0,
-            RecordsFailed = 0
+            RecordsSynced = synced,
+            RecordsFailed = failed
         };
 
-        // WMS sync would be implemented via IWmsService when available
-        // For now, record a sync log entry
         var log = await _configRepo.InsertSyncLogAsync(syncLog);
         await _eventLog.LogInformation("IntegrationConfigService", "SYNC_TRIGGERED",
-            $"Manual sync triggered for {type} by user {triggeredByUserId}");
+            $"Manual sync for {type} by user {triggeredByUserId}: {synced} updated, {failed} failed");
 
         return MapSyncLogToDTO(log);
     }
