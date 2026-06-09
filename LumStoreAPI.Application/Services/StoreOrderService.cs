@@ -281,13 +281,47 @@ internal class StoreOrderService : IStoreOrderService
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
 
-        // Generate order code before calling ShipRelay so it can be used as order_ref
         var orderCode = GenerateOrderCode();
 
-        // Call ShipRelay BEFORE saving — if it fails we do not create the order
+        // Save order as Pending FIRST so it exists in DB before ShipRelay fires the queued webhook
+        var order = new Order
+        {
+            OrderCode = orderCode,
+            CustomerId = profileDto.ProfileId,
+            CustomerName = user.FullName,
+            CustomerEmail = user.Email,
+            CustomerPhone = address.Phone,
+            ShippingAddress = address.Address,
+            ShippingDetails = address.Details,
+            ShippingCity = address.City,
+            ShippingState = address.State,
+            ShippingZip = address.ZipCode,
+            ShippingCountry = "US",
+            CustomerNote = request.Note,
+            SubTotal = subTotal,
+            ShippingFee = shippingFee,
+            Tax = tax,
+            Total = total,
+            Status = OrderStatus.Pending,
+            PaymentStatus = PaymentStatus.Unpaid,
+            ShippingServiceName = selectedRate?.CarrierName,
+            ShippingServiceDescription = selectedRate?.Description,
+            EstimatedDeliveryMin = selectedRate?.MinDeliveryDate.HasValue == true
+                ? new DateTimeOffset(selectedRate.MinDeliveryDate.Value, TimeSpan.Zero)
+                : null,
+            EstimatedDeliveryMax = selectedRate?.MaxDeliveryDate.HasValue == true
+                ? new DateTimeOffset(selectedRate.MaxDeliveryDate.Value, TimeSpan.Zero)
+                : null,
+            OrderItems = orderItems
+        };
+
+        _ctx.Orders.Add(order);
+        await _ctx.SaveChangesAsync(ct);  // commit now so webhook handler can find this order
+
+        // Call ShipRelay AFTER saving — order already in DB when webhook fires
         var shipmentDto = new ShiprelayCreateShipmentDTO
         {
-            OrderId = 0,              // no DB ID yet
+            OrderId = order.ItemID,
             OrderRef = orderCode,
             ShipmentTotalCost = total,
             PackageRef = 1,
@@ -315,57 +349,29 @@ internal class StoreOrderService : IStoreOrderService
         }
         catch (ShiprelayIntegrationException ex) when (ex.ShipmentMayExistOnRemote)
         {
-            // ShipRelay returned HTTP 2xx but unparseable JSON — shipment may exist remotely.
-            // Save the order and a reconciliation record instead of aborting.
             shipResult = new ShiprelayShipmentResult { Success = true, ShipmentId = "" };
             needsReconciliation = true;
             reconciliationRawResponse = ex.RawResponse ?? ex.Message;
         }
 
         if (!shipResult.Success)
+        {
+            // ShipRelay rejected — delete the pending order and abort
+            _ctx.Orders.Remove(order);
+            await _ctx.SaveChangesAsync(ct);
             return APIResponse<StoreOrderSummaryDTO>.Failure(
                 shipResult.ErrorMessage ?? "Unable to create shipment. Please try again.");
+        }
 
-        // Create order with correct totals — saved once below after PaymentCheckoutAsync
-        var order = new Order
-        {
-            OrderCode = orderCode,
-            CustomerId = profileDto.ProfileId,
-            CustomerName = user.FullName,
-            CustomerEmail = user.Email,
-            CustomerPhone = address.Phone,
-            ShippingAddress = address.Address,
-            ShippingDetails = address.Details,
-            ShippingCity = address.City,
-            ShippingState = address.State,
-            ShippingZip = address.ZipCode,
-            ShippingCountry = "US",
-            CustomerNote = request.Note,
-            SubTotal = subTotal,
-            ShippingFee = shippingFee,
-            Tax = tax,
-            Total = total,
-            Status = OrderStatus.Confirmed,
-            PaymentStatus = PaymentStatus.Unpaid,
-            ShiprelayShipmentId = shipResult.ShipmentId,
-            TrackingNumber = shipResult.TrackingNumber,
-            TrackingUrl = shipResult.TrackingUrl,
-            ShippingCarrier = shipResult.Carrier,
-            ShippingService = shipResult.Service,
-            ShippingServiceName = selectedRate?.CarrierName,
-            ShippingServiceDescription = selectedRate?.Description,
-            EstimatedDeliveryMin = selectedRate?.MinDeliveryDate.HasValue == true
-                ? new DateTimeOffset(selectedRate.MinDeliveryDate.Value, TimeSpan.Zero)
-                : null,
-            EstimatedDeliveryMax = selectedRate?.MaxDeliveryDate.HasValue == true
-                ? new DateTimeOffset(selectedRate.MaxDeliveryDate.Value, TimeSpan.Zero)
-                : null,
-            NeedsShiprelayReconciliation = needsReconciliation,
-            OrderItems = orderItems
-        };
-
-        _ctx.Orders.Add(order);
-        await _ctx.SaveChangesAsync(ct);  // save to get order.ItemID for payment + history
+        // ShipRelay accepted — promote order to Confirmed and persist shipment data
+        order.Status = OrderStatus.Confirmed;
+        order.ShiprelayShipmentId = shipResult.ShipmentId;
+        order.TrackingNumber = shipResult.TrackingNumber;
+        order.TrackingUrl = shipResult.TrackingUrl;
+        order.ShippingCarrier = shipResult.Carrier;
+        order.ShippingService = shipResult.Service;
+        order.NeedsShiprelayReconciliation = needsReconciliation;
+        await _ctx.SaveChangesAsync(ct);
 
         if (needsReconciliation)
         {
