@@ -307,10 +307,10 @@ internal class StoreOrderService : IStoreOrderService
             ShippingServiceName = selectedRate?.CarrierName,
             ShippingServiceDescription = selectedRate?.Description,
             EstimatedDeliveryMin = selectedRate?.MinDeliveryDate.HasValue == true
-                ? new DateTimeOffset(selectedRate.MinDeliveryDate.Value, TimeSpan.Zero)
+                ? new DateTimeOffset(DateTime.SpecifyKind(selectedRate.MinDeliveryDate.Value, DateTimeKind.Utc))
                 : null,
             EstimatedDeliveryMax = selectedRate?.MaxDeliveryDate.HasValue == true
-                ? new DateTimeOffset(selectedRate.MaxDeliveryDate.Value, TimeSpan.Zero)
+                ? new DateTimeOffset(DateTime.SpecifyKind(selectedRate.MaxDeliveryDate.Value, DateTimeKind.Utc))
                 : null,
             OrderItems = orderItems
         };
