@@ -25,3 +25,9 @@ public class StoreCancelOrderRequest
     [MaxLength(500)]
     public string? Reason { get; set; }
 }
+
+public class StoreRequestReturnRequest
+{
+    [MaxLength(1000)]
+    public string? Reason { get; set; }
+}
