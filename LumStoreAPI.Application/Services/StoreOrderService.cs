@@ -872,4 +872,30 @@ internal class StoreOrderService : IStoreOrderService
         var result = await _orderService.CreateReturnAsync(orderId, dto);
         return APIResponse<OrderReturnGetDTO>.Success(result, ["Return request submitted successfully"]);
     }
+
+    // ── Payment ───────────────────────────────────────────────────────────────
+
+    public async Task<APIResponse<PaymentStatusCheckDTO>> CheckPaymentStatusAsync(int orderId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
+
+        var order = await _ctx.Orders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.ItemID == orderId, ct);
+
+        if (order is null)
+            return APIResponse<PaymentStatusCheckDTO>.Failure("Order not found");
+
+        if (order.CustomerId != profileDto.ProfileId)
+            return APIResponse<PaymentStatusCheckDTO>.Failure("Forbidden");
+
+        return APIResponse<PaymentStatusCheckDTO>.Success(new PaymentStatusCheckDTO
+        {
+            OrderId = orderId,
+            PaymentStatus = order.PaymentStatus.ToString().ToLower(),
+            OrderStatus = order.Status.ToString().ToLower(),
+            IsPaid = order.PaymentStatus == Core.Models.Enums.PaymentStatus.Paid
+        });
+    }
 }

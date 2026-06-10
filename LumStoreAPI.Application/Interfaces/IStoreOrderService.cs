@@ -22,4 +22,7 @@ public interface IStoreOrderService
     // ── Returns ───────────────────────────────────────────────────────────
     Task<APIResponse<IEnumerable<OrderReturnGetDTO>>> GetOrderReturnsAsync(int orderId, CancellationToken ct = default);
     Task<APIResponse<OrderReturnGetDTO>> SubmitReturnAsync(int orderId, OrderReturnCreateDTO dto, CancellationToken ct = default);
+
+    // ── Payment ───────────────────────────────────────────────────────────────
+    Task<APIResponse<PaymentStatusCheckDTO>> CheckPaymentStatusAsync(int orderId, CancellationToken ct = default);
 }

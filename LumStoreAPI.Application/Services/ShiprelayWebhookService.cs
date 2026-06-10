@@ -67,9 +67,9 @@ public class ShiprelayWebhookService(
             ? trackingLink + trackingNumber
             : (trackingLink ?? payload.TrackingUrl);
 
-        // Fallback: fetch tracking from ShipRelay API if payload is missing tracking data
+        // Fallback: fetch tracking from ShipRelay API if payload is missing tracking data or carrier
         if (newStatus >= OrderStatus.Shipped
-            && (trackingNumber is null || trackingUrl is null)
+            && (trackingNumber is null || trackingUrl is null || payload.Carrier is null)
             && payload.ShipmentId is not null)
         {
             try

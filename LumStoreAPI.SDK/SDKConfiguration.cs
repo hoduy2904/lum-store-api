@@ -27,7 +27,10 @@ public static class SDKConfiguration
             {
                 using var scope = s.CreateScope();
                 var config = scope.ServiceProvider.GetRequiredService<IIntegrationConfigRepository>().GetConfigByTypeAsync(Core.Models.Enums.IntegrationType.Payment).GetAwaiter().GetResult();
-                return new StripeClient(config?.ApiSecret ?? "sk_not_configured");
+                var apiSecret = config?.ApiSecret;
+                if (string.IsNullOrEmpty(apiSecret))
+                    Console.WriteLine("[WARN] Stripe API secret is not configured in IntegrationConfigs (Type=Payment). Stripe features will be non-functional until the app is restarted with a valid key.");
+                return new StripeClient(apiSecret ?? "sk_not_configured");
             });
             return services;
         }

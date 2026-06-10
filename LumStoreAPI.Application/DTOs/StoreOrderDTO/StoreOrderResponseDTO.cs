@@ -67,3 +67,11 @@ public class StoreOrderLineItemDTO
     public string? SKU { get; set; }
     public decimal LineTotal { get; set; }
 }
+
+public class PaymentStatusCheckDTO
+{
+    public int OrderId { get; set; }
+    public string PaymentStatus { get; set; } = default!;
+    public string OrderStatus { get; set; } = default!;
+    public bool IsPaid { get; set; }
+}

@@ -71,4 +71,13 @@ public class StoreOrderController(IStoreOrderService storeOrderService) : Contro
         if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : BadRequest(result);
         return Ok(result);
     }
+
+    /// <summary>GET /api/store/orders/{orderId}/payment-status — Poll current payment status. Use after Stripe redirect to confirm payment before showing success UI.</summary>
+    [HttpGet("{orderId:int}/payment-status")]
+    public async Task<IActionResult> CheckPaymentStatus(int orderId, CancellationToken ct)
+    {
+        var result = await _storeOrderService.CheckPaymentStatusAsync(orderId, ct);
+        if (!result.IsSuccess) return result.Error == "Forbidden" ? Forbid() : NotFound(result);
+        return Ok(result);
+    }
 }

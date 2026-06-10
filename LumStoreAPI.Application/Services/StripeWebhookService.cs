@@ -53,7 +53,7 @@ internal class StripeWebhookService : IStripeWebhookService
         }
         catch (StripeException)
         {
-            throw;
+            return false;
         }
     }
 
@@ -68,6 +68,12 @@ internal class StripeWebhookService : IStripeWebhookService
             case EventTypes.CheckoutSessionCompleted:
                 if (stripeEvent.Data.Object is Session completedSession)
                     await HandlePaymentSuccessAsync(completedSession);
+                break;
+
+            // Async payment methods (ACH, SEPA, bank transfer, etc.) fire this instead of completed
+            case EventTypes.CheckoutSessionAsyncPaymentSucceeded:
+                if (stripeEvent.Data.Object is Session asyncSucceededSession)
+                    await HandlePaymentSuccessAsync(asyncSucceededSession);
                 break;
 
             case EventTypes.CheckoutSessionExpired:
@@ -108,13 +114,25 @@ internal class StripeWebhookService : IStripeWebhookService
         if (order.PaymentStatus == PaymentStatus.Paid) return;
 
         // Resolve payment method label from PaymentIntent (best-effort)
-        var piService = new PaymentIntentService(_stripeClient);
-        var intent = await piService.GetAsync(session.PaymentIntentId);
-        var paymentMethod = string.Join(',', intent.PaymentMethodTypes ?? ["stripe"]);
+        string paymentMethod = "stripe";
+        if (!string.IsNullOrEmpty(session.PaymentIntentId))
+        {
+            try
+            {
+                var piService = new PaymentIntentService(_stripeClient);
+                var intent = await piService.GetAsync(session.PaymentIntentId);
+                paymentMethod = string.Join(',', intent.PaymentMethodTypes ?? ["stripe"]);
+            }
+            catch (StripeException ex)
+            {
+                await _eventLogService.LogWarning("STRIPE_WEBHOOK", "PAYMENT_INTENT_FETCH_FAILED",
+                    $"Could not fetch PaymentIntent {session.PaymentIntentId}: {ex.Message}");
+            }
+        }
 
         long amountRaw = session.AmountTotal ?? 0;
         string currency = session.Currency?.ToUpper() ?? "USD";
-        string note = $"Paid via Stripe (payment: {session.PaymentIntentId}) ({paymentMethod}): {amountRaw / 100m:F2} {currency}";
+        string note = $"Paid via Stripe (payment: {session.PaymentIntentId ?? "N/A"}) ({paymentMethod}): {amountRaw / 100m:F2} {currency}";
 
         await _orderService.UpdateOrderStatusAsync(orderId, new OrderUpdateStatusDTO
         {
