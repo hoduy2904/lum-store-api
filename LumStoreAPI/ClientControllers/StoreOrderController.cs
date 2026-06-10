@@ -54,6 +54,15 @@ public class StoreOrderController(IStoreOrderService storeOrderService) : Contro
         return Ok(result);
     }
 
+    /// <summary>PATCH /api/store/orders/{orderId}/return — Request a return for a delivered + paid order.</summary>
+    [HttpPatch("{orderId:int}/return")]
+    public async Task<IActionResult> RequestReturn(int orderId, [FromBody] StoreRequestReturnRequest request, CancellationToken ct)
+    {
+        var result = await _storeOrderService.RequestReturnAsync(orderId, request, ct);
+        if (!result.IsSuccess) return result.Error is "Forbidden" ? Forbid() : BadRequest(result);
+        return Ok(result);
+    }
+
     /// <summary>GET /api/store/orders/{orderId}/returns — List returns for own order.</summary>
     [HttpGet("{orderId:int}/returns")]
     public async Task<IActionResult> GetOrderReturns(int orderId, CancellationToken ct)

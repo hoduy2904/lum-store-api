@@ -873,6 +873,57 @@ internal class StoreOrderService : IStoreOrderService
         return APIResponse<OrderReturnGetDTO>.Success(result, ["Return request submitted successfully"]);
     }
 
+    public async Task<APIResponse<StoreOrderSummaryDTO>> RequestReturnAsync(
+        int orderId, StoreRequestReturnRequest request, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
+
+        var order = await _ctx.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.ItemID == orderId, ct);
+
+        if (order is null)
+            return APIResponse<StoreOrderSummaryDTO>.Failure("Order not found");
+
+        if (order.CustomerId != profileDto.ProfileId)
+            return APIResponse<StoreOrderSummaryDTO>.Failure("Forbidden");
+
+        if (order.Status != OrderStatus.Delivered)
+            return APIResponse<StoreOrderSummaryDTO>.Failure("Returns can only be requested for delivered orders");
+
+        if (order.PaymentStatus != Core.Models.Enums.PaymentStatus.Paid)
+            return APIResponse<StoreOrderSummaryDTO>.Failure("Returns can only be requested for paid orders");
+
+        await _orderService.CreateReturnAsync(orderId, new OrderReturnCreateDTO
+        {
+            Reason = request.Reason ?? "Return requested by customer",
+            Items = []
+        });
+
+        return APIResponse<StoreOrderSummaryDTO>.Success(new StoreOrderSummaryDTO
+        {
+            OrderId = order.ItemID,
+            OrderCode = order.OrderCode,
+            Status = OrderStatus.ReturnRequested.ToString().ToLower(),
+            PaymentStatus = order.PaymentStatus.ToString().ToLower(),
+            Total = order.Total,
+            ItemCount = order.OrderItems.Sum(i => i.Quantity),
+            CreatedAt = order.CreatedAt,
+            TrackingNumber = order.TrackingNumber,
+            TrackingUrl = order.TrackingUrl,
+            ShippingCarrier = order.ShippingCarrier,
+            PreviewItems = order.OrderItems.Take(3).Select(i => new OrderPreviewItemDTO
+            {
+                ProductName = i.ProductName,
+                Image = i.ImageUrl,
+                VariantName = i.VariantName,
+                Price = i.UnitPrice,
+                Quantity = i.Quantity
+            })
+        }, ["Return request submitted successfully"]);
+    }
+
     // ── Payment ───────────────────────────────────────────────────────────────
 
     public async Task<APIResponse<PaymentStatusCheckDTO>> CheckPaymentStatusAsync(int orderId, CancellationToken ct = default)
