@@ -78,6 +78,15 @@ namespace LumStoreAPI.Infrastructure
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(BaseClassItem).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasKey(nameof(BaseClassItem.ItemID));
+                }
+            }
             base.OnModelCreating(modelBuilder);
         }
 

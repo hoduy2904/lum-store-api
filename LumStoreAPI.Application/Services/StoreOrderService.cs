@@ -813,6 +813,27 @@ internal class StoreOrderService : IStoreOrderService
             Comment = request.Reason ?? "Cancelled by customer"
         });
 
+        string refundMessage = "Order cancelled successfully";
+        if (order.PaymentStatus == PaymentStatus.Paid && !string.IsNullOrEmpty(order.PaymentIntentId))
+        {
+            var stripeReturn = await _paymentService.CreateRefundAsync(new(order.OrderCode, order.PaymentIntentId, "requested_by_customer"));
+            if(stripeReturn is null)
+            {
+                refundMessage = "Cancelled success, but need contact us to refund";
+            }
+            await _orderService.CreateReturnAsync(order.ItemID, new OrderReturnCreateDTO
+            {
+                Items = order.OrderItems.Select(x => new ReturnItemDTO
+                {
+                    OrderItemId = x.ItemID,
+                    Quantity = x.Quantity,
+                    Reason = "Cancelled order",
+                }).ToList(),
+                Reason = "Cancelled order",
+                StripeRefundId = stripeReturn?.Id
+            });
+        }
+
         return APIResponse<StoreOrderSummaryDTO>.Success(new StoreOrderSummaryDTO
         {
             OrderId = order.ItemID,
@@ -830,7 +851,7 @@ internal class StoreOrderService : IStoreOrderService
                 Price = i.UnitPrice,
                 Quantity = i.Quantity
             })
-        }, ["Order cancelled successfully"]);
+        }, [refundMessage]);
     }
 
     // ── Returns ───────────────────────────────────────────────────────────────

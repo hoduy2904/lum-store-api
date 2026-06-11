@@ -12,6 +12,7 @@ public class OrderReturn : BaseClassItem
     public decimal RefundAmount { get; set; }
     public string? AdminNote { get; set; }
     public int? ReviewedByUserId { get; set; }
+    public string? StripeRefundId { get; set; }
     public DateTimeOffset? ReviewedAt { get; set; }
 
     public virtual Order Order { get; set; } = default!;

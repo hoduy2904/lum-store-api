@@ -1,6 +1,5 @@
 using LumStoreAPI.Core.Entities.Base;
 using LumStoreAPI.Core.Entities.Customers;
-using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Models.Enums;
 
 namespace LumStoreAPI.Core.Entities.Orders;
@@ -37,6 +36,7 @@ public class Order : BaseClassItem
 
     // ── Shiprelay ─────────────────────────────────────────────────────────
     public string? ShiprelayShipmentId { get; set; }
+    public string? PaymentIntentId { get; set; }
     public string? TrackingNumber { get; set; }
     public string? TrackingUrl { get; set; }
     public string? ShippingCarrier { get; set; }

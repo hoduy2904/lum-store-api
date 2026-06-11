@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     [DbContext(typeof(LumStoreContext))]
-    [Migration("20260512172049_AddShiprelayResellerId")]
-    partial class AddShiprelayResellerId
+    [Migration("20260611060121_ReinitDatabase")]
+    partial class ReinitDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,18 +25,291 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.HasSequence("BaseClassItemSequence");
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Base.BaseClassItem", b =>
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Contact.ContactMessage", b =>
                 {
                     b.Property<int>("ItemID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValueSql("NEXT VALUE FOR [BaseClassItemSequence]");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseSequence(b.Property<int>("ItemID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
 
                     b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsRead");
+
+                    b.ToTable("ContactMessages");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerAddress", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CustomerAddresses");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerNote", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AuthorName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("CustomerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("CustomerProfileId");
+
+                    b.ToTable("CustomerNotes");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<int>("AvailablePoints")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("Birthday")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("TierLevel")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalOrders")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalPoints")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalSpent")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("TierLevel");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("CustomerProfiles");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerTier", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("BadgeColor")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxPoints")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinPoints")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PointsPerDollar")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TierLevel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TierName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("TierLevel")
+                        .IsUnique();
+
+                    b.ToTable("CustomerTiers");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.DiscountRule", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTimeOffset?>("EndDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("MaxQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RuleName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset?>("StartDate")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -44,9 +317,47 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.HasKey("ItemID");
 
-                    b.ToTable("BaseClassItem");
+                    b.HasIndex("IsActive");
 
-                    b.UseTpcMappingStrategy();
+                    b.ToTable("DiscountRules");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.LoyaltyPoint", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("CustomerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("CustomerProfileId");
+
+                    b.ToTable("LoyaltyPoints");
                 });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.UserCart", b =>
@@ -241,6 +552,873 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.UseTptMappingStrategy();
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.DiscountRuleMapping", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DiscountRuleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProductId", "DiscountRuleId");
+
+                    b.HasIndex("DiscountRuleId");
+
+                    b.ToTable("DiscountRuleMappings");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductCombo", b =>
+                {
+                    b.Property<int>("ProductID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VariantID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProductID", "VariantID");
+
+                    b.HasIndex("VariantID");
+
+                    b.ToTable("ProductCombos");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<int?>("ColorId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Images")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SKU")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("ShiprelayId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("ShiprelayOnceReceived")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UPC")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("VariantName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("ColorId");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("ProductID");
+
+                    b.HasIndex("SKU")
+                        .IsUnique();
+
+                    b.HasIndex("ShiprelayId");
+
+                    b.ToTable("ProductVariants");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.IntegrationConfig", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("AdditionalConfig")
+                        .HasMaxLength(-1)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ApiKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ApiSecret")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("BaseUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("IntegrationType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastSyncAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ResellerId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("WebhookSecret")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("IntegrationType");
+
+                    b.ToTable("IntegrationConfigs");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.ShiprelayDataSync", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("EntryActionStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("RunnedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("ShiprelayId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("VariantID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ItemID");
+
+                    b.ToTable("ShiprelayDataSyncs");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.ShiprelayReconciliationLog", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OrderCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RawResponse")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.ToTable("ShiprelayReconciliationLogs");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.SyncLog", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ErrorDetail")
+                        .HasMaxLength(-1)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("IntegrationType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecordsFailed")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecordsSynced")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SyncMode")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("IntegrationType");
+
+                    b.HasIndex("StartedAt");
+
+                    b.ToTable("SyncLogs");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.Order", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CustomerEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("CustomerNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("CustomerPhone")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset?>("DeliveredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("EstimatedDeliveryMax")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("EstimatedDeliveryMin")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("NeedsShiprelayReconciliation")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OrderCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PaymentIntentId")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("ShippedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ShippingAddress")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ShippingCarrier")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ShippingCity")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ShippingCountry")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("ShippingDetails")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("ShippingFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ShippingService")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ShippingServiceDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ShippingServiceName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ShippingState")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ShippingZip")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ShiprelayShipmentId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("SubTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Tax")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TrackingNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TrackingUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("OrderCode")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderHistory", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("ChangedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("ChangedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("FromStatus")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsSystemAction")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderHistories");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderItem", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SKU")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("VariantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VariantName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderNote", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AuthorName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderNotes");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderReturn", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("AdminNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal>("RefundAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("ReviewedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StripeRefundId")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ReviewedByUserId");
+
+                    b.ToTable("OrderReturns");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderReturnItem", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrderReturnId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("OrderReturnId");
+
+                    b.ToTable("OrderReturnItems");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.ColorCategory", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(70)
+                        .HasColumnType("nvarchar(70)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("ItemOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("CategoryName")
+                        .IsUnique();
+
+                    b.ToTable("ColorCategories");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.ColorItem", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ColorName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ColorValue")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("ItemOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ColorName")
+                        .IsUnique();
+
+                    b.HasIndex("ColorValue")
+                        .IsUnique();
+
+                    b.ToTable("ColorItems");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.EmailQueue", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("Attachments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("EmailBcc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmailBody")
+                        .IsRequired()
+                        .HasMaxLength(-1)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmailCc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmailFrom")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EmailStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmailSubject")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("EmailTo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset?>("NextRetryTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("EmailSubject");
+
+                    b.HasIndex("EmailTo");
+
+                    b.ToTable("EmailQueues");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.EventLog", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("EventCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EventDescription")
+                        .IsRequired()
+                        .HasMaxLength(-1)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EventLogType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EventName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EventSource")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EventUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IPAddress")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("ServerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("UserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("EventCode");
+
+                    b.HasIndex("EventName");
+
+                    b.HasIndex("EventSource");
+
+                    b.HasIndex("IPAddress");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("EventLogs");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.MediaLibrary", b =>
                 {
                     b.Property<Guid>("FileID")
@@ -336,6 +1514,102 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("SettingKeyValues");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.User", b =>
+                {
+                    b.Property<int>("ItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
+
+                    b.Property<string>("Avatar")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(254)");
+
+                    b.Property<string>("FacebookId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("GoogleId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("MiddleName")
+                        .HasMaxLength(70)
+                        .HasColumnType("nvarchar(70)");
+
+                    b.Property<string>("Provider")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("TimeActionCode")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("TimeLocked")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("UserLevel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("UserPassword")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("VerifyCode")
+                        .HasMaxLength(7)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(7)");
+
+                    b.HasKey("ItemID");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.UserToken", b =>
                 {
                     b.Property<Guid>("TokenID")
@@ -358,878 +1632,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("UserTokens");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Contact.ContactMessage", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("IsRead");
-
-                    b.ToTable("ContactMessages");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerAddress", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(4)
-                        .HasColumnType("nvarchar(4)");
-
-                    b.Property<string>("Details")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ZipCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("CustomerAddresses");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerNote", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<int>("AuthorId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AuthorName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<int>("CustomerProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("CustomerProfileId");
-
-                    b.ToTable("CustomerNotes");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<int>("AvailablePoints")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset?>("Birthday")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<int>("TierLevel")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalOrders")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalPoints")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("TotalSpent")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasIndex("TierLevel");
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
-
-                    b.ToTable("CustomerProfiles");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerTier", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("BadgeColor")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal>("DiscountPercent")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MaxPoints")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MinPoints")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PointsPerDollar")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TierLevel")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TierName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasIndex("TierLevel")
-                        .IsUnique()
-                        .HasFilter("[TierLevel] IS NOT NULL");
-
-                    b.ToTable("CustomerTiers");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.DiscountRule", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<decimal>("DiscountAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset?>("EndDate")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("MaxQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MinQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RuleName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTimeOffset?>("StartDate")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasIndex("IsActive");
-
-                    b.ToTable("DiscountRules");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.LoyaltyPoint", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<int>("CustomerProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<DateTimeOffset?>("ExpiresAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int?>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("int");
-
-                    b.HasIndex("CustomerProfileId");
-
-                    b.ToTable("LoyaltyPoints");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("Color")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Images")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProductID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SKU")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<int>("ShiprelayId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Stock")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UPC")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("VariantName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasIndex("ProductID");
-
-                    b.HasIndex("SKU")
-                        .IsUnique()
-                        .HasFilter("[SKU] IS NOT NULL");
-
-                    b.HasIndex("ShiprelayId");
-
-                    b.ToTable("ProductVariants");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.IntegrationConfig", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("AdditionalConfig")
-                        .HasMaxLength(-1)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ApiKey")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ApiSecret")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("BaseUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("IntegrationType")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LastSyncAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ResellerId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WebhookSecret")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasIndex("IntegrationType");
-
-                    b.ToTable("IntegrationConfigs");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.ShiprelayDataSync", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<int>("EntryActionStatus")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Message")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset>("RunnedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("VariantID")
-                        .HasColumnType("int");
-
-                    b.ToTable("ShiprelayDataSyncs");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Integrations.SyncLog", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ErrorDetail")
-                        .HasMaxLength(-1)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("IntegrationType")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RecordsFailed")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RecordsSynced")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Summary")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("SyncMode")
-                        .HasColumnType("int");
-
-                    b.HasIndex("IntegrationType");
-
-                    b.HasIndex("StartedAt");
-
-                    b.ToTable("SyncLogs");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.Order", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("CustomerEmail")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("CustomerNote")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("CustomerPhone")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<DateTimeOffset?>("DeliveredAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<decimal>("Discount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("OrderCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("PaymentStatus")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset?>("ShippedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ShippingAddress")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ShippingCarrier")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ShippingCity")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ShippingCountry")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("ShippingDetails")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("ShippingFee")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ShippingState")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ShippingZip")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("ShiprelayShipmentId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("SubTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Tax")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Total")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("TrackingNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("TrackingUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("OrderCode")
-                        .IsUnique()
-                        .HasFilter("[OrderCode] IS NOT NULL");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("Orders");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderHistory", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("ChangedByName")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<int?>("ChangedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("FromStatus")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsSystemAction")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ToStatus")
-                        .HasColumnType("int");
-
-                    b.HasIndex("ChangedByUserId");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("OrderHistories");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderItem", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<decimal>("Discount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SKU")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<decimal>("Total")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("VariantId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("VariantName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("OrderItems");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderNote", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<int>("AuthorId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AuthorName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Note")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("OrderNotes");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderReturn", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("AdminNote")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<decimal>("RefundAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset?>("ReviewedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int?>("ReviewedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("ReviewedByUserId");
-
-                    b.ToTable("OrderReturns");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.OrderReturnItem", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<int>("OrderItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrderReturnId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasIndex("OrderItemId");
-
-                    b.HasIndex("OrderReturnId");
-
-                    b.ToTable("OrderReturnItems");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.EmailQueue", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("Attachments")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EmailBcc")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EmailBody")
-                        .IsRequired()
-                        .HasMaxLength(-1)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EmailCc")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EmailFrom")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("EmailStatus")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EmailSubject")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("EmailTo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTimeOffset?>("NextRetryTime")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasIndex("EmailSubject");
-
-                    b.HasIndex("EmailTo");
-
-                    b.ToTable("EmailQueues");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.EventLog", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("EventCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("EventDescription")
-                        .IsRequired()
-                        .HasMaxLength(-1)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("EventLogType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EventName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("EventSource")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("EventUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("IPAddress")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("ServerName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int?>("UserID")
-                        .HasColumnType("int");
-
-                    b.HasIndex("EventCode");
-
-                    b.HasIndex("EventName");
-
-                    b.HasIndex("EventSource");
-
-                    b.HasIndex("IPAddress");
-
-                    b.HasIndex("UserID");
-
-                    b.ToTable("EventLogs");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.User", b =>
-                {
-                    b.HasBaseType("LumStoreAPI.Core.Entities.Base.BaseClassItem");
-
-                    b.Property<string>("Avatar")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<bool>("IsAdmin")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsLocked")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("MiddleName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTimeOffset?>("TimeActionCode")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<DateTimeOffset>("TimeLocked")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("UserLevel")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("UserPassword")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("VerifyCode")
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)");
-
-                    b.HasIndex("Email")
-                        .IsUnique()
-                        .HasFilter("[Email] IS NOT NULL");
-
-                    b.HasIndex("UserName")
-                        .IsUnique()
-                        .HasFilter("[UserName] IS NOT NULL");
-
-                    b.ToTable("Users");
-                });
-
             modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.AccordionItem", b =>
                 {
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
@@ -1240,8 +1642,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.ToTable("AccordionItems");
                 });
@@ -1251,8 +1653,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasMaxLength(270)
+                        .HasColumnType("nvarchar(270)");
 
                     b.Property<string>("Image")
                         .IsRequired()
@@ -1260,16 +1662,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .HasColumnType("nvarchar(250)");
 
                     b.Property<string>("Pretitle")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PrimaryButton")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(170)
+                        .HasColumnType("nvarchar(170)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -1284,17 +1686,17 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.HasBaseType("LumStoreAPI.Core.Entities.DocumentEngine.DocumentPage");
 
                     b.Property<string>("IconName")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
 
                     b.Property<string>("LinkListTitle")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("LinkUrl")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LinkUrl")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
                     b.ToTable("LinkLists");
                 });
@@ -1373,6 +1775,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Property<bool>("IsBestSeller")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsCombo")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsFoldable")
                         .HasColumnType("bit");
 
@@ -1387,6 +1792,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
                     b.Property<double>("Length")
                         .HasColumnType("float");
+
+                    b.Property<int>("ParentQty")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
@@ -1454,6 +1862,58 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.ToTable("ProductCategories");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerAddress", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerNote", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "CustomerProfile")
+                        .WithMany("CustomerNotes")
+                        .HasForeignKey("CustomerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("CustomerProfile");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.LoyaltyPoint", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "CustomerProfile")
+                        .WithMany("LoyaltyPoints")
+                        .HasForeignKey("CustomerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CustomerProfile");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.UserCart", b =>
                 {
                     b.HasOne("LumStoreAPI.Core.Entities.DocumentEngine.DocumentNode", "Node")
@@ -1515,88 +1975,58 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("Node");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.MediaLibrary", b =>
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.DiscountRuleMapping", b =>
                 {
-                    b.HasOne("LumStoreAPI.Core.Entities.Systems.MediaLibraryCategory", "MediaLibraryCategory")
-                        .WithMany("MediaLibraries")
-                        .HasForeignKey("CategoryID")
+                    b.HasOne("LumStoreAPI.Core.Entities.Customers.DiscountRule", "DiscountRule")
+                        .WithMany("DiscountRuleMappings")
+                        .HasForeignKey("DiscountRuleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("MediaLibraryCategory");
+                    b.Navigation("DiscountRule");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.UserToken", b =>
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductCombo", b =>
                 {
-                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
-                        .WithMany("UserTokens")
-                        .HasForeignKey("UserID")
+                    b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
+                        .WithMany("ProductCombos")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", "ProductVariant")
+                        .WithMany("ProductCombos")
+                        .HasForeignKey("VariantID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
-                });
+                    b.Navigation("Product");
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerAddress", b =>
-                {
-                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerNote", b =>
-                {
-                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "CustomerProfile")
-                        .WithMany("CustomerNotes")
-                        .HasForeignKey("CustomerProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Author");
-
-                    b.Navigation("CustomerProfile");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
-                {
-                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.LoyaltyPoint", b =>
-                {
-                    b.HasOne("LumStoreAPI.Core.Entities.Customers.CustomerProfile", "CustomerProfile")
-                        .WithMany("LoyaltyPoints")
-                        .HasForeignKey("CustomerProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CustomerProfile");
+                    b.Navigation("ProductVariant");
                 });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
                 {
+                    b.HasOne("LumStoreAPI.Core.Entities.Systems.ColorItem", "Color")
+                        .WithMany("ProductVariants")
+                        .HasForeignKey("ColorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", "CasePack")
+                        .WithMany("CasePacks")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LumStoreAPI.Core.Entities.Pages.Product", "Product")
                         .WithMany("ProductVariants")
                         .HasForeignKey("ProductID")
                         .HasPrincipalKey("NodeID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CasePack");
+
+                    b.Navigation("Color");
 
                     b.Navigation("Product");
                 });
@@ -1696,11 +2126,44 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("OrderReturn");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.ColorItem", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Systems.ColorCategory", "ColorCategory")
+                        .WithMany("Colors")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ColorCategory");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.EventLog", b =>
                 {
                     b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
                         .WithMany("EventLogs")
                         .HasForeignKey("UserID");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.MediaLibrary", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Systems.MediaLibraryCategory", "MediaLibraryCategory")
+                        .WithMany("MediaLibraries")
+                        .HasForeignKey("CategoryID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MediaLibraryCategory");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.UserToken", b =>
+                {
+                    b.HasOne("LumStoreAPI.Core.Entities.Systems.User", "User")
+                        .WithMany("UserTokens")
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -1777,6 +2240,18 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
+                {
+                    b.Navigation("CustomerNotes");
+
+                    b.Navigation("LoyaltyPoints");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.DiscountRule", b =>
+                {
+                    b.Navigation("DiscountRuleMappings");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentEngine.DocumentNode", b =>
                 {
                     b.Navigation("AncestorNodes");
@@ -1788,16 +2263,11 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("Properties");
                 });
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.MediaLibraryCategory", b =>
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.DocumentTypes.ProductVariant", b =>
                 {
-                    b.Navigation("MediaLibraries");
-                });
+                    b.Navigation("CasePacks");
 
-            modelBuilder.Entity("LumStoreAPI.Core.Entities.Customers.CustomerProfile", b =>
-                {
-                    b.Navigation("CustomerNotes");
-
-                    b.Navigation("LoyaltyPoints");
+                    b.Navigation("ProductCombos");
                 });
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Orders.Order", b =>
@@ -1816,6 +2286,21 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     b.Navigation("ReturnItems");
                 });
 
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.ColorCategory", b =>
+                {
+                    b.Navigation("Colors");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.ColorItem", b =>
+                {
+                    b.Navigation("ProductVariants");
+                });
+
+            modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.MediaLibraryCategory", b =>
+                {
+                    b.Navigation("MediaLibraries");
+                });
+
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Systems.User", b =>
                 {
                     b.Navigation("EventLogs");
@@ -1825,6 +2310,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             modelBuilder.Entity("LumStoreAPI.Core.Entities.Pages.Product", b =>
                 {
+                    b.Navigation("ProductCombos");
+
                     b.Navigation("ProductVariants");
                 });
 #pragma warning restore 612, 618

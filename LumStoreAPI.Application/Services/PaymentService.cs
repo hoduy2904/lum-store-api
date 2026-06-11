@@ -1,7 +1,6 @@
 ﻿using LumStoreAPI.Application.DTOs.PaymentDTO;
 using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Infrastructure;
-using Microsoft.EntityFrameworkCore;
+using LumStoreAPI.Core.Interfaces.Sytems;
 using Stripe;
 using Stripe.Checkout;
 
@@ -10,12 +9,39 @@ namespace LumStoreAPI.Application.Services
     internal class PaymentService : IPaymentService
     {
         private readonly IStripeClient _stripeClient;
-        public PaymentService(IStripeClient stripeClient)
+        private readonly IEventLogService _eventLogService;
+        public PaymentService(IStripeClient stripeClient, IEventLogService eventLogService)
         {
             _stripeClient = stripeClient;
+            _eventLogService = eventLogService;
         }
+
+        public async Task<Refund?> CreateRefundAsync(ReturnRequestDTO request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.PaymentIntentId)) throw new ArgumentNullException(nameof(request.PaymentIntentId), "payment intent cannot null");
+                var service = new RefundService(_stripeClient);
+                return await service.CreateAsync(new()
+                {
+                    PaymentIntent = request.PaymentIntentId,
+                    Reason = request.Reason,
+                    Metadata = new Dictionary<string, string>()
+                    {
+                        ["order_code"] = request.OrderCode
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                await _eventLogService.LogException("Payment", "REFUND", "Refund Failed", ex);
+                return null;
+            }
+        }
+
         public async Task<string> PaymentCheckoutAsync(PaymentRequestDTO request)
         {
+
             var lineItems = request.Order.OrderItems.Select(item => new SessionLineItemOptions
             {
                 PriceData = new SessionLineItemPriceDataOptions
