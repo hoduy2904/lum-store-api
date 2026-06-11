@@ -467,12 +467,15 @@ public class OrderService : IOrderService
             r.StripeRefundId = orderReturnReview.StripeRefundId == null ? r.StripeRefundId : orderReturnReview.StripeRefundId;
         });
 
+        OrderStatus oldOrderStatus = OrderStatus.Pending;
+
         OrderStatus? newOrderStatus = (orderReturnReview.Decision == ReturnStatus.Approved || orderReturnReview.Decision == ReturnStatus.Refunded)
             ? OrderStatus.Returned
             : null;
 
         var orderUpdate = await _orderRepo.UpdateOrderAsync(orderReturn.OrderId, o =>
         {
+            oldOrderStatus = o.Status;
             if (newOrderStatus != null)
                 o.Status = newOrderStatus.Value;
 
@@ -484,6 +487,7 @@ public class OrderService : IOrderService
 
         await _orderRepo.InsertOrderHistoryAsync(new OrderHistory
         {
+            FromStatus = oldOrderStatus,
             OrderId = orderReturn.OrderId,
             ToStatus = orderUpdate.Status,
             Comment = $"Return {orderReturnReview.Decision} by Stripe. {orderReturnReview.AdminNote}",
