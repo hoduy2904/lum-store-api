@@ -46,13 +46,13 @@ internal class CartService : ICartService
     }
 
     private Task<bool> IsValidProductNodeAsync(int nodeId, CancellationToken ct)
-        => _ctx.DocumentNodes.AnyAsync(n => n.NodeID == nodeId && n.ClassName == "Pages.Product", ct);
+        => _ctx.Products.AnyAsync(n => n.NodeID == nodeId && n.ProductVariants.Any(v => v.ShiprelayId > 0), ct);
 
     private async Task<int?> GetStockAsync(int? variantId, CancellationToken ct)
     {
         if (variantId is null) return null;
         return await _ctx.ProductVariants
-            .Where(v => v.ItemID == variantId)
+            .Where(v => v.ShiprelayId > 0 && v.ItemID == variantId)
             .Select(v => (int?)v.Stock)
             .FirstOrDefaultAsync(ct);
     }
@@ -60,7 +60,7 @@ internal class CartService : ICartService
     private async Task<int?> GetComboStockAsync(int nodeId, CancellationToken ct)
     {
         var isCombo = await _ctx.Products
-            .Where(p => p.NodeID == nodeId)
+            .Where(p => p.NodeID == nodeId && p.ProductVariants.Any(v => v.ShiprelayId > 0))
             .Select(p => (bool?)p.IsCombo)
             .FirstOrDefaultAsync(ct);
 
@@ -286,8 +286,8 @@ internal class CartService : ICartService
         if (request.Items.Length > 0)
         {
             var incomingNodeIds = request.Items.Select(x => x.NodeID).ToArray();
-            var validNodeIds = await _ctx.DocumentNodes
-                .Where(n => incomingNodeIds.Contains(n.NodeID) && n.ClassName == "Pages.Product")
+            var validNodeIds = await _ctx.Products
+                .Where(n => incomingNodeIds.Contains(n.NodeID) && n.ProductVariants.Any(v => v.ShiprelayId > 0))
                 .Select(n => n.NodeID)
                 .ToHashSetAsync(ct);
 
