@@ -28,9 +28,10 @@ namespace LumStoreAPI.Application.Services
                     Reason = request.Reason,
                     Metadata = new Dictionary<string, string>()
                     {
-                        ["order_code"] = request.OrderCode
+                        ["order_code"] = request.OrderCode,
+                        ["refund_id"] = request.RefundId.ToString()
                     }
-                });
+                }, new() { IdempotencyKey = "refund_" + request.OrderCode + "_" + request.RefundId });
             }
             catch (Exception ex)
             {

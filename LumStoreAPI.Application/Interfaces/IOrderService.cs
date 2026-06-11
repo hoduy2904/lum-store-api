@@ -1,7 +1,6 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
-using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Models.Enums;
 
 namespace LumStoreAPI.Application.Interfaces;
@@ -42,4 +41,5 @@ public interface IOrderService
     Task<OrderReturnGetDTO> CreateReturnAsync(int orderId, OrderReturnCreateDTO dto);
     Task<OrderReturnGetDTO> ReviewReturnAsync(int returnId, OrderReturnReviewDTO dto, int reviewerId, string reviewerName);
     Task<OrderReturnGetDTO> UpdateReturnOrderAsync(string stripeRefundId, OrderReturnReviewDTO orderReturnReview);
+    Task<OrderReturnGetDTO> UpdateReturnOrderAsync(int returnId, OrderReturnReviewDTO orderReturnReview);
 }

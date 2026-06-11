@@ -72,6 +72,7 @@ IDiscountRuleService discountRuleService)
         var products = await _pageRetrieveContext.GetPagedPagesAsync<Product>(query =>
          {
              query.Where(where)
+             .Where(x => x.ProductVariants.Any(v => v.ShiprelayId > 0))
              .Paged(page, pageSize)
              .Select(x => new Product
              {
@@ -147,6 +148,7 @@ IDiscountRuleService discountRuleService)
         var products = await _pageRetrieveContext.GetPagesAsync<Product>(query =>
          {
              query.Where(where)
+             .Where(x => x.ProductVariants.Any(v => v.ShiprelayId > 0))
              .IncludeQueryable(x => x.Take(topN))
              .Select(x => new Product
              {
@@ -215,7 +217,7 @@ IDiscountRuleService discountRuleService)
 
         var products = (await _pageRetrieveContext.GetPagesAsync<Product>(query =>
         {
-            query.Where(x => nodeIds.Contains(x.NodeID));
+            query.Where(x => x.ProductVariants.Any(v => v.ShiprelayId > 0) && nodeIds.Contains(x.NodeID));
         })).ToList();
 
         if (products.Count == 0) return Enumerable.Empty<DocumentClientGetDTO>();
@@ -257,7 +259,8 @@ IDiscountRuleService discountRuleService)
                 .Published(Core.Models.Enums.TreeNodePublished.Published)
                 .Where(x =>
                     (!request.MinPrice.HasValue || x.Price >= request.MinPrice.Value) &&
-                    (!request.MaxPrice.HasValue || x.Price <= request.MaxPrice.Value))
+                    (!request.MaxPrice.HasValue || x.Price <= request.MaxPrice.Value) &&
+                    x.ProductVariants.Any(v => v.ShiprelayId > 0))
                 .Paged(request.Page, request.PageSize)
                 .IncludeQueryable(q => request.SortBy switch
                 {
@@ -329,7 +332,8 @@ IDiscountRuleService discountRuleService)
                 _lumStoreContext.Products.Where(p =>
                     !p.IsDeleted &&
                     (p.PublishedFrom == null || p.PublishedFrom <= now) &&
-                    (p.PublishedTo == null || p.PublishedTo > now)),
+                    (p.PublishedTo == null || p.PublishedTo > now) &&
+                    p.ProductVariants.Any(v => v.ShiprelayId > 0)),
                 ln => ln.Descendant,
                 p => p.NodeID,
                 (ln, p) => new { ln.Ancestor })
@@ -356,6 +360,7 @@ IDiscountRuleService discountRuleService)
                 !p.IsDeleted &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now) &&
+                p.ProductVariants.Any(v => v.ShiprelayId > 0) &&
                 (p.ProductName.Contains(q) ||
                  (p.ShortDescription != null && p.ShortDescription.Contains(q)) ||
                  skuMatchIds.Contains(p.NodeID)))
@@ -431,7 +436,7 @@ IDiscountRuleService discountRuleService)
         // Load only the minimal variant data needed for sorting + display
         var matchingVariants = await _lumStoreContext.ProductVariants
             .AsNoTracking()
-            .Where(v => v.VariantName != null && v.ColorId == colorId)
+            .Where(v => v.ShiprelayId > 0 && v.VariantName != null && v.ColorId == colorId)
             .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.SKU, ColorValue = v.Color != null ? v.Color.ColorValue : null })
             .ToListAsync();
 
@@ -558,7 +563,7 @@ IDiscountRuleService discountRuleService)
         var now = DateTimeOffset.UtcNow;
 
         var variantProductIds = await _lumStoreContext.ProductVariants
-            .Where(v => v.VariantName != null && v.ColorId == colorId)
+            .Where(v => v.ShiprelayId > 0 && v.VariantName != null && v.ColorId == colorId)
             .Select(v => v.ProductID)
             .Distinct()
             .ToListAsync();
@@ -619,7 +624,7 @@ IDiscountRuleService discountRuleService)
         var now = DateTimeOffset.UtcNow;
 
         var current = await _lumStoreContext.Products
-            .Where(p => p.Node.RelativeUrl == relativeUrl && !p.IsDeleted)
+            .Where(p => p.ProductVariants.Any(v => v.ShiprelayId > 0) && p.Node.RelativeUrl == relativeUrl && !p.IsDeleted)
             .Select(p => new { p.NodeID, ParentNodeID = p.Node.ParentNodeID })
             .FirstOrDefaultAsync();
 
@@ -630,6 +635,7 @@ IDiscountRuleService discountRuleService)
             .Where(p =>
                 p.Node.ParentNodeID == current.ParentNodeID.Value &&
                 p.NodeID != current.NodeID &&
+                p.ProductVariants.Any(v => v.ShiprelayId > 0) &&
                 !p.IsDeleted &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now))
@@ -697,6 +703,7 @@ IDiscountRuleService discountRuleService)
         return await _lumStoreContext.Products
             .Where(p =>
                 !p.IsDeleted &&
+                p.ProductVariants.Any(v => v.ShiprelayId > 0) &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now) &&
                 (p.IsBestSeller || p.CreatedAt >= sevenDaysAgo))
@@ -731,7 +738,7 @@ IDiscountRuleService discountRuleService)
         .GetProductVariants()
         .Include(x => x.Color)
         .AsNoTrackingWithIdentityResolution()
-        .Where(v => ids.Contains(v.ProductID)).ToListAsync();
+        .Where(v => v.ShiprelayId > 0 && ids.Contains(v.ProductID)).ToListAsync();
 
         if (variants.Count == 0) return [];
 
@@ -770,7 +777,7 @@ IDiscountRuleService discountRuleService)
         if (ids.Count == 0)
             return [];
 
-        var variants = (await _productVariantRepository.GetProductVariantsAsync(v => ids.Contains(v.ProductID))).ToList();
+        var variants = (await _productVariantRepository.GetProductVariantsAsync(v => v.ShiprelayId > 0 && ids.Contains(v.ProductID))).ToList();
         if (variants.Count == 0)
             return [];
 

@@ -419,7 +419,8 @@ public class OrderService : IOrderService
                 OrderItemId = i.OrderItemId,
                 Quantity = i.Quantity,
                 Reason = i.Reason
-            }).ToList()
+            }).ToList(),
+            StripeRefundId = dto.StripeRefundId,
         };
 
         var created = await _orderRepo.InsertOrderReturnAsync(ret);
@@ -443,36 +444,59 @@ public class OrderService : IOrderService
         var returnItem = await _orderRepo.GetOrderReturnAsync(stripeRefundId)
             ?? throw new KeyNotFoundException($"OrderReturn with stripe refund {stripeRefundId} not found");
 
-        var updated = await _orderRepo.UpdateOrderReturnAsync(returnItem.ItemID, r =>
+        return await UpdateReturnOrderAsync(returnItem, orderReturnReview);
+    }
+
+
+    public async Task<OrderReturnGetDTO> UpdateReturnOrderAsync(int returnId, OrderReturnReviewDTO orderReturnReview)
+    {
+        var returnItem = await _orderRepo.GetOrderReturnAsync(returnId)
+             ?? throw new KeyNotFoundException($"OrderReturn with refund Id {returnId} not found");
+
+        return await UpdateReturnOrderAsync(returnItem, orderReturnReview);
+    }
+
+    private async Task<OrderReturnGetDTO> UpdateReturnOrderAsync(OrderReturn orderReturn, OrderReturnReviewDTO orderReturnReview)
+    {
+        var updated = await _orderRepo.UpdateOrderReturnAsync(orderReturn.ItemID, r =>
         {
             r.Status = orderReturnReview.Decision;
             r.AdminNote = orderReturnReview.AdminNote;
             r.RefundAmount = orderReturnReview.RefundAmount;
             r.ReviewedAt = DateTimeOffset.UtcNow;
+            r.StripeRefundId = orderReturnReview.StripeRefundId == null ? r.StripeRefundId : orderReturnReview.StripeRefundId;
         });
 
-        var newOrderStatus = orderReturnReview.Decision == ReturnStatus.Approved || orderReturnReview.Decision == ReturnStatus.Refunded
-            ? OrderStatus.Returned
-            : OrderStatus.Completed;
+        OrderStatus oldOrderStatus = OrderStatus.Pending;
 
-        await _orderRepo.UpdateOrderAsync(returnItem.OrderId, o =>
+        OrderStatus? newOrderStatus = (orderReturnReview.Decision == ReturnStatus.Approved || orderReturnReview.Decision == ReturnStatus.Refunded)
+            ? OrderStatus.Returned
+            : null;
+
+        var orderUpdate = await _orderRepo.UpdateOrderAsync(orderReturn.OrderId, o =>
         {
-            o.Status = newOrderStatus;
+            oldOrderStatus = o.Status;
+            if (newOrderStatus != null)
+                o.Status = newOrderStatus.Value;
+
             if (orderReturnReview.Decision == ReturnStatus.Refunded)
+            {
                 o.PaymentStatus = PaymentStatus.Refunded;
+            }
         });
 
         await _orderRepo.InsertOrderHistoryAsync(new OrderHistory
         {
-            OrderId = returnItem.OrderId,
-            ToStatus = newOrderStatus,
+            FromStatus = oldOrderStatus,
+            OrderId = orderReturn.OrderId,
+            ToStatus = orderUpdate.Status,
             Comment = $"Return {orderReturnReview.Decision} by Stripe. {orderReturnReview.AdminNote}",
             ChangedByName = "Stripe",
-            IsSystemAction = false
+            IsSystemAction = true
         });
 
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED_STRIPE",
-            $"Return #{returnItem.ItemID} reviewed: {orderReturnReview.Decision} by Stripe");
+            $"Return #{orderReturn.ItemID} reviewed: {orderReturnReview.Decision} by Stripe");
 
         return MapReturnToDTO(updated);
     }
@@ -598,4 +622,5 @@ public class OrderService : IOrderService
 
     private static string GenerateOrderCode()
         => $"ORD-{DateTimeOffset.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
+
 }

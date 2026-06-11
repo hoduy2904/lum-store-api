@@ -113,13 +113,13 @@ internal class StoreOrderService : IStoreOrderService
         var nodeIds = cartItems.Select(c => c.NodeId).Distinct().ToArray();
         var products = await _ctx.Products
             .AsNoTracking()
-            .Where(p => nodeIds.Contains(p.NodeID))
+            .Where(p => p.ProductVariants.Any(v => v.ShiprelayId > 0) && nodeIds.Contains(p.NodeID))
             .ToListAsync(ct);
 
         // Load variants
         var variantIds = cartItems.Where(c => c.VariantId.HasValue).Select(c => c.VariantId!.Value).ToArray();
         var variants = variantIds.Length > 0
-            ? await _ctx.ProductVariants.AsNoTracking().Where(v => variantIds.Contains(v.ItemID)).ToListAsync(ct)
+            ? await _ctx.ProductVariants.AsNoTracking().Where(v => v.ShiprelayId > 0 && variantIds.Contains(v.ItemID)).ToListAsync(ct)
             : [];
 
         // Load first image for each product
@@ -633,12 +633,12 @@ internal class StoreOrderService : IStoreOrderService
 
         var nodeIds = cartItems.Select(c => c.NodeId).Distinct().ToArray();
         var products = await _ctx.Products
-            .Where(p => nodeIds.Contains(p.NodeID))
+            .Where(p => p.ProductVariants.Any(v => v.ShiprelayId > 0) && nodeIds.Contains(p.NodeID))
             .ToListAsync(ct);
 
         var variantIds = cartItems.Where(c => c.VariantId.HasValue).Select(c => c.VariantId!.Value).ToArray();
         var variants = variantIds.Length > 0
-            ? await _ctx.ProductVariants.Where(v => variantIds.Contains(v.ItemID)).ToListAsync(ct)
+            ? await _ctx.ProductVariants.Where(v => v.ShiprelayId > 0 && variantIds.Contains(v.ItemID)).ToListAsync(ct)
             : [];
 
         var allImageGuids = products.SelectMany(p => p.Images).Distinct().ToArray();
@@ -816,12 +816,7 @@ internal class StoreOrderService : IStoreOrderService
         string refundMessage = "Order cancelled successfully";
         if (order.PaymentStatus == PaymentStatus.Paid && !string.IsNullOrEmpty(order.PaymentIntentId))
         {
-            var stripeReturn = await _paymentService.CreateRefundAsync(new(order.OrderCode, order.PaymentIntentId, "requested_by_customer"));
-            if(stripeReturn is null)
-            {
-                refundMessage = "Cancelled success, but need contact us to refund";
-            }
-            await _orderService.CreateReturnAsync(order.ItemID, new OrderReturnCreateDTO
+            var localRefund = await _orderService.CreateReturnAsync(order.ItemID, new OrderReturnCreateDTO
             {
                 Items = order.OrderItems.Select(x => new ReturnItemDTO
                 {
@@ -829,9 +824,15 @@ internal class StoreOrderService : IStoreOrderService
                     Quantity = x.Quantity,
                     Reason = "Cancelled order",
                 }).ToList(),
-                Reason = "Cancelled order",
-                StripeRefundId = stripeReturn?.Id
+                Reason = "Cancelled order"
             });
+
+            var stripeReturn = await _paymentService.CreateRefundAsync(new(localRefund.ReturnId, order.OrderCode, order.PaymentIntentId, "requested_by_customer"));
+            if (stripeReturn is null)
+            {
+                refundMessage = "Cancelled success, but need contact us to refund";
+            }
+
         }
 
         return APIResponse<StoreOrderSummaryDTO>.Success(new StoreOrderSummaryDTO
