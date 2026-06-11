@@ -41,4 +41,5 @@ public interface IOrderService
     Task<PagedResponse<OrderReturnGetDTO>> GetAllReturnsAsync(int page, int pageSize, ReturnStatus? status, string? search);
     Task<OrderReturnGetDTO> CreateReturnAsync(int orderId, OrderReturnCreateDTO dto);
     Task<OrderReturnGetDTO> ReviewReturnAsync(int returnId, OrderReturnReviewDTO dto, int reviewerId, string reviewerName);
+    Task<OrderReturnGetDTO> UpdateReturnOrderAsync(string stripeRefundId, OrderReturnReviewDTO orderReturnReview);
 }

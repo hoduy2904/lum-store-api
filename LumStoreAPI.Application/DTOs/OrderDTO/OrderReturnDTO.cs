@@ -8,6 +8,7 @@ public class OrderReturnCreateDTO
     [Required, MaxLength(1000)]
     public string Reason { get; set; } = default!;
     public List<ReturnItemDTO> Items { get; set; } = [];
+    public string? StripeRefundId { get; set; }
 }
 
 public class ReturnItemDTO

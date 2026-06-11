@@ -3,7 +3,6 @@ using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Orders;
-using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure.Extensions;
@@ -129,6 +128,7 @@ public class OrderService : IOrderService
             if (dto.NewStatus == OrderStatus.Shipped) o.ShippedAt = DateTimeOffset.UtcNow;
             if (dto.NewStatus == OrderStatus.Delivered || dto.NewStatus == OrderStatus.Completed)
                 o.DeliveredAt = DateTimeOffset.UtcNow;
+            o.PaymentIntentId = dto.StripePaymentIntentId;
         }, new OrderHistory
         {
             OrderId = orderId,
@@ -436,6 +436,45 @@ public class OrderService : IOrderService
         });
 
         return MapReturnToDTO(created);
+    }
+
+    public async Task<OrderReturnGetDTO> UpdateReturnOrderAsync(string stripeRefundId, OrderReturnReviewDTO orderReturnReview)
+    {
+        var returnItem = await _orderRepo.GetOrderReturnAsync(stripeRefundId)
+            ?? throw new KeyNotFoundException($"OrderReturn with stripe refund {stripeRefundId} not found");
+
+        var updated = await _orderRepo.UpdateOrderReturnAsync(returnItem.ItemID, r =>
+        {
+            r.Status = orderReturnReview.Decision;
+            r.AdminNote = orderReturnReview.AdminNote;
+            r.RefundAmount = orderReturnReview.RefundAmount;
+            r.ReviewedAt = DateTimeOffset.UtcNow;
+        });
+
+        var newOrderStatus = orderReturnReview.Decision == ReturnStatus.Approved || orderReturnReview.Decision == ReturnStatus.Refunded
+            ? OrderStatus.Returned
+            : OrderStatus.Completed;
+
+        await _orderRepo.UpdateOrderAsync(returnItem.OrderId, o =>
+        {
+            o.Status = newOrderStatus;
+            if (orderReturnReview.Decision == ReturnStatus.Refunded)
+                o.PaymentStatus = PaymentStatus.Refunded;
+        });
+
+        await _orderRepo.InsertOrderHistoryAsync(new OrderHistory
+        {
+            OrderId = returnItem.OrderId,
+            ToStatus = newOrderStatus,
+            Comment = $"Return {orderReturnReview.Decision} by Stripe. {orderReturnReview.AdminNote}",
+            ChangedByName = "Stripe",
+            IsSystemAction = false
+        });
+
+        await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED_STRIPE",
+            $"Return #{returnItem.ItemID} reviewed: {orderReturnReview.Decision} by Stripe");
+
+        return MapReturnToDTO(updated);
     }
 
     public async Task<OrderReturnGetDTO> ReviewReturnAsync(int returnId, OrderReturnReviewDTO dto, int reviewerId, string reviewerName)

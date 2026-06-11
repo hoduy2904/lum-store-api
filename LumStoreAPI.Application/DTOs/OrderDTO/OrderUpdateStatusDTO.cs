@@ -12,6 +12,7 @@ public class OrderUpdateStatusDTO
 
     [MaxLength(500)]
     public string? Comment { get; set; }
+    public string? StripePaymentIntentId { get; set; }
 }
 
 public class OrderUpdateTrackingDTO

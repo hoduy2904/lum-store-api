@@ -1,7 +1,5 @@
 ﻿using LumStoreAPI.Application.DTOs.PaymentDTO;
 using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Stripe.Checkout;
 
@@ -14,8 +12,25 @@ namespace LumStoreAPI.Application.Services
         {
             _stripeClient = stripeClient;
         }
+
+        public Task<Refund> CreateRefundAsync(ReturnRequestDTO request)
+        {
+            if (string.IsNullOrWhiteSpace(request.PaymentIntentId)) throw new ArgumentNullException(nameof(request.PaymentIntentId), "payment intent cannot null");
+            var service = new RefundService(_stripeClient);
+            return service.CreateAsync(new()
+            {
+                PaymentIntent = request.PaymentIntentId,
+                Reason = request.Reason,
+                Metadata = new Dictionary<string, string>()
+                {
+                    ["order_code"] = request.OrderCode
+                }
+            });
+        }
+
         public async Task<string> PaymentCheckoutAsync(PaymentRequestDTO request)
         {
+
             var lineItems = request.Order.OrderItems.Select(item => new SessionLineItemOptions
             {
                 PriceData = new SessionLineItemPriceDataOptions

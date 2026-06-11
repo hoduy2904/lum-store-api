@@ -70,12 +70,6 @@ internal class StripeWebhookService : IStripeWebhookService
                     await HandlePaymentSuccessAsync(completedSession);
                 break;
 
-            // Async payment methods (ACH, SEPA, bank transfer, etc.) fire this instead of completed
-            case EventTypes.CheckoutSessionAsyncPaymentSucceeded:
-                if (stripeEvent.Data.Object is Session asyncSucceededSession)
-                    await HandlePaymentSuccessAsync(asyncSucceededSession);
-                break;
-
             case EventTypes.CheckoutSessionExpired:
                 if (stripeEvent.Data.Object is Session expiredSession)
                     await HandlePaymentExpiredAsync(expiredSession, "Payment session expired or was cancelled by the customer");
@@ -85,11 +79,42 @@ internal class StripeWebhookService : IStripeWebhookService
                 if (stripeEvent.Data.Object is Session failedSession)
                     await HandlePaymentExpiredAsync(failedSession, "Async payment failed");
                 break;
+            case EventTypes.RefundUpdated:
+                if (stripeEvent.Data.Object is Refund refund)
+                    await HandleRefundStatus(refund);
+                break;
+
         }
     }
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
+    private async Task HandleRefundStatus(Refund refund)
+    {
+        var refundStatus = GetReturnStatus(refund.Status);
+        if (refundStatus == null)
+        {
+           await _eventLogService.LogWarning("WEBHOOK", "STRIPE_REFUND", "Handle refund status", $"Cannot update refund status with {refund.Status}");
+            return;
+        }
+        await _orderService.UpdateReturnOrderAsync(refund.Id, new()
+        {
+            AdminNote = "Refund automatic by Stripe",
+            Decision = refundStatus.Value,
+            RefundAmount = refund.Amount
+        });
+    }
+
+    private ReturnStatus? GetReturnStatus(string stripeRefund)
+    {
+        return stripeRefund switch
+        {
+            "pending" => ReturnStatus.Pending,
+            "succeeded" => ReturnStatus.Refunded,
+            "canceled" => ReturnStatus.Rejected,
+            _ => null
+        };
+    }
     private async Task HandlePaymentSuccessAsync(Session session)
     {
         if (!int.TryParse(session.ClientReferenceId, out int orderId))
@@ -138,7 +163,8 @@ internal class StripeWebhookService : IStripeWebhookService
         {
             NewStatus = OrderStatus.Confirmed,
             NewPaymentStatus = PaymentStatus.Paid,
-            Comment = note
+            Comment = note,
+            StripePaymentIntentId = session.PaymentIntentId
         });
 
         // Decrement stock for each variant — clamp at 0 to avoid negative stock
