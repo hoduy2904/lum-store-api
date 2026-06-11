@@ -419,7 +419,8 @@ public class OrderService : IOrderService
                 OrderItemId = i.OrderItemId,
                 Quantity = i.Quantity,
                 Reason = i.Reason
-            }).ToList()
+            }).ToList(),
+            StripeRefundId = dto.StripeRefundId,
         };
 
         var created = await _orderRepo.InsertOrderReturnAsync(ret);
@@ -459,7 +460,9 @@ public class OrderService : IOrderService
         {
             o.Status = newOrderStatus;
             if (orderReturnReview.Decision == ReturnStatus.Refunded)
+            {
                 o.PaymentStatus = PaymentStatus.Refunded;
+            }
         });
 
         await _orderRepo.InsertOrderHistoryAsync(new OrderHistory
@@ -468,7 +471,7 @@ public class OrderService : IOrderService
             ToStatus = newOrderStatus,
             Comment = $"Return {orderReturnReview.Decision} by Stripe. {orderReturnReview.AdminNote}",
             ChangedByName = "Stripe",
-            IsSystemAction = false
+            IsSystemAction = true
         });
 
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED_STRIPE",
