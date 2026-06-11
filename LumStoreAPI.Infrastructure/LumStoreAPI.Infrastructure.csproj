@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Folder Include="Interceptors/" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

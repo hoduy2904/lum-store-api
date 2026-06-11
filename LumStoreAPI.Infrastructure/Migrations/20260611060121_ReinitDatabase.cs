@@ -1,36 +1,57 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace LumStoreAPI.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class ReInitDatabase : Migration
+    public partial class ReinitDatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateSequence(
-                name: "BaseClassItemSequence");
-
             migrationBuilder.CreateTable(
-                name: "BaseClassItem",
+                name: "ColorCategories",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CategoryName = table.Column<string>(type: "nvarchar(70)", maxLength: 70, nullable: false),
+                    ItemOrder = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BaseClassItem", x => x.ItemID);
+                    table.PrimaryKey("PK_ColorCategories", x => x.ItemID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ContactMessages",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Subject = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContactMessages", x => x.ItemID);
                 });
 
             migrationBuilder.CreateTable(
                 name: "CustomerTiers",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     TierLevel = table.Column<int>(type: "int", nullable: false),
                     TierName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     MinPoints = table.Column<int>(type: "int", nullable: false),
@@ -52,14 +73,13 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "DiscountRules",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
-                    ProductId = table.Column<int>(type: "int", nullable: true),
-                    VariantId = table.Column<int>(type: "int", nullable: true),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     RuleName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     MinQuantity = table.Column<int>(type: "int", nullable: false),
                     MaxQuantity = table.Column<int>(type: "int", nullable: true),
                     DiscountPercent = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
-                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     StartDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     EndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -98,7 +118,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "EmailQueues",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     EmailStatus = table.Column<int>(type: "int", nullable: false),
                     EmailFrom = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     EmailTo = table.Column<string>(type: "nvarchar(450)", nullable: false),
@@ -120,12 +141,14 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "IntegrationConfigs",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     IntegrationType = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     BaseUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     ApiKey = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ApiSecret = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ResellerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     WebhookSecret = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     AdditionalConfig = table.Column<string>(type: "nvarchar(max)", maxLength: -1, nullable: true),
                     IsEnabled = table.Column<bool>(type: "bit", nullable: false),
@@ -169,8 +192,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "ShiprelayDataSyncs",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     VariantID = table.Column<int>(type: "int", nullable: false),
+                    ShiprelayId = table.Column<int>(type: "int", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EntryActionStatus = table.Column<int>(type: "int", nullable: false),
@@ -184,10 +209,29 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ShiprelayReconciliationLogs",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderId = table.Column<int>(type: "int", nullable: false),
+                    OrderCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RawResponse = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsResolved = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ShiprelayReconciliationLogs", x => x.ItemID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SyncLogs",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     IntegrationType = table.Column<int>(type: "int", nullable: false),
                     SyncMode = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -209,28 +253,74 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
-                    UserName = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserPassword = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    MiddleName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    LastName = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserName = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: false),
+                    UserPassword = table.Column<string>(type: "varchar(150)", unicode: false, maxLength: 150, nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    MiddleName = table.Column<string>(type: "nvarchar(70)", maxLength: 70, nullable: true),
+                    LastName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Email = table.Column<string>(type: "varchar(254)", unicode: false, maxLength: 254, nullable: false),
                     Avatar = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     IsLocked = table.Column<bool>(type: "bit", nullable: false),
                     IsVerified = table.Column<bool>(type: "bit", nullable: false),
                     IsEnabled = table.Column<bool>(type: "bit", nullable: false),
                     TimeLocked = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UserLevel = table.Column<int>(type: "int", nullable: false),
-                    VerifyCode = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
+                    VerifyCode = table.Column<string>(type: "varchar(7)", unicode: false, maxLength: 7, nullable: true),
                     IsAdmin = table.Column<bool>(type: "bit", nullable: false),
                     TimeActionCode = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    GoogleId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FacebookId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Provider = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.ItemID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ColorItems",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ItemOrder = table.Column<int>(type: "int", nullable: false),
+                    ColorName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ColorValue = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    CategoryId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ColorItems", x => x.ItemID);
+                    table.ForeignKey(
+                        name: "FK_ColorItems_ColorCategories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "ColorCategories",
+                        principalColumn: "ItemID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DiscountRuleMappings",
+                columns: table => new
+                {
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    DiscountRuleId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DiscountRuleMappings", x => new { x.ProductId, x.DiscountRuleId });
+                    table.ForeignKey(
+                        name: "FK_DiscountRuleMappings_DiscountRules_DiscountRuleId",
+                        column: x => x.DiscountRuleId,
+                        principalTable: "DiscountRules",
+                        principalColumn: "ItemID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -271,15 +361,66 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     PublishedTo = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     PublishedFrom = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     DocumentPageWidgets = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsEnableNavigation = table.Column<bool>(type: "bit", nullable: false),
+                    OgTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    OgDescription = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    OgImage = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DocumentPages", x => x.PageID);
+                    table.UniqueConstraint("AK_DocumentPages_NodeID", x => x.NodeID);
                     table.ForeignKey(
                         name: "FK_DocumentPages_DocumentNodes_NodeID",
                         column: x => x.NodeID,
+                        principalTable: "DocumentNodes",
+                        principalColumn: "NodeID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserCarts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    NodeId = table.Column<int>(type: "int", nullable: false),
+                    VariantId = table.Column<int>(type: "int", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserCarts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserCarts_DocumentNodes_NodeId",
+                        column: x => x.NodeId,
+                        principalTable: "DocumentNodes",
+                        principalColumn: "NodeID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserWishlists",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    NodeId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserWishlists", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserWishlists_DocumentNodes_NodeId",
+                        column: x => x.NodeId,
                         principalTable: "DocumentNodes",
                         principalColumn: "NodeID",
                         onDelete: ReferentialAction.Cascade);
@@ -312,22 +453,47 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CustomerAddresses",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
+                    City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    State = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Country = table.Column<string>(type: "nvarchar(4)", maxLength: 4, nullable: false),
+                    ZipCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    Details = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomerAddresses", x => x.ItemID);
+                    table.ForeignKey(
+                        name: "FK_CustomerAddresses_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "ItemID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CustomerProfiles",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<int>(type: "int", nullable: false),
                     TierLevel = table.Column<int>(type: "int", nullable: false),
                     TotalPoints = table.Column<int>(type: "int", nullable: false),
                     AvailablePoints = table.Column<int>(type: "int", nullable: false),
-                    TotalSpent = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TotalSpent = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalOrders = table.Column<int>(type: "int", nullable: false),
                     Phone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    State = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ZipCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    Country = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     Birthday = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
@@ -347,7 +513,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "EventLogs",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     EventLogType = table.Column<int>(type: "int", nullable: false),
                     EventSource = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     EventCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
@@ -368,50 +535,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                         column: x => x.UserID,
                         principalTable: "Users",
                         principalColumn: "ItemID");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Orders",
-                columns: table => new
-                {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
-                    OrderCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    CustomerId = table.Column<int>(type: "int", nullable: true),
-                    CustomerName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    CustomerEmail = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    CustomerPhone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    ShippingAddress = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    ShippingCity = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ShippingState = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ShippingZip = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    ShippingCountry = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
-                    SubTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Discount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Tax = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Total = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    PaymentStatus = table.Column<int>(type: "int", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    ShiprelayShipmentId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    TrackingNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    TrackingUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ShippingCarrier = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ShippedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    DeliveredAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CustomerNote = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Orders", x => x.ItemID);
-                    table.ForeignKey(
-                        name: "FK_Orders_Users_CustomerId",
-                        column: x => x.CustomerId,
-                        principalTable: "Users",
-                        principalColumn: "ItemID",
-                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -439,7 +562,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 columns: table => new
                 {
                     PageID = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true)
                 },
                 constraints: table =>
@@ -477,9 +600,10 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 columns: table => new
                 {
                     PageID = table.Column<int>(type: "int", nullable: false),
-                    Pretitle = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    Title = table.Column<string>(type: "nvarchar(70)", maxLength: 70, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    Type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Pretitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(170)", maxLength: 170, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(270)", maxLength: 270, nullable: true),
                     Image = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     PrimaryButton = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
@@ -488,6 +612,26 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     table.PrimaryKey("PK_CTAImages", x => x.PageID);
                     table.ForeignKey(
                         name: "FK_CTAImages_DocumentPages_PageID",
+                        column: x => x.PageID,
+                        principalTable: "DocumentPages",
+                        principalColumn: "PageID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GeneralContents",
+                columns: table => new
+                {
+                    PageID = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Descrition = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GeneralContents", x => x.PageID);
+                    table.ForeignKey(
+                        name: "FK_GeneralContents_DocumentPages_PageID",
                         column: x => x.PageID,
                         principalTable: "DocumentPages",
                         principalColumn: "PageID",
@@ -519,9 +663,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 columns: table => new
                 {
                     PageID = table.Column<int>(type: "int", nullable: false),
-                    LinkListTitle = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    LinkListIcon = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    LinkUrl = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                    LinkListTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    IconName = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: true),
+                    LinkUrl = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -559,6 +703,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 columns: table => new
                 {
                     PageID = table.Column<int>(type: "int", nullable: false),
+                    IsCombo = table.Column<bool>(type: "bit", nullable: false),
                     ProductType = table.Column<int>(type: "int", nullable: false),
                     ProductGroup = table.Column<int>(type: "int", nullable: false),
                     ProductName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
@@ -579,7 +724,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                     IsAlcoholic = table.Column<bool>(type: "bit", nullable: false),
                     IsHazmat = table.Column<bool>(type: "bit", nullable: false),
                     IsNeedBox = table.Column<bool>(type: "bit", nullable: false),
-                    IsFragile = table.Column<bool>(type: "bit", nullable: false)
+                    IsFragile = table.Column<bool>(type: "bit", nullable: false),
+                    ParentQty = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -593,10 +739,53 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProductVariants",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductID = table.Column<int>(type: "int", nullable: false),
+                    SKU = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    UPC = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    Stock = table.Column<int>(type: "int", nullable: false),
+                    Images = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ColorId = table.Column<int>(type: "int", nullable: true),
+                    VariantName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ShiprelayId = table.Column<int>(type: "int", nullable: false),
+                    ShiprelayOnceReceived = table.Column<bool>(type: "bit", nullable: false),
+                    ParentId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductVariants", x => x.ItemID);
+                    table.ForeignKey(
+                        name: "FK_ProductVariants_ColorItems_ColorId",
+                        column: x => x.ColorId,
+                        principalTable: "ColorItems",
+                        principalColumn: "ItemID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProductVariants_DocumentPages_ProductID",
+                        column: x => x.ProductID,
+                        principalTable: "DocumentPages",
+                        principalColumn: "NodeID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProductVariants_ProductVariants_ParentId",
+                        column: x => x.ParentId,
+                        principalTable: "ProductVariants",
+                        principalColumn: "ItemID",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CustomerNotes",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CustomerProfileId = table.Column<int>(type: "int", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     AuthorId = table.Column<int>(type: "int", nullable: false),
@@ -625,7 +814,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "LoyaltyPoints",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CustomerProfileId = table.Column<int>(type: "int", nullable: false),
                     OrderId = table.Column<int>(type: "int", nullable: true),
                     Points = table.Column<int>(type: "int", nullable: false),
@@ -646,10 +836,87 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    CustomerId = table.Column<int>(type: "int", nullable: true),
+                    CustomerName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    CustomerEmail = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    CustomerPhone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    ShippingAddress = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    ShippingDetails = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ShippingCity = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ShippingState = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ShippingZip = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ShippingCountry = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    SubTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Discount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Tax = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Total = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    PaymentStatus = table.Column<int>(type: "int", nullable: false),
+                    PaymentMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ShiprelayShipmentId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PaymentIntentId = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
+                    TrackingNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    TrackingUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ShippingCarrier = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ShippingService = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ShippingServiceName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ShippingServiceDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    EstimatedDeliveryMin = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    EstimatedDeliveryMax = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ShippedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    DeliveredAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    NeedsShiprelayReconciliation = table.Column<bool>(type: "bit", nullable: false),
+                    CustomerNote = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.ItemID);
+                    table.ForeignKey(
+                        name: "FK_Orders_CustomerProfiles_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "CustomerProfiles",
+                        principalColumn: "ItemID",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductCombos",
+                columns: table => new
+                {
+                    ProductID = table.Column<int>(type: "int", nullable: false),
+                    VariantID = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductCombos", x => new { x.ProductID, x.VariantID });
+                    table.ForeignKey(
+                        name: "FK_ProductCombos_ProductVariants_VariantID",
+                        column: x => x.VariantID,
+                        principalTable: "ProductVariants",
+                        principalColumn: "ItemID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProductCombos_Products_ProductID",
+                        column: x => x.ProductID,
+                        principalTable: "Products",
+                        principalColumn: "PageID");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderHistories",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     OrderId = table.Column<int>(type: "int", nullable: false),
                     FromStatus = table.Column<int>(type: "int", nullable: false),
                     ToStatus = table.Column<int>(type: "int", nullable: false),
@@ -681,7 +948,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "OrderItems",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     OrderId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     VariantId = table.Column<int>(type: "int", nullable: true),
@@ -711,7 +979,8 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "OrderNotes",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     OrderId = table.Column<int>(type: "int", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     AuthorId = table.Column<int>(type: "int", nullable: false),
@@ -740,13 +1009,15 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "OrderReturns",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     OrderId = table.Column<int>(type: "int", nullable: false),
                     Reason = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     RefundAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     AdminNote = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     ReviewedByUserId = table.Column<int>(type: "int", nullable: true),
+                    StripeRefundId = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
                     ReviewedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
@@ -769,37 +1040,11 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProductVariants",
-                columns: table => new
-                {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
-                    ProductID = table.Column<int>(type: "int", nullable: false),
-                    SKU = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    UPC = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    Stock = table.Column<int>(type: "int", nullable: false),
-                    Images = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Color = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    VariantName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ShiprelayId = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductVariants", x => x.ItemID);
-                    table.ForeignKey(
-                        name: "FK_ProductVariants_Products_ProductID",
-                        column: x => x.ProductID,
-                        principalTable: "Products",
-                        principalColumn: "PageID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "OrderReturnItems",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [BaseClassItemSequence]"),
+                    ItemID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     OrderReturnId = table.Column<int>(type: "int", nullable: false),
                     OrderItemId = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
@@ -825,6 +1070,44 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ColorCategories_CategoryName",
+                table: "ColorCategories",
+                column: "CategoryName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ColorItems_CategoryId",
+                table: "ColorItems",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ColorItems_ColorName",
+                table: "ColorItems",
+                column: "ColorName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ColorItems_ColorValue",
+                table: "ColorItems",
+                column: "ColorValue",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContactMessages_CreatedAt",
+                table: "ContactMessages",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContactMessages_IsRead",
+                table: "ContactMessages",
+                column: "IsRead");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomerAddresses_UserId",
+                table: "CustomerAddresses",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CustomerNotes_AuthorId",
                 table: "CustomerNotes",
                 column: "AuthorId");
@@ -843,15 +1126,18 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "IX_CustomerProfiles_UserId",
                 table: "CustomerProfiles",
                 column: "UserId",
-                unique: true,
-                filter: "[UserId] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CustomerTiers_TierLevel",
                 table: "CustomerTiers",
                 column: "TierLevel",
-                unique: true,
-                filter: "[TierLevel] IS NOT NULL");
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DiscountRuleMappings_DiscountRuleId",
+                table: "DiscountRuleMappings",
+                column: "DiscountRuleId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DiscountRules_IsActive",
@@ -884,11 +1170,6 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "IX_DocumentNodes_RelativeUrl",
                 table: "DocumentNodes",
                 column: "RelativeUrl");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_DocumentPages_NodeID",
-                table: "DocumentPages",
-                column: "NodeID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmailQueues_EmailSubject",
@@ -1017,8 +1298,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "IX_Orders_OrderCode",
                 table: "Orders",
                 column: "OrderCode",
-                unique: true,
-                filter: "[OrderCode] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_Status",
@@ -1026,9 +1306,24 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 column: "Status");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProductCombos_VariantID",
+                table: "ProductCombos",
+                column: "VariantID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Products_ProductName",
                 table: "Products",
                 column: "ProductName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductVariants_ColorId",
+                table: "ProductVariants",
+                column: "ColorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductVariants_ParentId",
+                table: "ProductVariants",
+                column: "ParentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProductVariants_ProductID",
@@ -1044,8 +1339,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "IX_ProductVariants_SKU",
                 table: "ProductVariants",
                 column: "SKU",
-                unique: true,
-                filter: "[SKU] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SyncLogs_IntegrationType",
@@ -1058,23 +1352,42 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 column: "StartedAt");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserCarts_NodeId",
+                table: "UserCarts",
+                column: "NodeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
-                unique: true,
-                filter: "[Email] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_UserName",
                 table: "Users",
                 column: "UserName",
-                unique: true,
-                filter: "[UserName] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserTokens_UserID",
                 table: "UserTokens",
                 column: "UserID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserWishlists_NodeId",
+                table: "UserWishlists",
+                column: "NodeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserWishlists_UserId",
+                table: "UserWishlists",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserWishlists_UserId_NodeId",
+                table: "UserWishlists",
+                columns: new[] { "UserId", "NodeId" },
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -1084,7 +1397,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "AccordionItems");
 
             migrationBuilder.DropTable(
-                name: "BaseClassItem");
+                name: "ContactMessages");
 
             migrationBuilder.DropTable(
                 name: "ContactUs");
@@ -1093,13 +1406,16 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "CTAImages");
 
             migrationBuilder.DropTable(
+                name: "CustomerAddresses");
+
+            migrationBuilder.DropTable(
                 name: "CustomerNotes");
 
             migrationBuilder.DropTable(
                 name: "CustomerTiers");
 
             migrationBuilder.DropTable(
-                name: "DiscountRules");
+                name: "DiscountRuleMappings");
 
             migrationBuilder.DropTable(
                 name: "DocumentLinkedNodes");
@@ -1109,6 +1425,9 @@ namespace LumStoreAPI.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "EventLogs");
+
+            migrationBuilder.DropTable(
+                name: "GeneralContents");
 
             migrationBuilder.DropTable(
                 name: "HomePages");
@@ -1138,7 +1457,7 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "ProductCategories");
 
             migrationBuilder.DropTable(
-                name: "ProductVariants");
+                name: "ProductCombos");
 
             migrationBuilder.DropTable(
                 name: "SettingKeyValues");
@@ -1147,13 +1466,22 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "ShiprelayDataSyncs");
 
             migrationBuilder.DropTable(
+                name: "ShiprelayReconciliationLogs");
+
+            migrationBuilder.DropTable(
                 name: "SyncLogs");
+
+            migrationBuilder.DropTable(
+                name: "UserCarts");
 
             migrationBuilder.DropTable(
                 name: "UserTokens");
 
             migrationBuilder.DropTable(
-                name: "CustomerProfiles");
+                name: "UserWishlists");
+
+            migrationBuilder.DropTable(
+                name: "DiscountRules");
 
             migrationBuilder.DropTable(
                 name: "MediaLibraryCategories");
@@ -1165,22 +1493,31 @@ namespace LumStoreAPI.Infrastructure.Migrations
                 name: "OrderReturns");
 
             migrationBuilder.DropTable(
+                name: "ProductVariants");
+
+            migrationBuilder.DropTable(
                 name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Orders");
 
             migrationBuilder.DropTable(
+                name: "ColorItems");
+
+            migrationBuilder.DropTable(
                 name: "DocumentPages");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "CustomerProfiles");
+
+            migrationBuilder.DropTable(
+                name: "ColorCategories");
 
             migrationBuilder.DropTable(
                 name: "DocumentNodes");
 
-            migrationBuilder.DropSequence(
-                name: "BaseClassItemSequence");
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

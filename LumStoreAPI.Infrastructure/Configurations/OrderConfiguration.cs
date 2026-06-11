@@ -31,6 +31,7 @@ internal class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.ShippingServiceDescription).HasMaxLength(500);
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
         builder.Property(x => x.CustomerNote).HasMaxLength(1000);
+        builder.Property(x => x.PaymentIntentId).HasMaxLength(150);
 
         builder.Property(x => x.SubTotal).HasPrecision(18, 2);
         builder.Property(x => x.ShippingFee).HasPrecision(18, 2);
