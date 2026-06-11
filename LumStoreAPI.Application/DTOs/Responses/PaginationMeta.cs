@@ -4,8 +4,10 @@ namespace LumStoreAPI.Application.DTOs.Responses
 {
     public class PaginationMeta
     {
-        public int TotalItems { get; internal set; }
-        public int TotalPages => (int)Math.Ceiling(TotalItems / (double)PageSize);
+        private readonly IEnumerable<object> _data = [];
+        public int TotalRecords { get; internal set; }
+        public int TotalPages => (int)Math.Ceiling(TotalRecords / (double)PageSize);
+        public int TotalItems => _data.Count();
         public int PageSize { get; internal set; }
         public int CurrentPage { get; internal set; }
         public PaginationMeta()
@@ -15,9 +17,11 @@ namespace LumStoreAPI.Application.DTOs.Responses
 
         public PaginationMeta(IPagedEnumerable<object> data, int currentPage, int pageSize)
         {
-            this.TotalItems = data.TotalRecords;
+            _data = data;
+            this.TotalRecords = data.TotalRecords;
             this.CurrentPage = currentPage;
             this.PageSize = pageSize;
+
         }
     }
 }
