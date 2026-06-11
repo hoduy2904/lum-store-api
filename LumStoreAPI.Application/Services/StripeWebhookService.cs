@@ -91,17 +91,24 @@ internal class StripeWebhookService : IStripeWebhookService
 
     private async Task HandleRefundStatus(Refund refund)
     {
+        if (!refund.Metadata.TryGetValue("refund_id", out string? refundIdString) || !int.TryParse(refundIdString, out int refundId))
+        {
+            await _eventLogService.LogWarning("WEBHOOK", "STRIPE_REFUND", $"Not found refund ID from {refund.Id}");
+            return;
+        }
+
         var refundStatus = GetReturnStatus(refund.Status);
         if (refundStatus == null)
         {
-           await _eventLogService.LogWarning("WEBHOOK", "STRIPE_REFUND", "Handle refund status", $"Cannot update refund status with {refund.Status}");
+            await _eventLogService.LogWarning("WEBHOOK", "STRIPE_REFUND", "Handle refund status", $"Cannot update refund status with {refund.Status}");
             return;
         }
-        await _orderService.UpdateReturnOrderAsync(refund.Id, new()
+        await _orderService.UpdateReturnOrderAsync(refundId, new()
         {
             AdminNote = "Refund automatic by Stripe",
             Decision = refundStatus.Value,
-            RefundAmount = refund.Amount
+            RefundAmount = refund.Amount,
+            StripeRefundId = refund.Id,
         });
     }
 
