@@ -51,10 +51,10 @@ internal class OrderRepository : IOrderRepository
 
         query = sortBy switch
         {
-            "Total"       => descending ? query.OrderByDescending(o => o.Total) : query.OrderBy(o => o.Total),
-            "Status"      => descending ? query.OrderByDescending(o => o.Status) : query.OrderBy(o => o.Status),
-            "CustomerName"=> descending ? query.OrderByDescending(o => o.CustomerName) : query.OrderBy(o => o.CustomerName),
-            _             => descending ? query.OrderByDescending(o => o.CreatedAt) : query.OrderBy(o => o.CreatedAt)
+            "Total" => descending ? query.OrderByDescending(o => o.Total) : query.OrderBy(o => o.Total),
+            "Status" => descending ? query.OrderByDescending(o => o.Status) : query.OrderBy(o => o.Status),
+            "CustomerName" => descending ? query.OrderByDescending(o => o.CustomerName) : query.OrderBy(o => o.CustomerName),
+            _ => descending ? query.OrderByDescending(o => o.CreatedAt) : query.OrderBy(o => o.CreatedAt)
         };
 
         int total = await query.CountAsync();
@@ -255,5 +255,11 @@ internal class OrderRepository : IOrderRepository
             .ToListAsync();
 
         return rows.Select(r => (new DateTimeOffset(r.Date, TimeSpan.Zero), r.Count, r.Revenue));
+    }
+
+    public Task<OrderReturn?> GetOrderReturnAsync(string stripeReturnId)
+    {
+        stripeReturnId = stripeReturnId.Trim();
+        return _ctx.OrderReturns.FirstOrDefaultAsync(x => !string.IsNullOrEmpty(x.StripeRefundId) && x.StripeRefundId == stripeReturnId);
     }
 }

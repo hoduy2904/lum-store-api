@@ -813,6 +813,22 @@ internal class StoreOrderService : IStoreOrderService
             Comment = request.Reason ?? "Cancelled by customer"
         });
 
+        if (order.PaymentStatus == PaymentStatus.Paid && !string.IsNullOrEmpty(order.PaymentIntentId))
+        {
+            var stripeReturn = await _paymentService.CreateRefundAsync(new(order.OrderCode, order.PaymentIntentId, "Cancelled order"));
+            await _orderService.CreateReturnAsync(order.ItemID, new OrderReturnCreateDTO
+            {
+                Items = order.OrderItems.Select(x => new ReturnItemDTO
+                {
+                    OrderItemId = x.OrderId,
+                    Quantity = x.Quantity,
+                    Reason = "Cancelled order",
+                }).ToList(),
+                Reason = "Cancelled order",
+                StripeRefundId = stripeReturn?.Id
+            });
+        }
+
         return APIResponse<StoreOrderSummaryDTO>.Success(new StoreOrderSummaryDTO
         {
             OrderId = order.ItemID,
