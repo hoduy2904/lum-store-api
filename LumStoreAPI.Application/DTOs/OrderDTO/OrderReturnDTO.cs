@@ -27,6 +27,7 @@ public class OrderReturnReviewDTO
     public string? AdminNote { get; set; }
 
     public decimal RefundAmount { get; set; }
+    public string? StripeRefundId { get; set; }
 }
 
 public class OrderReturnGetDTO

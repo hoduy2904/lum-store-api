@@ -816,12 +816,7 @@ internal class StoreOrderService : IStoreOrderService
         string refundMessage = "Order cancelled successfully";
         if (order.PaymentStatus == PaymentStatus.Paid && !string.IsNullOrEmpty(order.PaymentIntentId))
         {
-            var stripeReturn = await _paymentService.CreateRefundAsync(new(order.OrderCode, order.PaymentIntentId, "requested_by_customer"));
-            if(stripeReturn is null)
-            {
-                refundMessage = "Cancelled success, but need contact us to refund";
-            }
-            await _orderService.CreateReturnAsync(order.ItemID, new OrderReturnCreateDTO
+            var localRefund = await _orderService.CreateReturnAsync(order.ItemID, new OrderReturnCreateDTO
             {
                 Items = order.OrderItems.Select(x => new ReturnItemDTO
                 {
@@ -829,9 +824,15 @@ internal class StoreOrderService : IStoreOrderService
                     Quantity = x.Quantity,
                     Reason = "Cancelled order",
                 }).ToList(),
-                Reason = "Cancelled order",
-                StripeRefundId = stripeReturn?.Id
+                Reason = "Cancelled order"
             });
+
+            var stripeReturn = await _paymentService.CreateRefundAsync(new(localRefund.ReturnId, order.OrderCode, order.PaymentIntentId, "requested_by_customer"));
+            if (stripeReturn is null)
+            {
+                refundMessage = "Cancelled success, but need contact us to refund";
+            }
+
         }
 
         return APIResponse<StoreOrderSummaryDTO>.Success(new StoreOrderSummaryDTO
