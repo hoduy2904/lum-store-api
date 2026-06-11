@@ -202,13 +202,14 @@ internal class StripeWebhookService : IStripeWebhookService
         // Idempotency guard — skip if already cancelled
         if (order.Status == OrderStatus.Cancelled) return;
 
-        // Cancel the order — UpdateOrderStatusAsync will also cancel the ShipRelay shipment
+        // Cancel the order — UpdateOrderStatusAsync will also cancel the ShipRelay shipment.
+        // systemOverride=true because the order may be in any status when payment expires (race with ShipRelay).
         await _orderService.UpdateOrderStatusAsync(orderId, new OrderUpdateStatusDTO
         {
             NewStatus = OrderStatus.Cancelled,
             NewPaymentStatus = PaymentStatus.Failed,
             Comment = reason
-        });
+        }, systemOverride: true);
 
         // Enqueue cancellation notification email
         await EnqueueOrderCancelledAsync(order.CustomerEmail, order.CustomerName, order.OrderCode, reason);
