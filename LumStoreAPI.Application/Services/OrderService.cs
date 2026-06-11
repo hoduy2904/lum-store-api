@@ -128,7 +128,7 @@ public class OrderService : IOrderService
             if (dto.NewStatus == OrderStatus.Shipped) o.ShippedAt = DateTimeOffset.UtcNow;
             if (dto.NewStatus == OrderStatus.Delivered || dto.NewStatus == OrderStatus.Completed)
                 o.DeliveredAt = DateTimeOffset.UtcNow;
-            o.PaymentIntentId = dto.StripePaymentIntentId;
+            o.PaymentIntentId = dto.StripePaymentIntentId == null ? o.PaymentIntentId : dto.StripePaymentIntentId;
         }, new OrderHistory
         {
             OrderId = orderId,

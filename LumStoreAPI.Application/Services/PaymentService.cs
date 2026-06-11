@@ -24,7 +24,7 @@ namespace LumStoreAPI.Application.Services
                 Metadata = new Dictionary<string, string>()
                 {
                     ["order_code"] = request.OrderCode
-                },
+                }
             });
         }
 
