@@ -40,6 +40,7 @@ public class StoreOrderDetailDTO : StoreOrderSummaryDTO
     public StoreOrderAddressDTO Address { get; set; } = default!;
     public IEnumerable<StoreOrderLineItemDTO> Items { get; set; } = [];
     public decimal Subtotal { get; set; }
+    public decimal Discount { get; set; }
     public decimal Shipping { get; set; }
     public decimal Tax { get; set; }
 }

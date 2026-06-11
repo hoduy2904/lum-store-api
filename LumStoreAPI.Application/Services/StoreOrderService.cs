@@ -443,13 +443,16 @@ internal class StoreOrderService : IStoreOrderService
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
-    public async Task<PagedResponse<StoreOrderSummaryDTO>> GetOrdersAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResponse<StoreOrderSummaryDTO>> GetOrdersAsync(int page, int pageSize, string? status = null, CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
         var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
 
+        var parsedStatus = status is not null && Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var s) ? s : (OrderStatus?)null;
+
         var query = _ctx.Orders
             .Where(o => o.CustomerId == profileDto.ProfileId)
+            .Where(o => parsedStatus == null || o.Status == parsedStatus)
             .OrderByDescending(o => o.CreatedAt);
 
         var total = await query.CountAsync(ct);
@@ -557,6 +560,7 @@ internal class StoreOrderService : IStoreOrderService
                 LineTotal = i.Total
             }),
             Subtotal = order.SubTotal,
+            Discount = order.Discount,
             Shipping = order.ShippingFee,
             Tax = order.Tax
         };

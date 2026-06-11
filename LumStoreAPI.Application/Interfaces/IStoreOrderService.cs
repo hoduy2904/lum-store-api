@@ -7,7 +7,7 @@ namespace LumStoreAPI.Application.Interfaces;
 public interface IStoreOrderService
 {
     Task<APIResponse<StoreOrderSummaryDTO>> PlaceOrderAsync(StorePlaceOrderRequest request, CancellationToken ct = default);
-    Task<PagedResponse<StoreOrderSummaryDTO>> GetOrdersAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<PagedResponse<StoreOrderSummaryDTO>> GetOrdersAsync(int page, int pageSize, string? status = null, CancellationToken ct = default);
     Task<APIResponse<StoreOrderDetailDTO>> GetOrderAsync(int orderId, CancellationToken ct = default);
 
     // ── Checkout Preview ──────────────────────────────────────────────────
