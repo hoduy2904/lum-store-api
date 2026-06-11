@@ -825,7 +825,7 @@ internal class StoreOrderService : IStoreOrderService
             {
                 Items = order.OrderItems.Select(x => new ReturnItemDTO
                 {
-                    OrderItemId = x.OrderId,
+                    OrderItemId = x.ItemID,
                     Quantity = x.Quantity,
                     Reason = "Cancelled order",
                 }).ToList(),
