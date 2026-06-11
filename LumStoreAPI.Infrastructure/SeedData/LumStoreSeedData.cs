@@ -28,7 +28,6 @@ namespace LumStoreAPI.Infrastructure.SeedData
 
                 await SeedUsersAsync(context);
                 await SeedSettingsAsync(context);
-                await SeedMediaLibraryAsync(context);
                 await SeedContent(context);
 
                 logger.LogInformation("LUM Nails database seeded successfully.");
@@ -129,35 +128,16 @@ namespace LumStoreAPI.Infrastructure.SeedData
                 new() { SettingCode = "SITE_NAME",       SettingName = "Site Name",           SettingValue = "LUM Nails" },
                 new() { SettingCode = "SITE_URL",        SettingName = "Site URL",            SettingValue = "http://localhost:3000" },
                 new() { SettingCode = "CONTACT_EMAIL",   SettingName = "Contact Email",       SettingValue = "hello@lumnails.com" },
-                new() { SettingCode = "SMTP_FROM",       SettingName = "SMTP From Address",   SettingValue = "noreply@lumnails.com" },
                 new() { SettingCode = "CURRENCY",        SettingName = "Default Currency",    SettingValue = "USD" },
                 new() { SettingCode = "CURRENCY_SYMBOL", SettingName = "Currency Symbol",     SettingValue = "$" },
                 new() { SettingCode = "INSTAGRAM_URL",   SettingName = "Instagram URL",       SettingValue = "https://instagram.com/lumnails" },
                 new() { SettingCode = "TIKTOK_URL",      SettingName = "TikTok URL",          SettingValue = "https://tiktok.com/@lumnails" },
                 new() { SettingCode = "FREE_SHIPPING",   SettingName = "Free Shipping Over",  SettingValue = "50" },
-                new() { SettingCode = "TAX_RATE",        SettingName = "Tax Rate (%)",        SettingValue = "8" }
+                new() { SettingCode = "TAX_RATE",        SettingName = "Tax Rate (%)",        SettingValue = "8" },
+                new() { SettingCode = "Product_Accordion_Shipping",        SettingName = "Shipping & Returns",        SettingValue = "" },
             };
 
             await context.SettingKeyValues.AddRangeAsync(settings);
-            await context.SaveChangesAsync();
-        }
-
-        // ─── Media Library ────────────────────────────────────────────────────────
-
-        private static async Task SeedMediaLibraryAsync(LumStoreContext context)
-        {
-            var categories = new List<MediaLibraryCategory>
-            {
-                new() { CategoryName = "Products",   FolderName = "products"   },
-                new() { CategoryName = "Banners",    FolderName = "banners"    },
-                new() { CategoryName = "Gel Polish", FolderName = "gel-polish" },
-                new() { CategoryName = "Nail Art",   FolderName = "nail-art"   },
-                new() { CategoryName = "Tools",      FolderName = "tools"      },
-                new() { CategoryName = "Care",       FolderName = "care"       },
-                new() { CategoryName = "General",    FolderName = "general"    }
-            };
-
-            await context.MediaLibraryCategories.AddRangeAsync(categories);
             await context.SaveChangesAsync();
         }
     }
