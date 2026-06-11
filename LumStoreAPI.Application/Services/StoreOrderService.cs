@@ -815,7 +815,7 @@ internal class StoreOrderService : IStoreOrderService
 
         if (order.PaymentStatus == PaymentStatus.Paid && !string.IsNullOrEmpty(order.PaymentIntentId))
         {
-            var stripeReturn = await _paymentService.CreateRefundAsync(new(order.OrderCode, order.PaymentIntentId, "Cancelled order"));
+            var stripeReturn = await _paymentService.CreateRefundAsync(new(order.OrderCode, order.PaymentIntentId, "requested_by_customer"));
             await _orderService.CreateReturnAsync(order.ItemID, new OrderReturnCreateDTO
             {
                 Items = order.OrderItems.Select(x => new ReturnItemDTO
