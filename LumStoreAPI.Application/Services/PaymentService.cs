@@ -30,7 +30,8 @@ namespace LumStoreAPI.Application.Services
                     {
                         ["order_code"] = request.OrderCode,
                         ["refund_id"] = request.RefundId.ToString()
-                    }
+                    },
+                    Amount = request.Amount,
                 }, new() { IdempotencyKey = "refund_" + request.OrderCode + "_" + request.RefundId });
             }
             catch (Exception ex)
