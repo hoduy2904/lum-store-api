@@ -275,8 +275,7 @@ IDiscountRuleService discountRuleService)
                 .Published(Core.Models.Enums.TreeNodePublished.Published)
                 .Where(x =>
                     (!request.MinPrice.HasValue || x.Price >= request.MinPrice.Value) &&
-                    (!request.MaxPrice.HasValue || x.Price <= request.MaxPrice.Value) &&
-                    x.ProductVariants.Any(v => v.ShiprelayId > 0))
+                    (!request.MaxPrice.HasValue || x.Price <= request.MaxPrice.Value))
                 .Paged(request.Page, request.PageSize)
                 .IncludeQueryable(q => request.SortBy switch
                 {
