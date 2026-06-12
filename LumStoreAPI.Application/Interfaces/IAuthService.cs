@@ -10,7 +10,7 @@ namespace LumStoreAPI.Application.Interfaces
         Task<APIResponse<TokenResponse>> RefreshTokenAsync(TokenRequest request);
         Task LogoutAsync();
         Task<bool> IsValidCodeAsync(int userID, string code);
-        Task<UserDTO> RegisterUserAsync(UserCreateRequest request);
+        Task<APIResponse<TokenResponse>> RegisterUserAsync(UserCreateRequest request);
         Task<APIResponseBase> VerifyCode(string code);
         Task<bool> ResendVerifyCodeAsync(int user);
         Task<APIResponseBase> ForgotPasswordAsync(ForgotPasswordRequest request);

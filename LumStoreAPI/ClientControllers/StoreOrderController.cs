@@ -22,9 +22,9 @@ public class StoreOrderController(IStoreOrderService storeOrderService) : Contro
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? status = null)
     {
-        var result = await _storeOrderService.GetOrdersAsync(page, pageSize, CancellationToken.None);
+        var result = await _storeOrderService.GetOrdersAsync(page, pageSize, status, CancellationToken.None);
         return Ok(result);
     }
 

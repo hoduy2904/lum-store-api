@@ -145,7 +145,7 @@ namespace LumStoreAPI.Application.Services
             return APIResponse<TokenResponse>.Failure(ErrorStatusNameConstants.NOT_FOUND, ["Invalid user or token"]);
         }
 
-        public async Task<UserDTO> RegisterUserAsync(UserCreateRequest request)
+        public async Task<APIResponse<TokenResponse>> RegisterUserAsync(UserCreateRequest request)
         {
             var entity = request.GetEntity;
             entity.VerifyCode = StringHelper.GenerateCode();
@@ -161,7 +161,25 @@ namespace LumStoreAPI.Application.Services
                 EmailBody = "Code: " + entity.VerifyCode
             });
 
-            return new UserDTO(user);
+            var accessToken = _jwtTokenService.GenerateAccessToken(user, false);
+            var refreshToken = _jwtTokenService.GenerateRefreshToken();
+            var securityToken = JwtTokenHelper.GetJwtSecurityToken(accessToken);
+
+            await _userTokenRepository.InsertToken(new Core.Entities.Systems.UserToken
+            {
+                RefreshToken = refreshToken,
+                TokenID = Guid.Parse(securityToken.Id),
+                UserID = user.ItemID,
+                ValidTo = DateTime.UtcNow.AddDays(7)
+            });
+
+            SetCookies(accessToken, refreshToken);
+
+            return APIResponse<TokenResponse>.Success(new TokenResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            }, ["Registered successfully, please verify your email"]);
         }
 
         public Task<bool> ResendVerifyCodeAsync(int user)

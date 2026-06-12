@@ -13,6 +13,19 @@ namespace LumStoreAPI.Application.Services;
 
 public class OrderService : IOrderService
 {
+    private static readonly Dictionary<OrderStatus, HashSet<OrderStatus>> AllowedTransitions = new()
+    {
+        [OrderStatus.Pending]         = [OrderStatus.Confirmed, OrderStatus.Cancelled],
+        [OrderStatus.Confirmed]       = [OrderStatus.Processing, OrderStatus.Cancelled],
+        [OrderStatus.Processing]      = [OrderStatus.Shipped, OrderStatus.Cancelled],
+        [OrderStatus.Shipped]         = [OrderStatus.Delivered],
+        [OrderStatus.Delivered]       = [OrderStatus.Completed],
+        [OrderStatus.Completed]       = [],
+        [OrderStatus.ReturnRequested] = [OrderStatus.Returned, OrderStatus.Completed],
+        [OrderStatus.Returned]        = [],
+        [OrderStatus.Cancelled]       = [],
+    };
+
     private readonly IOrderRepository _orderRepo;
     private readonly IEventLogService _eventLog;
     private readonly IShiprelayService _shiprelayService;
@@ -105,12 +118,20 @@ public class OrderService : IOrderService
         return MapToDTO(created);
     }
 
-    public async Task<OrderGetDTO> UpdateOrderStatusAsync(int orderId, OrderUpdateStatusDTO dto, int? operatorUserId = null)
+    public async Task<OrderGetDTO> UpdateOrderStatusAsync(int orderId, OrderUpdateStatusDTO dto, int? operatorUserId = null, bool systemOverride = false)
     {
         var order = await _orderRepo.GetOrderAsync(orderId)
             ?? throw new KeyNotFoundException($"Order {orderId} not found");
 
         var prevStatus = order.Status;
+
+        // Validate transition unless this is a system-initiated update (e.g. Stripe webhook)
+        if (!systemOverride && dto.NewStatus != prevStatus)
+        {
+            if (!AllowedTransitions.TryGetValue(prevStatus, out var allowed) || !allowed.Contains(dto.NewStatus))
+                throw new InvalidOperationException(
+                    $"Cannot transition order from '{prevStatus}' to '{dto.NewStatus}'.");
+        }
 
         // Cancel shipment on ShipRelay before persisting — fire and forget errors (admin can resolve manually)
         if (dto.NewStatus == OrderStatus.Cancelled && !string.IsNullOrEmpty(order.ShiprelayShipmentId))
@@ -408,6 +429,19 @@ public class OrderService : IOrderService
     {
         var order = await _orderRepo.GetOrderAsync(orderId)
             ?? throw new KeyNotFoundException($"Order {orderId} not found");
+
+        // Only allow returns for orders that have been fulfilled or cancelled with a refund
+        var returnableStatuses = new[]
+        {
+            OrderStatus.Delivered,
+            OrderStatus.Completed,
+            OrderStatus.ReturnRequested,
+            OrderStatus.Cancelled,  // cancel-with-refund flow
+        };
+        if (!returnableStatuses.Contains(order.Status))
+            throw new InvalidOperationException(
+                $"Cannot create a return for an order in '{order.Status}' status. " +
+                "Order must be Delivered, Completed, or Cancelled.");
 
         var ret = new OrderReturn
         {

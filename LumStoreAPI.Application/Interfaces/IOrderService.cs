@@ -11,7 +11,7 @@ public interface IOrderService
     Task<OrderGetDTO?> GetOrderAsync(int orderId);
     Task<OrderGetDTO?> GetOrderByCodeAsync(string orderCode);
     Task<OrderGetDTO> CreateOrderAsync(OrderCreateDTO dto, int? operatorUserId = null);
-    Task<OrderGetDTO> UpdateOrderStatusAsync(int orderId, OrderUpdateStatusDTO dto, int? operatorUserId = null);
+    Task<OrderGetDTO> UpdateOrderStatusAsync(int orderId, OrderUpdateStatusDTO dto, int? operatorUserId = null, bool systemOverride = false);
     Task<OrderGetDTO> UpdateOrderTrackingAsync(int orderId, OrderUpdateTrackingDTO dto, int? operatorUserId = null);
     Task<ShiprelayTrackingResult?> GetOrderTrackingAsync(int orderId);
     Task<OrderGetDTO?> SyncOrderFromShiprelayAsync(int orderId);
