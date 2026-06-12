@@ -30,15 +30,29 @@ IDiscountRuleService discountRuleService)
     private readonly IProductVariantRepository _productVariantRepository = productVariantRepository;
     private readonly IDiscountRuleService _discountRuleService = discountRuleService;
 
-    public Task<IEnumerable<DocumentClientGetDTO>> GetFeatureProducts(int topN)
+    public async Task<IEnumerable<DocumentClientGetDTO>> GetFeatureProducts(int topN)
     {
-        return this.GetProducts(x => x.IsBestSeller, topN);
+        var result = (await this.GetProducts(x => x.IsBestSeller, topN)).ToList();
+        if (result.Count < topN)
+        {
+            var existingIds = result.Select(x => x.NodeID).ToHashSet();
+            var fallback = await this.GetProducts(x => !existingIds.Contains(x.NodeID), topN - result.Count, orderByLatest: true);
+            result.AddRange(fallback);
+        }
+        return result;
     }
 
-    public Task<IEnumerable<DocumentClientGetDTO>> GetNewProducts(int topN)
+    public async Task<IEnumerable<DocumentClientGetDTO>> GetNewProducts(int topN)
     {
         var sevenDaysAgo = DateTime.UtcNow.Date.AddDays(-7);
-        return this.GetProducts(x => x.CreatedAt >= sevenDaysAgo, topN);
+        var result = (await this.GetProducts(x => x.CreatedAt >= sevenDaysAgo, topN)).ToList();
+        if (result.Count < topN)
+        {
+            var existingIds = result.Select(x => x.NodeID).ToHashSet();
+            var fallback = await this.GetProducts(x => !existingIds.Contains(x.NodeID), topN - result.Count, orderByLatest: true);
+            result.AddRange(fallback);
+        }
+        return result;
     }
 
     public async Task<IEnumerable<StoreCategoryDTO>> GetProductCategories()
@@ -139,7 +153,7 @@ IDiscountRuleService discountRuleService)
         return productDTOs;
     }
 
-    private async Task<IEnumerable<DocumentClientGetDTO>> GetProducts(Expression<Func<Product, bool>> where, int topN)
+    private async Task<IEnumerable<DocumentClientGetDTO>> GetProducts(Expression<Func<Product, bool>> where, int topN, bool orderByLatest = false)
     {
         if (topN > 20)
         {
@@ -149,7 +163,9 @@ IDiscountRuleService discountRuleService)
          {
              query.Where(where)
              .Where(x => x.ProductVariants.Any(v => v.ShiprelayId > 0))
-             .IncludeQueryable(x => x.Take(topN))
+             .IncludeQueryable(x => orderByLatest
+                 ? x.OrderByDescending(p => p.CreatedAt).Take(topN)
+                 : x.Take(topN))
              .Select(x => new Product
              {
                  CreatedAt = x.CreatedAt,
