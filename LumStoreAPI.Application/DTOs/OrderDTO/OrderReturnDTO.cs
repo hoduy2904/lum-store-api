@@ -27,6 +27,7 @@ public class OrderReturnReviewDTO
     public string? AdminNote { get; set; }
 
     public decimal RefundAmount { get; set; }
+    public long RefundAmoutLong => (long)(RefundAmount * 100);
     public string? StripeRefundId { get; set; }
 }
 

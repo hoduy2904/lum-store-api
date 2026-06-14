@@ -15,28 +15,30 @@ public class OrderService : IOrderService
 {
     private static readonly Dictionary<OrderStatus, HashSet<OrderStatus>> AllowedTransitions = new()
     {
-        [OrderStatus.Pending]         = [OrderStatus.Confirmed, OrderStatus.Cancelled],
-        [OrderStatus.Confirmed]       = [OrderStatus.Processing, OrderStatus.Cancelled],
-        [OrderStatus.Processing]      = [OrderStatus.Shipped, OrderStatus.Cancelled],
-        [OrderStatus.Shipped]         = [OrderStatus.Delivered],
-        [OrderStatus.Delivered]       = [OrderStatus.Completed],
-        [OrderStatus.Completed]       = [],
+        [OrderStatus.Pending] = [OrderStatus.Confirmed, OrderStatus.Cancelled],
+        [OrderStatus.Confirmed] = [OrderStatus.Processing, OrderStatus.Cancelled],
+        [OrderStatus.Processing] = [OrderStatus.Shipped, OrderStatus.Cancelled],
+        [OrderStatus.Shipped] = [OrderStatus.Delivered],
+        [OrderStatus.Delivered] = [OrderStatus.Completed],
+        [OrderStatus.Completed] = [],
         [OrderStatus.ReturnRequested] = [OrderStatus.Returned, OrderStatus.Completed],
-        [OrderStatus.Returned]        = [],
-        [OrderStatus.Cancelled]       = [],
+        [OrderStatus.Returned] = [],
+        [OrderStatus.Cancelled] = [],
     };
 
     private readonly IOrderRepository _orderRepo;
     private readonly IEventLogService _eventLog;
     private readonly IShiprelayService _shiprelayService;
     private readonly ILogger<OrderService> _logger;
+    private readonly IPaymentService _paymentService;
 
-    public OrderService(IOrderRepository orderRepo, IEventLogService eventLog, IShiprelayService shiprelayService, ILogger<OrderService> logger)
+    public OrderService(IOrderRepository orderRepo, IEventLogService eventLog, IShiprelayService shiprelayService, ILogger<OrderService> logger, IPaymentService paymentService)
     {
         _orderRepo = orderRepo;
         _eventLog = eventLog;
         _shiprelayService = shiprelayService;
         _logger = logger;
+        _paymentService = paymentService;
     }
 
     public async Task<PagedResponse<OrderGetDTO>> GetOrdersAsync(OrderListRequest request)
@@ -496,7 +498,7 @@ public class OrderService : IOrderService
         {
             r.Status = orderReturnReview.Decision;
             r.AdminNote = orderReturnReview.AdminNote;
-            r.RefundAmount = orderReturnReview.RefundAmount;
+            r.RefundAmount = orderReturnReview.RefundAmoutLong;
             r.ReviewedAt = DateTimeOffset.UtcNow;
             r.StripeRefundId = orderReturnReview.StripeRefundId == null ? r.StripeRefundId : orderReturnReview.StripeRefundId;
         });
@@ -544,7 +546,7 @@ public class OrderService : IOrderService
         {
             r.Status = dto.Decision;
             r.AdminNote = dto.AdminNote;
-            r.RefundAmount = dto.RefundAmount;
+            r.RefundAmount = dto.RefundAmoutLong;
             r.ReviewedByUserId = reviewerId;
             r.ReviewedAt = DateTimeOffset.UtcNow;
         });
@@ -569,6 +571,12 @@ public class OrderService : IOrderService
             ChangedByName = reviewerName,
             IsSystemAction = false
         });
+
+        if (!string.IsNullOrWhiteSpace(ret.Order.PaymentIntentId) && ret is { Status: ReturnStatus.Approved or ReturnStatus.Refunded })
+        {
+            await _paymentService.CreateRefundAsync(
+                new DTOs.PaymentDTO.ReturnRequestDTO(returnId, ret.Order.OrderCode, ret.Order.PaymentIntentId, updated.RefundAmount * 100, "Return by " + reviewerName));
+        }
 
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED",
             $"Return #{returnId} reviewed: {dto.Decision} by {reviewerName}");

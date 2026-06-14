@@ -6,5 +6,6 @@
         public const string EMAIL_PORT = "Email_Port";
         public const string EMAIL_USERNAME = "Email_Username";
         public const string EMAIL_PASSWORD = "Email_Password";
+        public const string EMAIL_ADMIN_TO = "EMAIL_ADMIN_TO";
     }
 }

@@ -8,7 +8,7 @@ namespace LumStoreAPI.Core.Interfaces.Sytems
 {
     public interface IEmailService
     {
-        Task SendEmailAsync(EmailMessage emailMessage);
+        Task SendEmailAsync(EmailMessage emailMessage, bool isSendAdmin = false);
         Task<EmailSettings> GetConfigAsync();
         Task<IEnumerable<EmailQueue>> GetEmailQueuesAsync(int topN);
         Task<IPagedEnumerable<EmailQueue>> GetEmailQueuesAsync(int page, int pageSize, EmailStatus? emailStatus = null, string? q = null);

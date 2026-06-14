@@ -8,6 +8,7 @@ using LumStoreAPI.Application.Exceptions;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Integrations;
 using LumStoreAPI.Core.Entities.Orders;
+using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Extensions;
@@ -26,6 +27,7 @@ internal class StoreOrderService : IStoreOrderService
     private readonly IPaymentService _paymentService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IDiscountRuleService _discountRuleService;
+    private readonly IEmailService _emailService;
 
     public StoreOrderService(
         ICustomerService customerService,
@@ -34,7 +36,8 @@ internal class StoreOrderService : IStoreOrderService
         LumStoreContext ctx,
         IHttpContextAccessor httpContextAccessor,
         IPaymentService paymentService,
-        IDiscountRuleService discountRuleService)
+        IDiscountRuleService discountRuleService,
+        IEmailService emailService)
     {
         _customerService = customerService;
         _shiprelayService = shiprelayService;
@@ -43,6 +46,7 @@ internal class StoreOrderService : IStoreOrderService
         _httpContextAccessor = httpContextAccessor;
         _paymentService = paymentService;
         _discountRuleService = discountRuleService;
+        _emailService = emailService;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -831,12 +835,11 @@ internal class StoreOrderService : IStoreOrderService
                 Reason = "Cancelled order"
             });
 
-            var stripeReturn = await _paymentService.CreateRefundAsync(new(localRefund.ReturnId, order.OrderCode, order.PaymentIntentId, "requested_by_customer"));
+            var stripeReturn = await _paymentService.CreateRefundAsync(new(localRefund.ReturnId, order.OrderCode, order.PaymentIntentId, null, "requested_by_customer"), order);
             if (stripeReturn is null)
             {
                 refundMessage = "Cancelled success, but need contact us to refund";
             }
-
         }
 
         return APIResponse<StoreOrderSummaryDTO>.Success(new StoreOrderSummaryDTO
