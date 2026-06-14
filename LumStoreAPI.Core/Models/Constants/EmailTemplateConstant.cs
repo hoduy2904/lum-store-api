@@ -43,13 +43,13 @@ public class EmailTemplateConstant
     public static EmailTemplate ADMIN_ORDER_PAID = new()
     {
         EmailHeader = $"ACTION REQUIRED: New Paid Order Received - #{{{{{nameof(Order.OrderCode)}}}}}",
-        EmailBody = $$"""
+        EmailBody = $$$"""
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>ACTION REQUIRED: New Paid Order Received - #{{{nameof(Order.OrderCode)}}}</title>
+                <title>ACTION REQUIRED: New Paid Order Received - #{{{{{nameof(Order.OrderCode)}}}}}</title>
             </head>
             <body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, sans-serif;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding:20px 0;">
@@ -59,7 +59,7 @@ public class EmailTemplateConstant
                                 
                                 <tr>
                                     <td style="background-color:#2563eb; color:#ffffff; padding:20px; text-align:center;">
-                                        <h2 style="margin:0;">New Paid Order Received - #{{{nameof(Order.OrderCode)}}}</h2>
+                                        <h2 style="margin:0;">New Paid Order Received - #{{{{{nameof(Order.OrderCode)}}}}}</h2>
                                     </td>
                                 </tr>
 
@@ -69,7 +69,7 @@ public class EmailTemplateConstant
 
                                         <p>
                                             A new order has been successfully placed and paid for by
-                                            <strong>{{{nameof(Order.CustomerName)}}}</strong>.
+                                            <strong>{{{{{nameof(Order.CustomerName)}}}}}</strong>.
                                             Please process this order for fulfillment.
                                         </p>
 
@@ -77,19 +77,19 @@ public class EmailTemplateConstant
                                         <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;">
                                             <tr>
                                                 <td style="border:1px solid #dddddd;"><strong>Order Number</strong></td>
-                                                <td style="border:1px solid #dddddd;">{{{nameof(Order.OrderCode)}}}</td>
+                                                <td style="border:1px solid #dddddd;">{{{{{nameof(Order.OrderCode)}}}}}</td>
                                             </tr>
                                             <tr>
                                                 <td style="border:1px solid #dddddd;"><strong>Date & Time</strong></td>
-                                                <td style="border:1px solid #dddddd;">{{{nameof(Order.CreatedAt)}}}</td>
+                                                <td style="border:1px solid #dddddd;">{{{{{nameof(Order.CreatedAt)}}}}}</td>
                                             </tr>
                                             <tr>
                                                 <td style="border:1px solid #dddddd;"><strong>Customer Email</strong></td>
-                                                <td style="border:1px solid #dddddd;">{{{nameof(Order.CustomerEmail)}}}</td>
+                                                <td style="border:1px solid #dddddd;">{{{{{nameof(Order.CustomerEmail)}}}}}</td>
                                             </tr>
                                             <tr>
                                                 <td style="border:1px solid #dddddd;"><strong>Customer Phone</strong></td>
-                                                <td style="border:1px solid #dddddd;">{{{nameof(Order.CustomerPhone)}}}</td>
+                                                <td style="border:1px solid #dddddd;">{{{{{nameof(Order.CustomerPhone)}}}}}</td>
                                             </tr>
                                         </table>
 
@@ -97,13 +97,13 @@ public class EmailTemplateConstant
                                         <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;">
                                             <tr>
                                                 <td style="border:1px solid #dddddd;"><strong>Total Amount</strong></td>
-                                                <td style="border:1px solid #dddddd;">{{{nameof(Order.Total)}}}</td>
+                                                <td style="border:1px solid #dddddd;">{{{{{nameof(Order.Total)}}}}}</td>
                                             </tr>
                                             <tr>
                                                 <td style="border:1px solid #dddddd;"><strong>Payment Status</strong></td>
                                                 <td style="border:1px solid #dddddd;">
                                                     <span style="color:#16a34a; font-weight:bold;">
-                                                        PAID ({{{nameof(Order.PaymentMethod)}}})
+                                                        PAID ({{{{{nameof(Order.PaymentMethod)}}}}})
                                                     </span>
                                                 </td>
                                             </tr>
@@ -111,7 +111,7 @@ public class EmailTemplateConstant
 
                                         <h3 style="color:#2563eb; margin-top:25px;">Shipping Information</h3>
                                         <div style="padding:15px; background-color:#f8fafc; border:1px solid #e5e7eb; border-radius:6px;">
-                                            {{{nameof(Order.ShippingAddress)}}}
+                                            {{{{{nameof(Order.ShippingAddress)}}}}}
                                         </div>
 
                                         <p style="margin-top:30px;">
@@ -139,17 +139,17 @@ public class EmailTemplateConstant
     public static EmailTemplate USER_CANCELLED_ORDER = new()
     {
         EmailHeader = $"Order Cancellation Confirmation - Order #{{{nameof(Order.OrderCode)}}}",
-        EmailBody = $$"""
-                <p>Dear {{{nameof(Order.CustomerName)}}},</p>
+        EmailBody = $$$"""
+                <p>Dear {{{{{nameof(Order.CustomerName)}}}}},</p>
 
                 <p>
-                    As requested, your order #{{{nameof(Order.OrderCode)}}} has been successfully cancelled.
+                    As requested, your order #{{{{{nameof(Order.OrderCode)}}}}} has been successfully cancelled.
                 </p>
 
                 <p>
                     <strong>Refund Information:</strong><br>
                     Since your order was already paid, we have initiated a full refund of
-                    {{{nameof(Order.Total)}}} to your original payment method. Please allow
+                    {{{{{nameof(Order.Total)}}}}} to your original payment method. Please allow
                     2 to 5 business days for the funds to appear
                     in your account, depending on your bank's processing time.
                 </p>
@@ -175,20 +175,20 @@ public class EmailTemplateConstant
     public static EmailTemplate ADMIN_CANCELLED_ORDER = new()
     {
         EmailHeader = $"ALERT: Order Cancelled by User - #{{{nameof(Order.OrderCode)}}}",
-        EmailBody = $$"""
+        EmailBody = $$$"""
             <p>Hello Admin,</p>
 
             <p>
-                Please be advised that {{{nameof(Order.CustomerName)}}} has cancelled their order
-                #{{{nameof(Order.OrderCode)}}}.
+                Please be advised that {{{{{nameof(Order.CustomerName)}}}}} has cancelled their order
+                #{{{{{nameof(Order.OrderCode)}}}}}.
             </p>
 
             <p><strong>Cancellation Details:</strong></p>
 
             <p>
-                • Order Number: {{{nameof(Order.OrderCode)}}}<br>
-                • Cancellation Reason: {{{nameof(Order.OrderNotes)}}}<br>
-                • Total Amount: {{{nameof(Order.Total)}}}<br>
+                • Order Number: {{{{{nameof(Order.OrderCode)}}}}}<br>
+                • Cancellation Reason: {{{{{nameof(Order.OrderNotes)}}}}}<br>
+                • Total Amount: {{{{{nameof(Order.Total)}}}}}<br>
                 • Payment Status: PAID (Needs Refund)
             </p>
 
@@ -196,7 +196,7 @@ public class EmailTemplateConstant
 
             <p>
                 1. Please verify that the automated refund process has been triggered via
-                {{{nameof(Order.PaymentMethod)}}}, or process the refund manually if required.<br>
+                {{{{{nameof(Order.PaymentMethod)}}}}}, or process the refund manually if required.<br>
                 2. Ensure that the items are restocked in the inventory.
             </p>
 
