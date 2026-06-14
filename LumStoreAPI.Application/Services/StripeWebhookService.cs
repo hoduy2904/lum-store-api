@@ -174,7 +174,8 @@ internal class StripeWebhookService : IStripeWebhookService
             NewStatus = OrderStatus.Confirmed,
             NewPaymentStatus = PaymentStatus.Paid,
             Comment = note,
-            StripePaymentIntentId = session.PaymentIntentId
+            StripePaymentIntentId = session.PaymentIntentId,
+            PaymentMethod = paymentMethod
         });
 
         // Decrement stock for each variant — clamp at 0 to avoid negative stock

@@ -152,6 +152,7 @@ public class OrderService : IOrderService
             if (dto.NewStatus == OrderStatus.Delivered || dto.NewStatus == OrderStatus.Completed)
                 o.DeliveredAt = DateTimeOffset.UtcNow;
             o.PaymentIntentId = dto.StripePaymentIntentId == null ? o.PaymentIntentId : dto.StripePaymentIntentId;
+            if (!string.IsNullOrWhiteSpace(dto.PaymentMethod)) o.PaymentMethod = dto.PaymentMethod;
         }, new OrderHistory
         {
             OrderId = orderId,
