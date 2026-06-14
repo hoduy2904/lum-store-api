@@ -49,7 +49,17 @@ namespace LumStoreAPI.Infrastructure.Systems
             {
                 var adminEmail = await _settingKeyValueService.GetSettingsAsync(SystemKeyConstants.EMAIL_ADMIN_TO);
                 if (adminEmail.Any())
-                    emailMessage.EmailTo.Append(adminEmail.First().SettingValue);
+                {
+                    var adminEmailValue = adminEmail.First().SettingValue;
+                    if (emailMessage.EmailTo is not null)
+                    {
+                        emailMessage.EmailTo.Append(adminEmailValue);
+                    }
+                    else
+                    {
+                        emailMessage.EmailTo = [adminEmailValue];
+                    }
+                }
             }
             if (string.IsNullOrWhiteSpace(emailMessage.EmailFrom))
             {
