@@ -3,6 +3,7 @@ using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Services;
 using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Constants;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Core.Models.Systems.SettingKeys;
@@ -42,9 +43,20 @@ namespace LumStoreAPI.Infrastructure.Systems
                 emailStatus == null || x.EmailStatus == emailStatus);
         }
 
-        public Task SendEmailAsync(EmailMessage emailMessage)
+        public async Task SendEmailAsync(EmailMessage emailMessage, bool isSendAdmin = false)
         {
-            return _emailRepository.InsertEmailQueueAsync(emailMessage.GetEmailQueue());
+            if (isSendAdmin)
+            {
+                var adminEmail = await _settingKeyValueService.GetSettingsAsync(SystemKeyConstants.EMAIL_ADMIN_TO);
+                if (adminEmail.Any())
+                    emailMessage.EmailTo.Append(adminEmail.First().SettingValue);
+            }
+            if (string.IsNullOrWhiteSpace(emailMessage.EmailFrom))
+            {
+                var emailConfig = await GetConfigAsync();
+                emailMessage.EmailFrom = emailConfig.FromEmail;
+            }
+            await _emailRepository.InsertEmailQueueAsync(emailMessage.GetEmailQueue());
         }
 
         public Task<int> UpdateEmailStatusAsync(int emailID, EmailStatus emailStatus)

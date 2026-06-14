@@ -9,7 +9,7 @@ public class OrderReturn : BaseClassItem
     public int OrderId { get; set; }
     public string Reason { get; set; } = default!;
     public ReturnStatus Status { get; set; } = ReturnStatus.Pending;
-    public decimal RefundAmount { get; set; }
+    public long RefundAmount { get; set; }
     public string? AdminNote { get; set; }
     public int? ReviewedByUserId { get; set; }
     public string? StripeRefundId { get; set; }

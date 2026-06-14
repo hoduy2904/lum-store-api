@@ -1,10 +1,13 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Entities.Orders;
 using LumStoreAPI.Core.Interfaces.Repositories;
 using LumStoreAPI.Core.Interfaces.Sytems;
+using LumStoreAPI.Core.Models.Constants;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure;
+using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Stripe.Checkout;
@@ -107,7 +110,7 @@ internal class StripeWebhookService : IStripeWebhookService
         {
             AdminNote = "Refund automatic by Stripe",
             Decision = refundStatus.Value,
-            RefundAmount = refund.Amount,
+            RefundAmount = (refund.Amount / 100m),
             StripeRefundId = refund.Id,
         });
     }
@@ -185,7 +188,7 @@ internal class StripeWebhookService : IStripeWebhookService
         }
 
         // Enqueue order confirmation email
-        await EnqueueOrderConfirmationAsync(order.CustomerEmail, order.CustomerName, order.OrderCode, order.Total);
+        await EnqueueOrderConfirmationAsync(order);
 
         await _eventLogService.LogInformation("STRIPE_WEBHOOK", "PAYMENT_SUCCESS",
             $"Order {order.OrderCode} payment confirmed",
@@ -240,6 +243,33 @@ internal class StripeWebhookService : IStripeWebhookService
         }
     }
 
+    private async Task EnqueueOrderConfirmationAsync(Order order)
+    {
+        try
+        {
+            var config = await _emailService.GetConfigAsync();
+            var emailTemplateMacro = await EmailHelper.MacroEmailTemplate(EmailTemplateConstant.USER_ORDER_PAID, order);
+            await _emailService.SendEmailAsync(new EmailMessage
+            {
+                EmailFrom = config?.FromEmail ?? "noreply@lumnails.com",
+                EmailTo = [order.CustomerEmail],
+                EmailSubject = emailTemplateMacro.EmailHeader,
+                EmailBody = emailTemplateMacro.EmailBody
+            });
+
+            var emailAdminTemplateMacro = await EmailHelper.MacroEmailTemplate(EmailTemplateConstant.ADMIN_ORDER_PAID, order);
+            await _emailService.SendEmailAsync(new EmailMessage
+            {
+                EmailSubject = emailAdminTemplateMacro.EmailHeader,
+                EmailBody = emailAdminTemplateMacro.EmailBody
+            }, true);
+        }
+        catch (Exception ex)
+        {
+            await _eventLogService.LogException("STRIPE_WEBHOOK", "EMAIL_ENQUEUE_FAILED",
+                $"Failed to enqueue confirmation email for order {order.OrderCode}", ex);
+        }
+    }
     private async Task EnqueueOrderConfirmationAsync(string email, string name, string orderCode, decimal total)
     {
         try

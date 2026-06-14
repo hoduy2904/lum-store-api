@@ -498,7 +498,7 @@ public class OrderService : IOrderService
         {
             r.Status = orderReturnReview.Decision;
             r.AdminNote = orderReturnReview.AdminNote;
-            r.RefundAmount = orderReturnReview.RefundAmount;
+            r.RefundAmount = orderReturnReview.RefundAmoutLong;
             r.ReviewedAt = DateTimeOffset.UtcNow;
             r.StripeRefundId = orderReturnReview.StripeRefundId == null ? r.StripeRefundId : orderReturnReview.StripeRefundId;
         });
@@ -546,7 +546,7 @@ public class OrderService : IOrderService
         {
             r.Status = dto.Decision;
             r.AdminNote = dto.AdminNote;
-            r.RefundAmount = dto.RefundAmount;
+            r.RefundAmount = dto.RefundAmoutLong;
             r.ReviewedByUserId = reviewerId;
             r.ReviewedAt = DateTimeOffset.UtcNow;
         });
@@ -575,7 +575,7 @@ public class OrderService : IOrderService
         if (!string.IsNullOrWhiteSpace(ret.Order.PaymentIntentId) && ret is { Status: ReturnStatus.Approved or ReturnStatus.Refunded })
         {
             await _paymentService.CreateRefundAsync(
-                new DTOs.PaymentDTO.ReturnRequestDTO(returnId, ret.Order.OrderCode, ret.Order.PaymentIntentId, updated.RefundAmount, "Return by " + reviewerName));
+                new DTOs.PaymentDTO.ReturnRequestDTO(returnId, ret.Order.OrderCode, ret.Order.PaymentIntentId, updated.RefundAmount * 100, "Return by " + reviewerName));
         }
 
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED",

@@ -3,6 +3,7 @@ using LumStoreAPI.Core.Models.Systems.SettingKeys;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using Scriban;
 
 namespace LumStoreAPI.Libraries.Helpers
 {
@@ -93,6 +94,21 @@ namespace LumStoreAPI.Libraries.Helpers
                 _client.Dispose();
                 _client = null;
             }
+        }
+
+        public static async Task<EmailTemplate> MacroEmailTemplate(EmailTemplate emailTemplate, object data)
+        {
+            var headerTemplate = Template.Parse(emailTemplate.EmailHeader);
+            var bodyTemplate = Template.Parse(emailTemplate.EmailBody);
+
+            var emailHeaderText = await headerTemplate.RenderAsync(data, memberRenamer: member => member.Name);
+            var emailBodyText = await bodyTemplate.RenderAsync(data, memberRenamer: member => member.Name);
+
+            return new EmailTemplate
+            {
+                EmailBody = emailBodyText,
+                EmailHeader = emailHeaderText
+            };
         }
     }
 }
