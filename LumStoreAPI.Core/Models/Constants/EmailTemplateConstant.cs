@@ -138,7 +138,7 @@ public class EmailTemplateConstant
 
     public static EmailTemplate USER_CANCELLED_ORDER = new()
     {
-        EmailHeader = $"Order Cancellation Confirmation - Order #{{{nameof(Order.OrderCode)}}}",
+        EmailHeader = $"Order Cancellation Confirmation - Order #{{{{{nameof(Order.OrderCode)}}}}}",
         EmailBody = $$$"""
                 <p>Dear {{{{{nameof(Order.CustomerName)}}}}},</p>
 
@@ -174,7 +174,7 @@ public class EmailTemplateConstant
 
     public static EmailTemplate ADMIN_CANCELLED_ORDER = new()
     {
-        EmailHeader = $"ALERT: Order Cancelled by User - #{{{nameof(Order.OrderCode)}}}",
+        EmailHeader = $"ALERT: Order Cancelled by User - #{{{{{nameof(Order.OrderCode)}}}}}",
         EmailBody = $$$"""
             <p>Hello Admin,</p>
 
