@@ -42,7 +42,8 @@ internal class WishlistService : IWishlistService
     }
 
     private Task<bool> IsValidProductNodeAsync(int nodeId, CancellationToken ct)
-        => _ctx.Products.AnyAsync(n => n.NodeID == nodeId && n.ProductVariants.Any(v => v.ShiprelayId > 0), ct);
+        => _ctx.Products.AnyAsync(n => n.NodeID == nodeId &&
+            (n.IsCombo || n.ProductVariants.Any(v => v.ShiprelayId > 0)), ct);
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ internal class WishlistService : IWishlistService
         {
             // Filter to only valid product nodes before bulk insert
             var validNodeIds = await _ctx.Products
-                .Where(n => request.NodeIDs.Contains(n.NodeID) && n.ProductVariants.Any(v => v.ShiprelayId > 0))
+                .Where(n => request.NodeIDs.Contains(n.NodeID) && (n.IsCombo || n.ProductVariants.Any(v => v.ShiprelayId > 0)))
                 .Select(n => n.NodeID)
                 .ToListAsync(ct);
 

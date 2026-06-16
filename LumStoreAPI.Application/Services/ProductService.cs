@@ -86,7 +86,7 @@ IDiscountRuleService discountRuleService)
         var products = await _pageRetrieveContext.GetPagedPagesAsync<Product>(query =>
          {
              query.Where(where)
-             .Where(x => x.ProductVariants.Any(v => v.ShiprelayId > 0))
+             .Where(x => x.IsCombo || x.ProductVariants.Any(v => v.ShiprelayId > 0))
              .Paged(page, pageSize)
              .Select(x => new Product
              {
@@ -162,7 +162,7 @@ IDiscountRuleService discountRuleService)
         var products = await _pageRetrieveContext.GetPagesAsync<Product>(query =>
          {
              query.Where(where)
-             .Where(x => x.ProductVariants.Any(v => v.ShiprelayId > 0))
+             .Where(x => x.IsCombo || x.ProductVariants.Any(v => v.ShiprelayId > 0))
              .IncludeQueryable(x => orderByLatest
                  ? x.OrderByDescending(p => p.CreatedAt).Take(topN)
                  : x.Take(topN))
@@ -233,7 +233,7 @@ IDiscountRuleService discountRuleService)
 
         var products = (await _pageRetrieveContext.GetPagesAsync<Product>(query =>
         {
-            query.Where(x => x.ProductVariants.Any(v => v.ShiprelayId > 0) && nodeIds.Contains(x.NodeID));
+            query.Where(x => (x.IsCombo || x.ProductVariants.Any(v => v.ShiprelayId > 0)) && nodeIds.Contains(x.NodeID));
         })).ToList();
 
         if (products.Count == 0) return Enumerable.Empty<DocumentClientGetDTO>();
@@ -348,7 +348,7 @@ IDiscountRuleService discountRuleService)
                     !p.IsDeleted &&
                     (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                     (p.PublishedTo == null || p.PublishedTo > now) &&
-                    p.ProductVariants.Any(v => v.ShiprelayId > 0)),
+                    (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0))),
                 ln => ln.Descendant,
                 p => p.NodeID,
                 (ln, p) => new { ln.Ancestor })
@@ -375,7 +375,7 @@ IDiscountRuleService discountRuleService)
                 !p.IsDeleted &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now) &&
-                p.ProductVariants.Any(v => v.ShiprelayId > 0) &&
+                (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
                 (p.ProductName.Contains(q) ||
                  (p.ShortDescription != null && p.ShortDescription.Contains(q)) ||
                  skuMatchIds.Contains(p.NodeID)))
@@ -639,7 +639,7 @@ IDiscountRuleService discountRuleService)
         var now = DateTimeOffset.UtcNow;
 
         var current = await _lumStoreContext.Products
-            .Where(p => p.ProductVariants.Any(v => v.ShiprelayId > 0) && p.Node.RelativeUrl == relativeUrl && !p.IsDeleted)
+            .Where(p => (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) && p.Node.RelativeUrl == relativeUrl && !p.IsDeleted)
             .Select(p => new { p.NodeID, ParentNodeID = p.Node.ParentNodeID })
             .FirstOrDefaultAsync();
 
@@ -650,7 +650,7 @@ IDiscountRuleService discountRuleService)
             .Where(p =>
                 p.Node.ParentNodeID == current.ParentNodeID.Value &&
                 p.NodeID != current.NodeID &&
-                p.ProductVariants.Any(v => v.ShiprelayId > 0) &&
+                (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
                 !p.IsDeleted &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now))
@@ -718,7 +718,7 @@ IDiscountRuleService discountRuleService)
         return await _lumStoreContext.Products
             .Where(p =>
                 !p.IsDeleted &&
-                p.ProductVariants.Any(v => v.ShiprelayId > 0) &&
+                (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now) &&
                 (p.IsBestSeller || p.CreatedAt >= sevenDaysAgo))

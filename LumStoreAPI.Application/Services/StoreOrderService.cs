@@ -117,7 +117,7 @@ internal class StoreOrderService : IStoreOrderService
         var nodeIds = cartItems.Select(c => c.NodeId).Distinct().ToArray();
         var products = await _ctx.Products
             .AsNoTracking()
-            .Where(p => p.ProductVariants.Any(v => v.ShiprelayId > 0) && nodeIds.Contains(p.NodeID))
+            .Where(p => (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) && nodeIds.Contains(p.NodeID))
             .ToListAsync(ct);
 
         // Load variants
@@ -641,7 +641,7 @@ internal class StoreOrderService : IStoreOrderService
 
         var nodeIds = cartItems.Select(c => c.NodeId).Distinct().ToArray();
         var products = await _ctx.Products
-            .Where(p => p.ProductVariants.Any(v => v.ShiprelayId > 0) && nodeIds.Contains(p.NodeID))
+            .Where(p => (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) && nodeIds.Contains(p.NodeID))
             .ToListAsync(ct);
 
         var variantIds = cartItems.Where(c => c.VariantId.HasValue).Select(c => c.VariantId!.Value).ToArray();
