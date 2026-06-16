@@ -57,11 +57,11 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
 
         public async Task<IEnumerable<ComboItemPricing>> GetComboItemsForPricingAsync(IEnumerable<int> productIds)
         {
-            var ids = productIds.ToList();
-            if (ids.Count == 0) return [];
+            var ids = productIds.ToArray();
+            if (ids.Length == 0) return [];
 
             return await _lumStoreContext.ProductCombos
-                .Where(x => ids.Contains(x.ProductID))
+                .Where(x => ids.Contains(x.ProductID) && x.ProductVariant.ShiprelayId > 0)
                 .Include(x => x.ProductVariant)
                 .ThenInclude(v => v.Product)
                 .AsNoTrackingWithIdentityResolution()
