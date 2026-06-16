@@ -61,9 +61,8 @@ internal class CartService : ICartService
     private async Task<int?> GetComboStockAsync(int nodeId, CancellationToken ct)
     {
         var isCombo = await _ctx.Products
-            .Where(p => p.NodeID == nodeId)
-            .Select(p => (bool?)p.IsCombo)
-            .FirstOrDefaultAsync(ct);
+            .Where(p => p.NodeID == nodeId && p.IsCombo)
+            .AnyAsync();
 
         if (isCombo != true) return null;
 
