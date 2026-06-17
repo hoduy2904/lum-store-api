@@ -216,10 +216,10 @@ public class CustomerService : ICustomerService
 
     private static readonly CustomerTierGetDTO[] _defaultTiers =
     [
-        new() { TierLevel = CustomerTierLevel.Standard, TierName = "Standard", MinPoints = 0,     IsActive = true },
-        new() { TierLevel = CustomerTierLevel.Silver,   TierName = "Silver",   MinPoints = 1000,  IsActive = true },
-        new() { TierLevel = CustomerTierLevel.Gold,     TierName = "Gold",     MinPoints = 5000,  IsActive = true },
-        new() { TierLevel = CustomerTierLevel.VIP,      TierName = "VIP",      MinPoints = 20000, IsActive = true },
+        new() { TierLevel = CustomerTierLevel.Standard, TierName = "Standard", MinPoints = 0,     IsActive = true, PointsPerDollar = 1 },
+        new() { TierLevel = CustomerTierLevel.Silver,   TierName = "Silver",   MinPoints = 1000,  IsActive = true, PointsPerDollar = 1 },
+        new() { TierLevel = CustomerTierLevel.Gold,     TierName = "Gold",     MinPoints = 5000,  IsActive = true, PointsPerDollar = 1 },
+        new() { TierLevel = CustomerTierLevel.VIP,      TierName = "VIP",      MinPoints = 20000, IsActive = true, PointsPerDollar = 1 },
     ];
 
     public async Task<IEnumerable<CustomerTierGetDTO>> GetTiersAsync()
