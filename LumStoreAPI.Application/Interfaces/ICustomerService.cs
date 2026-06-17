@@ -21,6 +21,7 @@ public interface ICustomerService
     // ── Loyalty Points ────────────────────────────────────────────────────
     Task<IEnumerable<LoyaltyPointGetDTO>> GetLoyaltyPointsAsync(int profileId);
     Task AwardPointsAsync(int profileId, int points, string description, int? orderId = null);
+    Task RevokeOrderPointsAsync(int profileId, int orderId, string description);
     Task RedeemPointsAsync(int profileId, int points, string description);
     Task RecalculateTierAsync(int profileId);
 
