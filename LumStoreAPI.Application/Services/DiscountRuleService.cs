@@ -141,6 +141,7 @@ public class DiscountRuleService : IDiscountRuleService
 
         return new ComboPriceResult
         {
+            SubTotal = subTotal,
             TotalPrice = totalPrice,
             ComboStock = comboStock,
             Items = itemDetails
@@ -189,6 +190,7 @@ public class DiscountRuleService : IDiscountRuleService
 
             result[comboId] = new ComboPriceResult
             {
+                SubTotal = subTotal,
                 TotalPrice = ApplyBestRule(rules, comboId, subTotal, 1),
                 ComboStock = comboStock,
                 Items = itemDetails
