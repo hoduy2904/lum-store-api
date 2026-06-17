@@ -92,7 +92,6 @@ namespace LumStoreAPI.Controllers
         }
 
         [HttpGet("{nodeId}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetNode(int nodeId)
         {
             var node = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
