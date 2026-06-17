@@ -15,7 +15,7 @@ namespace LumStoreAPI.Libraries.Helpers
             }
             try
             {
-                return JsonSerializer.Deserialize<T>(data, jsonSerializerOptions ?? new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return JsonSerializer.Deserialize<T>(data!, jsonSerializerOptions ?? new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch
             {

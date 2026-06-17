@@ -298,7 +298,7 @@ internal class StoreOrderService : IStoreOrderService
             ShippingAddress = address.Address,
             ShippingDetails = address.Details,
             ShippingCity = address.City,
-            ShippingState = address.State,
+            ShippingState = address.State ?? "",
             ShippingZip = address.ZipCode,
             ShippingCountry = "US",
             CustomerNote = request.Note,
@@ -835,7 +835,7 @@ internal class StoreOrderService : IStoreOrderService
                 Reason = "Cancelled order"
             });
 
-            var stripeReturn = await _paymentService.CreateRefundAsync(new(localRefund.ReturnId, order.OrderCode, order.PaymentIntentId, null, "requested_by_customer"), order);
+            var stripeReturn = await _paymentService.CreateRefundAsync(new(localRefund.ReturnId, order.OrderCode, order.PaymentIntentId), order);
             if (stripeReturn is null)
             {
                 refundMessage = "Cancelled success, but need contact us to refund";

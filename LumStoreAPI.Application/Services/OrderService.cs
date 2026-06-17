@@ -122,10 +122,11 @@ public class OrderService : IOrderService
         return MapToDTO(created);
     }
 
-    public async Task<OrderGetDTO> UpdateOrderStatusAsync(int orderId, OrderUpdateStatusDTO dto, int? operatorUserId = null, bool systemOverride = false)
+    public async Task<OrderGetDTO> UpdateOrderStatusAsync(int orderId, OrderUpdateStatusDTO dto,
+        int? operatorUserId = null, bool systemOverride = false)
     {
         var order = await _orderRepo.GetOrderAsync(orderId)
-            ?? throw new KeyNotFoundException($"Order {orderId} not found");
+                    ?? throw new KeyNotFoundException($"Order {orderId} not found");
 
         var prevStatus = order.Status;
 
@@ -177,10 +178,11 @@ public class OrderService : IOrderService
         return MapToDTO(updated);
     }
 
-    public async Task<OrderGetDTO> UpdateOrderTrackingAsync(int orderId, OrderUpdateTrackingDTO dto, int? operatorUserId = null)
+    public async Task<OrderGetDTO> UpdateOrderTrackingAsync(int orderId, OrderUpdateTrackingDTO dto,
+        int? operatorUserId = null)
     {
         var order = await _orderRepo.GetOrderAsync(orderId)
-            ?? throw new KeyNotFoundException($"Order {orderId} not found");
+                    ?? throw new KeyNotFoundException($"Order {orderId} not found");
 
         var updated = await _orderRepo.UpdateOrderAsync(orderId, o =>
         {
@@ -209,7 +211,7 @@ public class OrderService : IOrderService
     public async Task<ShiprelayTrackingResult?> GetOrderTrackingAsync(int orderId)
     {
         var order = await _orderRepo.GetOrderAsync(orderId)
-            ?? throw new KeyNotFoundException($"Order {orderId} not found");
+                    ?? throw new KeyNotFoundException($"Order {orderId} not found");
 
         if (string.IsNullOrEmpty(order.ShiprelayShipmentId))
             return null;
@@ -220,7 +222,7 @@ public class OrderService : IOrderService
     public async Task<OrderGetDTO?> SyncOrderFromShiprelayAsync(int orderId)
     {
         var order = await _orderRepo.GetOrderAsync(orderId)
-            ?? throw new KeyNotFoundException($"Order {orderId} not found");
+                    ?? throw new KeyNotFoundException($"Order {orderId} not found");
 
         var tracking = await _shiprelayService.GetTrackingAsync(order.ShiprelayShipmentId!);
         if (tracking == null) return null;
@@ -238,14 +240,16 @@ public class OrderService : IOrderService
             if (tracking.Service is not null) o.ShippingService = tracking.Service;
             if (newStatus == OrderStatus.Shipped) o.ShippedAt ??= DateTimeOffset.UtcNow;
             if (newStatus == OrderStatus.Delivered) o.DeliveredAt ??= DateTimeOffset.UtcNow;
-        }, statusChanged ? new OrderHistory
-        {
-            OrderId = orderId,
-            FromStatus = prevStatus,
-            ToStatus = newStatus!.Value,
-            Comment = "Synced from ShipRelay",
-            IsSystemAction = true
-        } : null);
+        }, statusChanged
+            ? new OrderHistory
+            {
+                OrderId = orderId,
+                FromStatus = prevStatus,
+                ToStatus = newStatus!.Value,
+                Comment = "Synced from ShipRelay",
+                IsSystemAction = true
+            }
+            : null);
 
         var newStatusLabel = newStatus.HasValue ? newStatus.Value.ToString() : prevStatus.ToString();
         await _eventLog.LogInformation("OrderService", "ORDER_SYNCED_SHIPRELAY",
@@ -265,9 +269,17 @@ public class OrderService : IOrderService
             try
             {
                 var tracking = await _shiprelayService.GetTrackingAsync(o.ShiprelayShipmentId!);
-                if (tracking == null) { skipped++; continue; }
+                if (tracking == null)
+                {
+                    skipped++;
+                    continue;
+                }
 
-                if (tracking.Service == null && tracking.EstimatedDelivery == null) { skipped++; continue; }
+                if (tracking.Service == null && tracking.EstimatedDelivery == null)
+                {
+                    skipped++;
+                    continue;
+                }
 
                 await _orderRepo.UpdateOrderAsync(o.ItemID, order =>
                 {
@@ -291,7 +303,8 @@ public class OrderService : IOrderService
         return (updated, failed, skipped);
     }
 
-    public async Task<(int Synced, int Failed)> BulkUpdateFromShipmentsAsync(IEnumerable<ShiprelayShipmentSummaryDTO> shipments)
+    public async Task<(int Synced, int Failed)> BulkUpdateFromShipmentsAsync(
+        IEnumerable<ShiprelayShipmentSummaryDTO> shipments)
     {
         int synced = 0, failed = 0;
 
@@ -302,7 +315,11 @@ public class OrderService : IOrderService
             try
             {
                 var order = await _orderRepo.GetOrderByCodeAsync(shipment.OrderRef);
-                if (order == null) { failed++; continue; }
+                if (order == null)
+                {
+                    failed++;
+                    continue;
+                }
 
                 var newStatus = MapShiprelayStatus(shipment.Status);
                 var prevStatus = order.Status;
@@ -317,20 +334,23 @@ public class OrderService : IOrderService
                     if (!string.IsNullOrEmpty(shipment.Id)) o.ShiprelayShipmentId ??= shipment.Id;
                     if (newStatus == OrderStatus.Shipped) o.ShippedAt ??= DateTimeOffset.UtcNow;
                     if (newStatus == OrderStatus.Delivered) o.DeliveredAt ??= DateTimeOffset.UtcNow;
-                }, statusChanged ? new OrderHistory
-                {
-                    OrderId = order.ItemID,
-                    FromStatus = prevStatus,
-                    ToStatus = newStatus!.Value,
-                    Comment = "Synced from ShipRelay",
-                    IsSystemAction = true
-                } : null);
+                }, statusChanged
+                    ? new OrderHistory
+                    {
+                        OrderId = order.ItemID,
+                        FromStatus = prevStatus,
+                        ToStatus = newStatus!.Value,
+                        Comment = "Synced from ShipRelay",
+                        IsSystemAction = true
+                    }
+                    : null);
 
                 synced++;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "BulkUpdateFromShipments: failed to update order for OrderRef={OrderRef}", shipment.OrderRef);
+                _logger.LogError(ex, "BulkUpdateFromShipments: failed to update order for OrderRef={OrderRef}",
+                    shipment.OrderRef);
                 failed++;
             }
         }
@@ -394,7 +414,8 @@ public class OrderService : IOrderService
         });
     }
 
-    public async Task<OrderNoteGetDTO> AddOrderNoteAsync(int orderId, OrderNoteCreateDTO dto, int authorId, string authorName)
+    public async Task<OrderNoteGetDTO> AddOrderNoteAsync(int orderId, OrderNoteCreateDTO dto, int authorId,
+        string authorName)
     {
         var note = await _orderRepo.InsertOrderNoteAsync(new OrderNote
         {
@@ -429,7 +450,8 @@ public class OrderService : IOrderService
         return ret == null ? null : MapReturnToDTO(ret);
     }
 
-    public async Task<PagedResponse<OrderReturnGetDTO>> GetAllReturnsAsync(int page, int pageSize, ReturnStatus? status, string? search)
+    public async Task<PagedResponse<OrderReturnGetDTO>> GetAllReturnsAsync(int page, int pageSize, ReturnStatus? status,
+        string? search)
     {
         var paged = await _orderRepo.GetAllReturnsAsync(page, pageSize, status, search);
         var dtos = paged.Select(MapReturnToDTO).ToList().AsPagedEnumerable(paged.TotalRecords);
@@ -439,7 +461,7 @@ public class OrderService : IOrderService
     public async Task<OrderReturnGetDTO> CreateReturnAsync(int orderId, OrderReturnCreateDTO dto)
     {
         var order = await _orderRepo.GetOrderAsync(orderId)
-            ?? throw new KeyNotFoundException($"Order {orderId} not found");
+                    ?? throw new KeyNotFoundException($"Order {orderId} not found");
 
         // Only allow returns for orders that have been fulfilled or cancelled with a refund
         var returnableStatuses = new[]
@@ -447,7 +469,7 @@ public class OrderService : IOrderService
             OrderStatus.Delivered,
             OrderStatus.Completed,
             OrderStatus.ReturnRequested,
-            OrderStatus.Cancelled,  // cancel-with-refund flow
+            OrderStatus.Cancelled, // cancel-with-refund flow
         };
         if (!returnableStatuses.Contains(order.Status))
             throw new InvalidOperationException(
@@ -484,10 +506,12 @@ public class OrderService : IOrderService
         return MapReturnToDTO(created);
     }
 
-    public async Task<OrderReturnGetDTO> UpdateReturnOrderAsync(string stripeRefundId, OrderReturnReviewDTO orderReturnReview)
+    public async Task<OrderReturnGetDTO> UpdateReturnOrderAsync(string stripeRefundId,
+        OrderReturnReviewDTO orderReturnReview)
     {
         var returnItem = await _orderRepo.GetOrderReturnAsync(stripeRefundId)
-            ?? throw new KeyNotFoundException($"OrderReturn with stripe refund {stripeRefundId} not found");
+                         ?? throw new KeyNotFoundException(
+                             $"OrderReturn with stripe refund {stripeRefundId} not found");
 
         return await UpdateReturnOrderAsync(returnItem, orderReturnReview);
     }
@@ -496,12 +520,13 @@ public class OrderService : IOrderService
     public async Task<OrderReturnGetDTO> UpdateReturnOrderAsync(int returnId, OrderReturnReviewDTO orderReturnReview)
     {
         var returnItem = await _orderRepo.GetOrderReturnAsync(returnId)
-             ?? throw new KeyNotFoundException($"OrderReturn with refund Id {returnId} not found");
+                         ?? throw new KeyNotFoundException($"OrderReturn with refund Id {returnId} not found");
 
         return await UpdateReturnOrderAsync(returnItem, orderReturnReview);
     }
 
-    private async Task<OrderReturnGetDTO> UpdateReturnOrderAsync(OrderReturn orderReturn, OrderReturnReviewDTO orderReturnReview)
+    private async Task<OrderReturnGetDTO> UpdateReturnOrderAsync(OrderReturn orderReturn,
+        OrderReturnReviewDTO orderReturnReview)
     {
         var updated = await _orderRepo.UpdateOrderReturnAsync(orderReturn.ItemID, r =>
         {
@@ -509,14 +534,17 @@ public class OrderService : IOrderService
             r.AdminNote = orderReturnReview.AdminNote;
             r.RefundAmount = orderReturnReview.RefundAmoutLong;
             r.ReviewedAt = DateTimeOffset.UtcNow;
-            r.StripeRefundId = orderReturnReview.StripeRefundId == null ? r.StripeRefundId : orderReturnReview.StripeRefundId;
+            r.StripeRefundId = orderReturnReview.StripeRefundId == null
+                ? r.StripeRefundId
+                : orderReturnReview.StripeRefundId;
         });
 
         OrderStatus oldOrderStatus = OrderStatus.Pending;
 
-        OrderStatus? newOrderStatus = (orderReturnReview.Decision == ReturnStatus.Approved || orderReturnReview.Decision == ReturnStatus.Refunded)
-            ? OrderStatus.Returned
-            : null;
+        OrderStatus? newOrderStatus =
+            (orderReturnReview.Decision == ReturnStatus.Approved || orderReturnReview.Decision == ReturnStatus.Refunded)
+                ? OrderStatus.Returned
+                : null;
 
         var orderUpdate = await _orderRepo.UpdateOrderAsync(orderReturn.OrderId, o =>
         {
@@ -549,11 +577,11 @@ public class OrderService : IOrderService
         return MapReturnToDTO(updated);
     }
 
-    public async Task<OrderReturnGetDTO> ReviewReturnAsync(int returnId, OrderReturnReviewDTO dto, int reviewerId, string reviewerName)
+    public async Task<OrderReturnGetDTO> ReviewReturnAsync(int returnId, OrderReturnReviewDTO dto, int reviewerId,
+        string reviewerName)
     {
         var ret = await _orderRepo.GetOrderReturnAsync(returnId)
-            ?? throw new KeyNotFoundException($"OrderReturn {returnId} not found");
-
+                  ?? throw new KeyNotFoundException($"OrderReturn {returnId} not found");
         var updated = await _orderRepo.UpdateOrderReturnAsync(returnId, r =>
         {
             r.Status = dto.Decision;
@@ -584,10 +612,12 @@ public class OrderService : IOrderService
             IsSystemAction = false
         });
 
-        if (!string.IsNullOrWhiteSpace(ret.Order.PaymentIntentId) && ret is { Status: ReturnStatus.Approved or ReturnStatus.Refunded })
+        if (!string.IsNullOrWhiteSpace(ret.Order.PaymentIntentId) &&
+            ret is { Status: ReturnStatus.Approved or ReturnStatus.Refunded })
         {
             await _paymentService.CreateRefundAsync(
-                new DTOs.PaymentDTO.ReturnRequestDTO(returnId, ret.Order.OrderCode, ret.Order.PaymentIntentId, updated.RefundAmount * 100, "Return by " + reviewerName));
+                new DTOs.PaymentDTO.ReturnRequestDTO(returnId, ret.Order.OrderCode, ret.Order.PaymentIntentId,
+                    updated.RefundAmount * 100));
         }
 
         if (newOrderStatus == OrderStatus.Completed)
@@ -711,5 +741,4 @@ public class OrderService : IOrderService
 
     private static string GenerateOrderCode()
         => $"ORD-{DateTimeOffset.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
-
 }

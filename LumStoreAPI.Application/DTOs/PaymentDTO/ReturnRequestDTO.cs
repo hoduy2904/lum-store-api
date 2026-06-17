@@ -4,6 +4,5 @@
         int RefundId,
         string OrderCode,
         string PaymentIntentId,
-        long? Amount = null,
-        string? Reason = null);
+        long? Amount = null);
 }
