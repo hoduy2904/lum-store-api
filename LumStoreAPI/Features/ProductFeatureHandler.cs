@@ -70,8 +70,11 @@ public class ProductFeatureHandler(
         if (product.IsCombo)
         {
             var comboResult = await discountRuleService.CalculateComboPriceAsync(product.NodeID);
-            dto.Price = comboResult.TotalPrice;
-            dto.PriceDiscount = null;
+            dto.Price = comboResult.SubTotal;
+            dto.PriceDiscount = comboResult.TotalPrice < comboResult.SubTotal
+                ? comboResult.TotalPrice
+                : null;
+            dto.DiscountRules = [];
             dto.ComboItems = comboResult.Items;
             dto.ComboStock = comboResult.ComboStock;
         }
