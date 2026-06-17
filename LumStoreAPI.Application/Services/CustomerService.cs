@@ -1,5 +1,4 @@
 using LumStoreAPI.Application.DTOs.CustomerDTO;
-using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Customers;
@@ -13,13 +12,11 @@ namespace LumStoreAPI.Application.Services;
 public class CustomerService : ICustomerService
 {
     private readonly ICustomerRepository _customerRepo;
-    private readonly IOrderService _orderService;
     private readonly IEventLogService _eventLog;
 
-    public CustomerService(ICustomerRepository customerRepo, IOrderService orderService, IEventLogService eventLog)
+    public CustomerService(ICustomerRepository customerRepo, IEventLogService eventLog)
     {
         _customerRepo = customerRepo;
-        _orderService = orderService;
         _eventLog = eventLog;
     }
 
@@ -290,14 +287,6 @@ public class CustomerService : ICustomerService
             }
         };
     }
-
-    public Task<PagedResponse<OrderGetDTO>> GetCustomerOrdersAsync(int profileId, int page, int pageSize)
-        => _orderService.GetOrdersAsync(new OrderListRequest
-        {
-            Page = page,
-            PageSize = pageSize,
-            CustomerId = profileId
-        });
 
     // ── Mappers ───────────────────────────────────────────────────────────
 
