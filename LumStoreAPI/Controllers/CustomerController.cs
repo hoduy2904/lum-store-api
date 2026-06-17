@@ -14,8 +14,13 @@ namespace LumStoreAPI.Controllers;
 public class CustomerController : ControllerBase
 {
     private readonly ICustomerService _customerService;
+    private readonly IOrderService _orderService;
 
-    public CustomerController(ICustomerService customerService) => _customerService = customerService;
+    public CustomerController(ICustomerService customerService, IOrderService orderService)
+    {
+        _customerService = customerService;
+        _orderService = orderService;
+    }
 
     // ── Profiles ──────────────────────────────────────────────────────────
 
@@ -167,7 +172,7 @@ public class CustomerController : ControllerBase
     [HttpGet("{profileId:int}/orders")]
     public async Task<IActionResult> GetCustomerOrders(int profileId, [FromQuery] int page = 1, [FromQuery] int limit = 5)
     {
-        var result = await _customerService.GetCustomerOrdersAsync(profileId, page, limit);
+        var result = await _orderService.GetOrdersAsync(new OrderListRequest { Page = page, PageSize = limit, CustomerId = profileId });
         return Ok(result);
     }
 

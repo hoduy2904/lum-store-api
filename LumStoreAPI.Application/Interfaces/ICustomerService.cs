@@ -30,9 +30,6 @@ public interface ICustomerService
     Task<CustomerTierGetDTO> UpsertTierAsync(CustomerTierUpsertDTO dto);
     Task<IEnumerable<CustomerTierGetDTO>> UpsertTiersAsync(IEnumerable<CustomerTierUpsertDTO> dtos);
 
-    // ── Orders ────────────────────────────────────────────────────────────
-    Task<PagedResponse<OrderGetDTO>> GetCustomerOrdersAsync(int profileId, int page, int pageSize);
-
     // ── Stats ─────────────────────────────────────────────────────────────
     Task<CustomerStatsDTO> GetStatsAsync();
 }
