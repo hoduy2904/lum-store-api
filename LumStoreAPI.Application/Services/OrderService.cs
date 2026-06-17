@@ -31,14 +31,16 @@ public class OrderService : IOrderService
     private readonly IShiprelayService _shiprelayService;
     private readonly ILogger<OrderService> _logger;
     private readonly IPaymentService _paymentService;
+    private readonly ICustomerService _customerService;
 
-    public OrderService(IOrderRepository orderRepo, IEventLogService eventLog, IShiprelayService shiprelayService, ILogger<OrderService> logger, IPaymentService paymentService)
+    public OrderService(IOrderRepository orderRepo, IEventLogService eventLog, IShiprelayService shiprelayService, ILogger<OrderService> logger, IPaymentService paymentService, ICustomerService customerService)
     {
         _orderRepo = orderRepo;
         _eventLog = eventLog;
         _shiprelayService = shiprelayService;
         _logger = logger;
         _paymentService = paymentService;
+        _customerService = customerService;
     }
 
     public async Task<PagedResponse<OrderGetDTO>> GetOrdersAsync(OrderListRequest request)
@@ -162,6 +164,12 @@ public class OrderService : IOrderService
             ChangedByUserId = operatorUserId,
             IsSystemAction = false
         });
+
+        if (dto.NewStatus == OrderStatus.Completed)
+            await AwardOrderCompletionPointsAsync(updated);
+
+        if (dto.NewStatus == OrderStatus.Returned)
+            await RevokeOrderCompletionPointsAsync(updated);
 
         await _eventLog.LogInformation("OrderService", "ORDER_STATUS_UPDATED",
             $"Order {order.OrderCode}: {prevStatus} → {dto.NewStatus}");
@@ -532,6 +540,9 @@ public class OrderService : IOrderService
             IsSystemAction = true
         });
 
+        if (newOrderStatus == OrderStatus.Returned)
+            await RevokeOrderCompletionPointsAsync(orderUpdate);
+
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED_STRIPE",
             $"Return #{orderReturn.ItemID} reviewed: {orderReturnReview.Decision} by Stripe");
 
@@ -579,10 +590,45 @@ public class OrderService : IOrderService
                 new DTOs.PaymentDTO.ReturnRequestDTO(returnId, ret.Order.OrderCode, ret.Order.PaymentIntentId, updated.RefundAmount * 100, "Return by " + reviewerName));
         }
 
+        if (newOrderStatus == OrderStatus.Completed)
+            await AwardOrderCompletionPointsAsync(ret.Order);
+
+        if (newOrderStatus == OrderStatus.Returned)
+            await RevokeOrderCompletionPointsAsync(ret.Order);
+
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED",
             $"Return #{returnId} reviewed: {dto.Decision} by {reviewerName}");
 
         return MapReturnToDTO(updated);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    private async Task AwardOrderCompletionPointsAsync(Order order)
+    {
+        if (!order.CustomerId.HasValue) return;
+
+        var profileId = order.CustomerId.Value;
+        var profile = await _customerService.GetCustomerAsync(profileId);
+        if (profile == null) return;
+
+        var tiers = await _customerService.GetTiersAsync();
+        var pointsPerDollar = tiers
+            .FirstOrDefault(t => t.TierLevel == profile.TierLevel)
+            ?.PointsPerDollar ?? 1;
+
+        var points = (int)(order.Total * pointsPerDollar);
+        if (points <= 0) return;
+
+        await _customerService.AwardPointsAsync(profileId, points,
+            $"Earned from completed order {order.OrderCode}", order.ItemID);
+    }
+
+    private async Task RevokeOrderCompletionPointsAsync(Order order)
+    {
+        if (!order.CustomerId.HasValue) return;
+        await _customerService.RevokeOrderPointsAsync(order.CustomerId.Value, order.ItemID,
+            $"Points revoked for returned order {order.OrderCode}");
     }
 
     // ── Mappers ───────────────────────────────────────────────────────────

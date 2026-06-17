@@ -147,6 +147,32 @@ public class CustomerService : ICustomerService
         await RecalculateTierAsync(profileId);
     }
 
+    public async Task RevokeOrderPointsAsync(int profileId, int orderId, string description)
+    {
+        var loyaltyPoints = await _customerRepo.GetLoyaltyPointsAsync(profileId);
+        var earnedForOrder = loyaltyPoints
+            .Where(lp => lp.OrderId == orderId && lp.Points > 0)
+            .Sum(lp => lp.Points);
+
+        if (earnedForOrder <= 0) return;
+
+        await _customerRepo.InsertLoyaltyPointAsync(new LoyaltyPoint
+        {
+            CustomerProfileId = profileId,
+            Points = -earnedForOrder,
+            Description = description,
+            OrderId = orderId
+        });
+
+        await _customerRepo.UpdateProfileAsync(profileId, p =>
+        {
+            p.TotalPoints = Math.Max(0, p.TotalPoints - earnedForOrder);
+            p.AvailablePoints = Math.Max(0, p.AvailablePoints - earnedForOrder);
+        });
+
+        await RecalculateTierAsync(profileId);
+    }
+
     public async Task RedeemPointsAsync(int profileId, int points, string description)
     {
         var profile = await _customerRepo.GetProfileAsync(profileId)
