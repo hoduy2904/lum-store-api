@@ -50,6 +50,7 @@ package.json
 
 appsettings.Development.json
 wwwroot/
+!wwwroot/robots.txt
 LumStoreAPI/logs
 # Claude Code - KHÔNG commit lên Git
 .claude.json
