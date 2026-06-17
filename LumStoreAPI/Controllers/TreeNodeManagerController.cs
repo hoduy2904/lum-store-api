@@ -79,6 +79,7 @@ namespace LumStoreAPI.Controllers
             var nodes = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
                 query
+                .Published()
                 .Where(x => nodeIds.Contains(x.NodeID));
             })).Select(x => new DocumentPageGetDTO(x));
 
@@ -96,6 +97,7 @@ namespace LumStoreAPI.Controllers
             var node = (await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
             {
                 query
+                .Published()
                 .Where(x => x.NodeID == nodeId);
             })).Select(x => new DocumentPageGetDTO(x)).FirstOrDefault();
 

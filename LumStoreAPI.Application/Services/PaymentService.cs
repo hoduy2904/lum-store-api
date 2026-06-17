@@ -30,7 +30,7 @@ namespace LumStoreAPI.Application.Services
                 var refund = await service.CreateAsync(new()
                 {
                     PaymentIntent = request.PaymentIntentId,
-                    Reason = request.Reason,
+                    Reason = "requested_by_customer",
                     Metadata = new Dictionary<string, string>()
                     {
                         ["order_code"] = request.OrderCode,
