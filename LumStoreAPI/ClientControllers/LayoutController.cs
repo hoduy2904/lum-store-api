@@ -54,5 +54,32 @@ namespace LumStoreAPI.ClientControllers
 
             return Ok(APIResponse<SiteConfigViewModel>.Success(new SiteConfigViewModel(layoutSettings, keySettings, footerColumns, navigations)));
         }
+
+        [HttpGet("sitemap")]
+        public async Task<IActionResult> GetSitemap()
+        {
+           var pages = await _pageRetrieveContext.GetPagesAsync<DocumentPage>(query =>
+            {
+                query.Where(x => x.Node.ClassName.StartsWith("Pages"))
+                    .Select(x=> new DocumentPage
+                    {
+                        DocumentName = x.DocumentName,
+                        UpdatedAt =  x.UpdatedAt,
+                        CreatedAt =  x.CreatedAt,
+                        Node = new DocumentNode
+                        {
+                            RelativeUrl =  x.Node.RelativeUrl
+                        }
+                    });
+            },cache=>cache.Dependencies(d=>d.Nodes()).Key("sitemap").Expiration(-1));
+
+            var sitemaps = pages.Select(x => new Sitemap
+            {
+                LastMod = x.UpdatedAt.ToUniversalTime().DateTime,
+                Loc = x.Node.RelativeUrl
+            });
+            
+            return Ok(APIResponse<IEnumerable<Sitemap>>.Success(sitemaps,["success"]));
+        }
     }
 }
