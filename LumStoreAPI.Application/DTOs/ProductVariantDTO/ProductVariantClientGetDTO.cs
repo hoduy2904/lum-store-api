@@ -6,8 +6,9 @@ namespace LumStoreAPI.Application.DTOs.ProductVariantDTO;
 public record class ProductVariantClientGetDTO : ProductVariantGetDTO
 {
     public new string[] Images { get; set; } = [];
+    public string? ColorImage { get; set; }
 
-    public ProductVariantClientGetDTO(ProductVariant productVariant, MediaItemDTO[] mediaItemDTOs) : base(productVariant)
+    public ProductVariantClientGetDTO(ProductVariant productVariant, MediaItemDTO[] mediaItemDTOs, string? colorImageUrl = null) : base(productVariant)
     {
         this.VariantId = productVariant.ItemID;
         this.SKU = productVariant.SKU;
@@ -19,6 +20,8 @@ public record class ProductVariantClientGetDTO : ProductVariantGetDTO
             this.Images = mediaItemDTOs.Select(x => x.FileURL).ToArray();
         }
         this.Color = productVariant.Color?.ColorValue;
+        this.ColorImageId = productVariant.Color?.ColorImageId;
+        this.ColorImage = colorImageUrl;
         this.VariantName = productVariant.VariantName;
         this.ColorId = productVariant.ColorId;
         this.ParentId = productVariant.ParentId;

@@ -23,6 +23,8 @@ public class CategoryProductVariantDTO
     public int VariantId { get; set; }
     public string VariantName { get; set; } = default!;
     public string? Color { get; set; }
+    public string? ColorImage { get; set; }
+    public Guid? ColorImageId { get; set; }
     public int Stock { get; set; }
     public string SKU { get; set; } = default!;
     public string[] Images { get; set; } = [];

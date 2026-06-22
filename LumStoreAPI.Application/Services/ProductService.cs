@@ -326,6 +326,8 @@ IDiscountRuleService discountRuleService)
                     VariantId = v.VariantId,
                     VariantName = v.VariantName,
                     Color = v.Color,
+                    ColorImage = v.ColorImage,
+                    ColorImageId = v.ColorImageId,
                     Stock = v.Stock,
                     SKU = v.SKU,
                     Images = [.. productImageUrls, .. v.Images]
@@ -452,7 +454,7 @@ IDiscountRuleService discountRuleService)
         var matchingVariants = await _lumStoreContext.ProductVariants
             .AsNoTracking()
             .Where(v => v.ShiprelayId > 0 && v.VariantName != null && v.ColorId == colorId)
-            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.SKU, ColorValue = v.Color != null ? v.Color.ColorValue : null })
+            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.SKU, ColorValue = v.Color != null ? v.Color.ColorValue : null, ColorImageId = v.Color != null ? v.Color.ColorImageId : (Guid?)null })
             .ToListAsync();
 
         if (matchingVariants.Count == 0)
@@ -539,6 +541,15 @@ IDiscountRuleService discountRuleService)
             ? (await _mediaService.GetMediaItemsAsync(imageGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
             : new Dictionary<Guid, string>();
 
+        var colorImageIds = pageItems
+            .Where(x => x.variant.ColorImageId.HasValue)
+            .Select(x => x.variant.ColorImageId!.Value)
+            .Distinct()
+            .ToArray();
+        var colorImageMap = colorImageIds.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(colorImageIds)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : new Dictionary<Guid, string>();
+
         var result2 = pageItems.Select(x =>
         {
             string? imageUrl = x.product.Images.Length > 0
@@ -564,6 +575,7 @@ IDiscountRuleService discountRuleService)
                     VariantId = x.variant.ItemID,
                     VariantName = x.variant.VariantName,
                     Color = x.variant.ColorValue,
+                    ColorImage = x.variant.ColorImageId.HasValue && colorImageMap.TryGetValue(x.variant.ColorImageId.Value, out var cu) ? cu : null,
                     SKU = x.variant.SKU,
                     Stock = x.variant.Stock,
                 }
@@ -762,6 +774,14 @@ IDiscountRuleService discountRuleService)
             ? (await _mediaService.GetMediaItemsAsync(variantImageGuids)).ToList()
             : [];
 
+        var colorImageIds = variants
+            .Where(v => v.Color?.ColorImageId.HasValue == true)
+            .Select(v => v.Color!.ColorImageId!.Value)
+            .Distinct().ToArray();
+        var colorImageMap = colorImageIds.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(colorImageIds)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : new Dictionary<Guid, string>();
+
         return variants
             .GroupBy(v => v.ProductID)
             .ToDictionary(
@@ -771,6 +791,8 @@ IDiscountRuleService discountRuleService)
                     VariantId = v.ItemID,
                     VariantName = v.VariantName,
                     Color = v.Color?.ColorValue,
+                    ColorImageId = v.Color?.ColorImageId,
+                    ColorImage = v.Color?.ColorImageId.HasValue == true && colorImageMap.TryGetValue(v.Color.ColorImageId.Value, out var cu) ? cu : null,
                     Stock = v.Stock,
                     SKU = v.SKU,
                     Images = variantImages
@@ -801,14 +823,27 @@ IDiscountRuleService discountRuleService)
             ? (await _mediaService.GetMediaItemsAsync(variantImageGuids)).ToList()
             : [];
 
+        var colorImageIds = variants
+            .Where(v => v.Color?.ColorImageId.HasValue == true)
+            .Select(v => v.Color!.ColorImageId!.Value)
+            .Distinct().ToArray();
+        var colorImageMap = colorImageIds.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(colorImageIds)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : new Dictionary<Guid, string>();
+
         return variants
             .GroupBy(v => v.ProductID)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(v => new ProductVariantClientGetDTO(
-                    v,
-                    variantImages.Where(img => v.Images.Contains(img.FileID)).OrderBy(img => v.Images.IndexOf(img.FileID)).ToArray()
-                )).ToList()
+                g => g.Select(v =>
+                {
+                    string? colorImageUrl = v.Color?.ColorImageId.HasValue == true && colorImageMap.TryGetValue(v.Color.ColorImageId.Value, out var cu) ? cu : null;
+                    return new ProductVariantClientGetDTO(
+                        v,
+                        variantImages.Where(img => v.Images.Contains(img.FileID)).OrderBy(img => v.Images.IndexOf(img.FileID)).ToArray(),
+                        colorImageUrl
+                    );
+                }).ToList()
             );
     }
 }

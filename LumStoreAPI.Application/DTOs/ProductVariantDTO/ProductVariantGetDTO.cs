@@ -11,6 +11,7 @@ public record class ProductVariantGetDTO
     public int Stock { get; set; }
     public Guid[] Images { get; set; } = [];
     public string? Color { get; set; }
+    public Guid? ColorImageId { get; set; }
     public int? ColorId { get; set; }
     public string VariantName { get; set; } = default!;
     public int? ParentId { get; set; }
@@ -24,6 +25,7 @@ public record class ProductVariantGetDTO
         this.Stock = productVariant.Stock;
         this.Images = productVariant.Images;
         this.Color = productVariant.Color?.ColorValue;
+        this.ColorImageId = productVariant.Color?.ColorImageId;
         this.VariantName = productVariant.VariantName;
         this.ColorId = productVariant.ColorId;
         this.ParentId = productVariant.ParentId;

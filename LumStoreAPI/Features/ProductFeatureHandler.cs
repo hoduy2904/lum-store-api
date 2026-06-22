@@ -36,6 +36,14 @@ public class ProductFeatureHandler(
                 ? (await mediaService.GetMediaItemsAsync(variantImageGuids)).ToList()
                 : []).OrderBy(x => variantImageGuids.IndexOf(x.FileID)).ToList();
 
+            var colorImageIds = variantList
+                .Where(v => v.Color?.ColorImageId.HasValue == true)
+                .Select(v => v.Color!.ColorImageId!.Value)
+                .Distinct().ToArray();
+            var colorImageMap = colorImageIds.Length > 0
+                ? (await mediaService.GetMediaItemsAsync(colorImageIds)).ToDictionary(m => m.FileID, m => m.FileURL)
+                : new Dictionary<Guid, string>();
+
             variantDTOs = variantList.Select(v =>
             {
                 var uniqueVariantImages = variantImages
@@ -43,7 +51,8 @@ public class ProductFeatureHandler(
                     .OrderBy(img => v.Images.IndexOf(img.FileID))
                     .ToArray();
 
-                return new ProductVariantClientGetDTO(v, [.. images, .. uniqueVariantImages]);
+                string? colorImageUrl = v.Color?.ColorImageId.HasValue == true && colorImageMap.TryGetValue(v.Color.ColorImageId.Value, out var cu) ? cu : null;
+                return new ProductVariantClientGetDTO(v, [.. images, .. uniqueVariantImages], colorImageUrl);
             });
         }
 
