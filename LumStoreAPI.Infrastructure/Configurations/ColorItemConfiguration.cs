@@ -12,13 +12,14 @@ public class ColorItemConfiguration : IEntityTypeConfiguration<ColorItem>
             .HasMaxLength(50);
 
         builder.Property(x => x.ColorValue)
-        .HasMaxLength(30);
+            .HasMaxLength(30)
+            .IsRequired(false);
+
+        builder.Property(x => x.ColorImageId)
+            .IsRequired(false);
 
         builder.HasIndex(x => x.ColorName)
             .IsUnique();
-
-        builder.HasIndex(x => x.ColorValue)
-         .IsUnique();
 
         builder.HasOne(x => x.ColorCategory)
         .WithMany(x => x.Colors)

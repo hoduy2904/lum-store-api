@@ -17,6 +17,7 @@ public class MatchedVariantDTO
     public int VariantId { get; set; }
     public string VariantName { get; set; } = default!;
     public string? Color { get; set; }
+    public string? ColorImage { get; set; }
     public string SKU { get; set; } = default!;
     public int Stock { get; set; }
 }

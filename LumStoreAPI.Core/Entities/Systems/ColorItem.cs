@@ -9,7 +9,8 @@ public class ColorItem : BaseClassItem
 {
     public int ItemOrder { get; set; }
     public string ColorName { get; set; } = default!;
-    public string ColorValue { get; set; } = default!;
+    public string? ColorValue { get; set; }
+    public Guid? ColorImageId { get; set; }
     public int CategoryId { get; set; }
     [JsonIgnore]
     public virtual ColorCategory? ColorCategory { get; set; }
