@@ -39,7 +39,8 @@ internal class ColorService(
             Value = x.ItemID,
             RelatedData = x.Colors.Select(c => new ContentKeyValue
             {
-                Key = c.ColorImageId.HasValue && mediaMap.TryGetValue(c.ColorImageId.Value, out var url)
+                Key = (c.ColorValue ?? ""),
+                ColorImage = c.ColorImageId.HasValue && mediaMap.TryGetValue(c.ColorImageId.Value, out var url)
                       ? url
                       : (c.ColorValue ?? ""),
                 Value = c.ItemID
