@@ -18,7 +18,7 @@ namespace LumStoreAPI.Application.DTOs.UserDTO
         public string PasswordHash => HashHelper.HashPassword(Password);
 
         [JsonIgnore]
-        public User GetEntity => new User()
+        public virtual User GetEntity => new User()
         {
             UserName = UserName,
             Email = Email,
