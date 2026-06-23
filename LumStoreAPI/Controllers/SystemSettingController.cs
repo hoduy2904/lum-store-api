@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text.Json;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.Systems;
 using LumStoreAPI.Core.Entities.Systems;
@@ -7,8 +9,6 @@ using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
-using System.Text.Json;
 
 namespace LumStoreAPI.Controllers
 {
@@ -38,7 +38,8 @@ namespace LumStoreAPI.Controllers
         {
             search = search?.Trim();
             var settingKeys = await _settingKeyValueRepository.GetSettingKeysAsync(page, pageSize,
-             query => !query.SettingCode.StartsWith("System.") && (string.IsNullOrWhiteSpace(search) || query.SettingCode.StartsWith(search)));
+                query => !query.SettingCode.StartsWith("System.") &&
+                         (string.IsNullOrWhiteSpace(search) || query.SettingCode.StartsWith(search)));
 
             return Ok(PagedResponse<SettingKeyValue>.Success(settingKeys, page, pageSize));
         }
@@ -58,10 +59,11 @@ namespace LumStoreAPI.Controllers
         [ProducesResponseType<APIResponse<SettingKeyValue>>((int)HttpStatusCode.OK)]
         [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.BadRequest)]
         [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.InternalServerError)]
-
         public async Task<IActionResult> PostSettingKey(SettingKeyValue settingKeyValue)
         {
-            if (settingKeyValue.SettingCode.StartsWith("System")) return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.INVALID_DATA, ["Cannot use system code name"]));
+            if (settingKeyValue.SettingCode.StartsWith("System"))
+                return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.INVALID_DATA,
+                    ["Cannot use system code name"]));
             var settingKey = await _settingKeyValueRepository.InsertSettingKeyAsync(settingKeyValue);
             if (settingKey == null) return Ok(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR));
 
@@ -74,7 +76,9 @@ namespace LumStoreAPI.Controllers
         [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> PutSettingKey(string settingCode, SettingKeyValue settingKeyValue)
         {
-            if (settingKeyValue.SettingCode.StartsWith("System")) return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.INVALID_DATA, ["Cannot use system code name"]));
+            if (settingKeyValue.SettingCode.StartsWith("System"))
+                return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.INVALID_DATA,
+                    ["Cannot use system code name"]));
             var settingKey = await _settingKeyValueRepository.UpdateSettingKeyAsync(settingCode, settingKeyValue);
             if (settingKey == null) return NotFound(APIResponseBase.Failure(ErrorStatusNameConstants.SYSTEM_ERROR));
 
@@ -85,13 +89,13 @@ namespace LumStoreAPI.Controllers
         [ProducesResponseType<APIResponse<SettingKeySystemRequest>>((int)HttpStatusCode.OK)]
         [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.BadRequest)]
         [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.NotFound)]
-
         public async Task<IActionResult> PutSystemSettingKey(SettingKeySystemRequest request)
         {
             if (!SettingKeyHelper.SystemSettingTypeMapping.TryGetValue(request.SettingCode, out Type? systemType))
             {
                 return NotFound(APIResponseBase.Failure(ErrorStatusNameConstants.NOT_FOUND));
             }
+
             try
             {
                 var obj = request.SettingValue.Deserialize(systemType, new JsonSerializerOptions
@@ -107,7 +111,8 @@ namespace LumStoreAPI.Controllers
                     SettingName = request.SettingName,
                     SettingValue = objJson
                 };
-                var updated = await _settingKeyValueRepository.UpdateSettingKeyAsync(request.SettingCode, settingEntity);
+                var updated =
+                    await _settingKeyValueRepository.UpdateSettingKeyAsync(request.SettingCode, settingEntity);
 
                 if (updated is null)
                 {
@@ -128,8 +133,10 @@ namespace LumStoreAPI.Controllers
         [ProducesResponseType<APIResponseBase>((int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> GetSystemKeySetting(string key)
         {
-            if (string.IsNullOrWhiteSpace(key) || !key.StartsWith("System")) return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.INVALID_DATA));
-            if (!SettingKeyHelper.SystemSettingTypeMapping.TryGetValue(key, out Type? settingKeyType)) return NotFound();
+            if (string.IsNullOrWhiteSpace(key) || !key.StartsWith("System"))
+                return BadRequest(APIResponseBase.Failure(ErrorStatusNameConstants.INVALID_DATA));
+            if (!SettingKeyHelper.SystemSettingTypeMapping.TryGetValue(key, out Type? settingKeyType))
+                return NotFound();
             var model = new SettingKeySystemResponse();
             var settingKey = await _settingKeyValueRepository.GetSettingKeyAsync(key);
 

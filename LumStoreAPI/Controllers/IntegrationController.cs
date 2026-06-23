@@ -11,7 +11,7 @@ namespace LumStoreAPI.Controllers;
 /// <summary>Integration configuration management (Shiprelay, WMS, etc.).</summary>
 [Route("api/integrations")]
 [ApiController]
-[Authorize(Roles = "ADMIN")]
+[Authorize(Roles = nameof(UserRole.ADMIN))]
 public class IntegrationController : ControllerBase
 {
     private readonly IIntegrationConfigService _integrationService;

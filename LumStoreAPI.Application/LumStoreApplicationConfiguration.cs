@@ -63,7 +63,6 @@ namespace LumStoreAPI.Application
                 {
                     opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                     opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
                 })
                     .AddJwtBearer(opt =>
                     {
@@ -137,8 +136,21 @@ namespace LumStoreAPI.Application
                 {
                     opt.DefaultPolicy = new AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()
-                    .RequireRole(nameof(UserRole.ADMIN), nameof(UserRole.USER))
+                    .RequireRole(nameof(UserRole.ADMIN), nameof(UserRole.USER), nameof(UserRole.MANAGER))
                     .Build();
+                    
+                    opt.AddPolicy(nameof(RoleType.ADMIN_TYPE), policy =>
+                    {
+                        policy.RequireRole(nameof(UserRole.ADMIN));
+                    });
+                    opt.AddPolicy(nameof(RoleType.MANAGER_TYPE), policy =>
+                    {
+                        policy.RequireRole(nameof(UserRole.ADMIN), nameof(UserRole.MANAGER));
+                    });
+                    opt.AddPolicy(nameof(RoleType.EDITOR_TYPE), policy =>
+                    {
+                        policy.RequireRole(nameof(UserRole.ADMIN), nameof(UserRole.EDITOR), nameof(UserRole.MANAGER));
+                    });
                 });
 
                 return services;

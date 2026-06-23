@@ -1,5 +1,6 @@
 ﻿using LumStoreAPI.Core.Entities.Base;
 using System.ComponentModel.DataAnnotations.Schema;
+using LumStoreAPI.Core.Models.Enums;
 
 namespace LumStoreAPI.Core.Entities.Systems
 {
@@ -27,7 +28,7 @@ namespace LumStoreAPI.Core.Entities.Systems
         public DateTimeOffset TimeLocked { get; set; }
         public int UserLevel { get; set; }
         public string? VerifyCode { get; set; }
-        public bool IsAdmin { get; set; }
+        public UserRole Role { get; set; } = UserRole.USER;
         public DateTimeOffset? TimeActionCode { get; set; }
 
         public string? GoogleId { get; set; }

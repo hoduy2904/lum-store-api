@@ -1,6 +1,7 @@
 using LumStoreAPI.Application.DTOs.DiscountRuleDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +10,7 @@ namespace LumStoreAPI.Controllers;
 /// <summary>Quantity-based discount rules management.</summary>
 [Route("api/discount-rules")]
 [ApiController]
-[Authorize(Roles = "ADMIN")]
+[Authorize(Policy = nameof(RoleType.MANAGER_TYPE))]
 public class DiscountRuleController : ControllerBase
 {
     private readonly IDiscountRuleService _discountRuleService;

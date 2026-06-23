@@ -10,7 +10,7 @@ namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = nameof(UserRole.ADMIN))]
+    [Authorize(Policy = nameof(RoleType.EDITOR_TYPE))]
     public class ProductVariantController : ControllerBase
     {
         private readonly IProductVariantService _productVariantService;

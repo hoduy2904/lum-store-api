@@ -2,7 +2,6 @@
 using LumStoreAPI.Application.DTOs.EventLogDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
-using LumStoreAPI.Core.Interfaces.ContentEngine;
 using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;

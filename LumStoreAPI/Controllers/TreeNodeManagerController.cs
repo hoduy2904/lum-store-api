@@ -7,7 +7,6 @@ using LumStoreAPI.Core.Models.Constants.Systems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Core.Models.Systems;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +14,7 @@ namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = nameof(UserRole.ADMIN))]
+    [Authorize(Policy = nameof(RoleType.EDITOR_TYPE))]
     public class TreeNodeManagerController : ControllerBase
     {
         private readonly IPageRetrieveContext _pageRetrieveContext;

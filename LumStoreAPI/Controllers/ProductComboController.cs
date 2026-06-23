@@ -12,7 +12,7 @@ namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = nameof(UserRole.ADMIN))]
+    [Authorize(Policy = nameof(RoleType.EDITOR_TYPE))]
     public class ProductComboController(
         IProductComboRepository productComboRepository) : ControllerBase
     {
