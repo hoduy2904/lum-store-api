@@ -23,7 +23,7 @@ public class ProductFeatureHandler(
             ? await mediaService.GetMediaItemsAsync(product.Images)
             : []).OrderBy(x => product.Images.IndexOf(x.FileID)).ToArray();
 
-        var productImageIds = new HashSet<Guid>(product.Images);
+        //var productImageIds = new HashSet<Guid>(product.Images);
 
         var variants = await productVariantRepository.GetProductVariantsAsync(v => v.ProductID == product.NodeID);
         var variantList = variants.ToList();
@@ -46,13 +46,15 @@ public class ProductFeatureHandler(
 
             variantDTOs = variantList.Select(v =>
             {
-                var uniqueVariantImages = variantImages
-                    .Where(img => v.Images.Contains(img.FileID) && !productImageIds.Contains(img.FileID))
+                var variantOnlyImages = variantImages
+                    .Where(img => v.Images.Contains(img.FileID))
+                    //.Where(img => v.Images.Contains(img.FileID) && !productImageIds.Contains(img.FileID))
                     .OrderBy(img => v.Images.IndexOf(img.FileID))
                     .ToArray();
 
                 string? colorImageUrl = v.Color?.ColorImageId.HasValue == true && colorImageMap.TryGetValue(v.Color.ColorImageId.Value, out var cu) ? cu : null;
-                return new ProductVariantClientGetDTO(v, [.. images, .. uniqueVariantImages], colorImageUrl);
+                //return new ProductVariantClientGetDTO(v, [.. images, .. uniqueVariantImages], colorImageUrl);
+                return new ProductVariantClientGetDTO(v, variantOnlyImages, colorImageUrl);
             });
         }
 
