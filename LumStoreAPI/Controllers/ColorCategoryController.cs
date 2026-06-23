@@ -2,13 +2,16 @@ using LumStoreAPI.Application.DTOs.ColorDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Core.Entities.Systems;
 using LumStoreAPI.Core.Models.Constants.Systems;
+using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Policy = nameof(RoleType.MANAGER_TYPE))]
     public class ColorCategoryController(
         IColorCategoryRepository colorCategoryRepository
     ) : ControllerBase

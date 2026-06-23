@@ -2,6 +2,7 @@ using LumStoreAPI.Application.DTOs.CustomerDTO;
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +11,7 @@ namespace LumStoreAPI.Controllers;
 /// <summary>Customer management — profiles, loyalty points, tiers, notes.</summary>
 [Route("api/customers")]
 [ApiController]
-[Authorize(Roles = "ADMIN")]
+[Authorize(Policy = nameof(RoleType.MANAGER_TYPE))]
 public class CustomerController : ControllerBase
 {
     private readonly ICustomerService _customerService;

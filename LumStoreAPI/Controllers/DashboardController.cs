@@ -1,6 +1,7 @@
 using LumStoreAPI.Application.DTOs.DashboardDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
+using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +10,7 @@ namespace LumStoreAPI.Controllers;
 /// <summary>Dashboard statistics and charts data.</summary>
 [Route("api/dashboard")]
 [ApiController]
-[Authorize(Roles = "ADMIN")]
+[Authorize(Policy = nameof(RoleType.MANAGER_TYPE))]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;

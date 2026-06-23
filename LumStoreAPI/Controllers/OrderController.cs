@@ -11,7 +11,7 @@ namespace LumStoreAPI.Controllers;
 /// <summary>Order management — admin CRUD, status updates, notes, returns.</summary>
 [Route("api/orders")]
 [ApiController]
-[Authorize(Roles = "ADMIN")]
+[Authorize(Policy = nameof(RoleType.MANAGER_TYPE))]
 public class OrderController : ControllerBase
 {
     private readonly IOrderService _orderService;

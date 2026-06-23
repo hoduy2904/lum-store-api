@@ -10,22 +10,16 @@ namespace LumStoreAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController(
+        IAuthService authService,
+        IUserService userService,
+        ISocialAuthService socialAuthService)
+        : ControllerBase
     {
-        private readonly IAuthService _authService;
-        private readonly IUserService _userService;
-        private readonly ISocialAuthService _socialAuthService;
-        public AuthController(IAuthService authService, IUserService userService, ISocialAuthService socialAuthService)
-        {
-            _authService = authService;
-            _userService = userService;
-            _socialAuthService = socialAuthService;
-        }
-
         [HttpPost("Register")]
         public async Task<IActionResult> Register(UserCreateRequest userCreateRequest)
         {
-            var result = await _authService.RegisterUserAsync(userCreateRequest);
+            var result = await authService.RegisterUserAsync(userCreateRequest);
             return Ok(result);
         }
 
@@ -33,20 +27,20 @@ namespace LumStoreAPI.Controllers
         [Authorize(Roles = "pre")]
         public async Task<IActionResult> VerifyCode(string code)
         {
-            return Ok(await _authService.VerifyCode(code));
+            return Ok(await authService.VerifyCode(code));
         }
 
         [HttpPost("Login")]
         public async Task<IActionResult> Login(AuthRequest auth)
         {
-            var token = await _authService.AuthenticateAsync(auth);
+            var token = await authService.AuthenticateAsync(auth);
             return Ok(token);
         }
 
         [HttpPost("Logout")]
         public async Task<IActionResult> Logout()
         {
-            await _authService.LogoutAsync();
+            await authService.LogoutAsync();
             return NoContent();
         }
 
@@ -54,7 +48,7 @@ namespace LumStoreAPI.Controllers
         [Authorize]
         public async Task<IActionResult> CurrentUser()
         {
-            var user = await _userService.GetCurrentUserAsync();
+            var user = await userService.GetCurrentUserAsync();
             return Ok(APIResponse<UserDTO?>.Success(user));
         }
 
@@ -62,28 +56,28 @@ namespace LumStoreAPI.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {
-            return Ok(await _authService.ChangePasswordAsync(request));
+            return Ok(await authService.ChangePasswordAsync(request));
         }
 
         [HttpPost("ForgotPassword")]
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
-            return Ok(await _authService.ForgotPasswordAsync(request));
+            return Ok(await authService.ForgotPasswordAsync(request));
         }
 
         [HttpPost("ResetPassword")]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
-            return Ok(await _authService.ResetPasswordAsync(request));
+            return Ok(await authService.ResetPasswordAsync(request));
         }
 
         [HttpPost("social-login")]
         [AllowAnonymous]
         public async Task<IActionResult> SocialLogin(SocialLoginRequest request)
         {
-            return Ok(await _socialAuthService.SocialLoginAsync(request));
+            return Ok(await socialAuthService.SocialLoginAsync(request));
         }
 
         [HttpPost("RefreshToken")]
@@ -95,7 +89,7 @@ namespace LumStoreAPI.Controllers
             {
                 return Unauthorized();
             }
-            var token = await _authService.RefreshTokenAsync(new(accessToken, refreshToken));
+            var token = await authService.RefreshTokenAsync(new(accessToken, refreshToken));
             return Ok(token);
         }
     }

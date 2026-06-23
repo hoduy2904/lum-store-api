@@ -1,5 +1,6 @@
 using LumStoreAPI.Core.Entities.Pages;
 using LumStoreAPI.Core.Entities.Systems;
+using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Libraries.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,7 +79,7 @@ namespace LumStoreAPI.Infrastructure.SeedData
                     FirstName    = "Admin",
                     LastName     = "LUM",
                     Email        = "admin@lumnails.com",
-                    IsAdmin      = true,
+                    Role         = UserRole.ADMIN,
                     IsVerified   = true,
                     IsEnabled    = true,
                     IsLocked     = false,
@@ -92,7 +93,6 @@ namespace LumStoreAPI.Infrastructure.SeedData
                     FirstName    = "Sarah",
                     LastName     = "Nguyen",
                     Email        = "sarah@lumnails.com",
-                    IsAdmin      = false,
                     IsVerified   = true,
                     IsEnabled    = true,
                     IsLocked     = false,
@@ -106,7 +106,6 @@ namespace LumStoreAPI.Infrastructure.SeedData
                     FirstName    = "Emily",
                     LastName     = "Tran",
                     Email        = "emily@lumnails.com",
-                    IsAdmin      = false,
                     IsVerified   = true,
                     IsEnabled    = true,
                     IsLocked     = false,
