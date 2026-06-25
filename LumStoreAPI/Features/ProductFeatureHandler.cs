@@ -78,7 +78,7 @@ public class ProductFeatureHandler(
             Accordions = accordions
         };
 
-        if (product.IsCombo)
+        if (product.IsCombo || product.IsExpand)
         {
             var comboResult = await discountRuleService.CalculateComboPriceAsync(product.NodeID);
             dto.Price = comboResult.SubTotal;

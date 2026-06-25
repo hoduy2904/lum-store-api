@@ -7,6 +7,8 @@ namespace LumStoreAPI.Application.Interfaces;
 public interface IProductVariantService
 {
     Task<ProductVariantGetDTO?> GetProductVariantAsync(int variantId);
+    Task<int[]> GetProductIdsAsync(params int[] variantIds);
+    Task<Dictionary<int, int>> GetVariantIdAndProductIdsAsync(params int[] variantIds);
     Task<ProductVariantGetDTO?> GetProductVariantAsync(string sku);
     Task<IEnumerable<ProductVariantGetDTO>> GetProductVariantsAsync(int productId);
     Task<int> UpdateProductVariantAsync(int variantId, ProductVariantUpdateDTO request);

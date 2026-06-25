@@ -1,4 +1,5 @@
 using LumStoreAPI.Application.DTOs.CartDTO;
+using LumStoreAPI.Application.DTOs.ProductComboDTO;
 using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
@@ -17,19 +18,22 @@ internal class CartService : ICartService
     private readonly LumStoreContext _ctx;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IDiscountRuleService _discountRuleService;
+    private readonly IProductVariantService _productVariantService;
 
     public CartService(
         ICartRepository cartRepo,
         IProductService productService,
         LumStoreContext ctx,
         IHttpContextAccessor httpContextAccessor,
-        IDiscountRuleService discountRuleService)
+        IDiscountRuleService discountRuleService,
+        IProductVariantService productVariantService)
     {
         _cartRepo = cartRepo;
         _productService = productService;
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
         _discountRuleService = discountRuleService;
+        _productVariantService = productVariantService;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -70,26 +74,32 @@ internal class CartService : ICartService
         return comboResult.ComboStock;
     }
 
-    private async Task<CartResponseDTO> BuildCartResponseAsync(int userId, CancellationToken ct)
+    public async Task<CartResponseDTO> BuildCartResponseAsync(int userId, Action<Dictionary<int, ComboPriceResult>, CartItemDTO>? action = null, CancellationToken ct = default)
     {
         var cartItems = (await _cartRepo.GetByUserIdAsync(userId, ct)).ToList();
         if (cartItems.Count == 0) return new CartResponseDTO();
 
-        var nodeIds = cartItems.Select(x => x.NodeId).Distinct().ToArray();
+        var variantIds = cartItems.Where(x => x.VariantId is not null).Select(x => x.VariantId!.Value).ToArray();
+        var expandNodeIds = await _productVariantService.GetVariantIdAndProductIdsAsync(variantIds);
+        var nodeIds = cartItems.Select(x => x.NodeId).Union(expandNodeIds.Values).Distinct().ToArray();
         var products = (await _productService.GetProductsByNodeIdsAsync(nodeIds))
             .ToDictionary(p => p.NodeID);
 
         // Extract price data from already-loaded products — avoids a redundant DB round-trip
-        var prices = products.ToDictionary(
+        var prices = products
+           .Where(kvp => kvp.Value.Fields is ProductClientDTO f && f != null)
+           .ToDictionary(
             kvp => kvp.Key,
             kvp =>
             {
-                var f = kvp.Value.Fields as ProductClientDTO;
+                var f = (kvp.Value.Fields as ProductClientDTO)!;
                 return new
                 {
-                    Price = f?.Price ?? 0m,
-                    PriceDiscount = f?.PriceDiscount ?? 0m,
-                    IsCombo = f?.IsCombo ?? false
+                    Price = f.Price ?? 0m,
+                    PriceDiscount = f.PriceDiscount ?? 0m,
+                    Variants = f.ProductVariants,
+                    IsCombo = f.IsCombo,
+                    IsExpand = f.IsExpand
                 };
             });
 
@@ -114,35 +124,52 @@ internal class CartService : ICartService
 
         // Batch-load combo prices in 2 queries total regardless of combo count
         var comboNodeIds = nodeIds.Where(id => prices.TryGetValue(id, out var p) && p.IsCombo).Distinct().ToArray();
-        var comboPrices = comboNodeIds.Length > 0
+        var comboPriceResults = comboNodeIds.Length > 0
             ? (await _discountRuleService.CalculateBatchComboPricesAsync(comboNodeIds))
-                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice)
-            : new Dictionary<int, decimal>();
+            : [];
+
+        var comboPrices = comboPriceResults
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
+
+        var variantComboResults = comboPriceResults.Values.SelectMany(s => s.Items);
 
         decimal subtotal = 0;
         foreach (var item in items)
         {
             if (!prices.TryGetValue(item.NodeID, out var p)) continue;
+            decimal unitPrice = 0m, basePrice = 0m, discountPrice = 0m;
+            var variantPrice = prices.Values.FirstOrDefault(x => x.Variants.Any(v => v.VariantId == item.VariantId));
+            if (variantPrice != null)
+            {
+                basePrice = variantPrice.PriceDiscount > 0 ? variantPrice.PriceDiscount : variantPrice.Price;
+                discountPrice = variantPrice.PriceDiscount;
+            }
+            else if (p.IsExpand)
+            {
+                var comboPrice = variantComboResults.FirstOrDefault(x => x.VariantId == item.VariantId);
+                basePrice = comboPrice?.UnitPrice ?? 0m;
+                discountPrice = comboPrice?.DiscountedPrice ?? 0m;
+            }
 
-            decimal unitPrice;
             if (p.IsCombo)
             {
                 unitPrice = comboPrices.TryGetValue(item.NodeID, out var cp) ? cp : p.Price;
             }
             else
             {
-                var basePrice = p.PriceDiscount > 0 ? p.PriceDiscount : p.Price;
                 unitPrice = ApplyBestDiscount(discountTiers.GetValueOrDefault(item.NodeID, []), basePrice, item.Quantity);
             }
+            item.UnitPrice = unitPrice;
 
             subtotal += unitPrice * item.Quantity;
+
+            action?.Invoke(comboPriceResults, item);
         }
 
         return new CartResponseDTO
         {
             Items = items,
-            Subtotal = subtotal,
-            ItemCount = items.Sum(x => x.Quantity)
+            Subtotal = subtotal
         };
     }
 
@@ -151,7 +178,7 @@ internal class CartService : ICartService
     public async Task<APIResponse<CartResponseDTO>> GetCartAsync(CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
-        return APIResponse<CartResponseDTO>.Success(await BuildCartResponseAsync(userId, ct));
+        return APIResponse<CartResponseDTO>.Success(await BuildCartResponseAsync(userId, ct: ct));
     }
 
     // ── Commands ──────────────────────────────────────────────────────────────
@@ -318,7 +345,7 @@ internal class CartService : ICartService
             }
         }
 
-        var cart = await BuildCartResponseAsync(userId, ct);
+        var cart = await BuildCartResponseAsync(userId, ct: ct);
         return APIResponse<CartResponseDTO>.Success(cart, [$"Synced {request.Items.Length} items"]);
     }
 }

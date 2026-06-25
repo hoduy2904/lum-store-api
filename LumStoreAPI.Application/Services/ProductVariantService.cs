@@ -30,6 +30,18 @@ internal class ProductVariantService : IProductVariantService
         return count;
     }
 
+    public Task<int[]> GetProductIdsAsync(params int[] variantIds)
+    {
+        if (variantIds.Length == 0) return Task.FromResult<int[]>([]);
+
+        return _productVariantRepository
+             .GetProductVariants()
+             .Where(x => variantIds.Contains(x.ItemID))
+             .AsNoTracking()
+             .Select(x => x.ProductID)
+             .ToArrayAsync();
+    }
+
     public async Task<ProductVariantGetDTO?> GetProductVariantAsync(int variantId)
     {
         var productVariant = await _productVariantRepository.GetProductVariantAsync(variantId);
@@ -70,6 +82,18 @@ internal class ProductVariantService : IProductVariantService
         var productVariants = await _productVariantRepository.GetProductVariantsAsync(x => x.ProductID == productId);
         if (!productVariants.Any()) return Enumerable.Empty<ProductVariantGetDTO>();
         return productVariants.Select(x => new ProductVariantGetDTO(x));
+    }
+
+    public Task<Dictionary<int, int>> GetVariantIdAndProductIdsAsync(params int[] variantIds)
+    {
+        if (variantIds.Length == 0) return Task.FromResult<Dictionary<int, int>>([]);
+
+        return _productVariantRepository
+             .GetProductVariants()
+             .Where(x => variantIds.Contains(x.ItemID))
+             .AsNoTracking()
+             .Select(x => new { x.ProductID, x.ItemID })
+             .ToDictionaryAsync(x => x.ItemID, x => x.ProductID);
     }
 
     public async Task<ProductVariantGetDTO> InsertProductVariantAsync(ProductVariantRequestDTO request)

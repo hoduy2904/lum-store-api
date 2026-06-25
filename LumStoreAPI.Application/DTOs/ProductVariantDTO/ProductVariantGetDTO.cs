@@ -1,4 +1,5 @@
 using LumStoreAPI.Core.Entities.DocumentTypes;
+using System.Text.Json.Serialization;
 
 namespace LumStoreAPI.Application.DTOs.ProductVariantDTO;
 
@@ -15,6 +16,8 @@ public record class ProductVariantGetDTO
     public int? ColorId { get; set; }
     public string VariantName { get; set; } = default!;
     public int? ParentId { get; set; }
+    [JsonIgnore]
+    public int ShiprelayId { get; set; }
 
     public ProductVariantGetDTO(ProductVariant productVariant)
     {
@@ -29,5 +32,6 @@ public record class ProductVariantGetDTO
         this.VariantName = productVariant.VariantName;
         this.ColorId = productVariant.ColorId;
         this.ParentId = productVariant.ParentId;
+        this.ShiprelayId = productVariant.ShiprelayId;
     }
 }

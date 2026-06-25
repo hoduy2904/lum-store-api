@@ -10,5 +10,6 @@ namespace LumStoreAPI.Core.Models.Systems
         public decimal SubProductPrice { get; set; }
         public decimal SubProductPriceDiscount { get; set; }
         public int Stock { get; set; }
+        public int ShiprelayId { get; set; }
     }
 }

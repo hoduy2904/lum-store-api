@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace LumStoreAPI.Application.DTOs.ProductComboDTO;
 
 public class ComboItemDetailDTO
@@ -7,6 +9,9 @@ public class ComboItemDetailDTO
     public string ProductName { get; set; } = default!;
     public decimal UnitPrice { get; set; }
     public decimal DiscountedPrice { get; set; }
+    public int Stock { get; set; }
+    [JsonIgnore]
+    public int ShiprelayId { get; set; }
 }
 
 public class ComboPriceResult

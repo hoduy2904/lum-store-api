@@ -132,7 +132,9 @@ public class DiscountRuleService : IDiscountRuleService
                 VariantName = item.VariantName,
                 ProductName = item.SubProductName,
                 UnitPrice = basePrice,
-                DiscountedPrice = discountedPrice
+                DiscountedPrice = discountedPrice,
+                Stock = item.Stock,
+                ShiprelayId = item.ShiprelayId
             });
         }
 
@@ -184,7 +186,8 @@ public class DiscountRuleService : IDiscountRuleService
                     VariantName = item.VariantName,
                     ProductName = item.SubProductName,
                     UnitPrice = basePrice,
-                    DiscountedPrice = discountedPrice
+                    DiscountedPrice = discountedPrice,
+                    ShiprelayId = item.ShiprelayId
                 });
             }
 

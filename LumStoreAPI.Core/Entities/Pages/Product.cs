@@ -12,6 +12,7 @@ namespace LumStoreAPI.Core.Entities.Pages
         public const string CLASS_NAME = "Pages.Product";
 
         public bool IsCombo { get; set; }
+        public bool IsExpand { get; set; }
         public ProductType ProductType { get; set; } = ProductType.SIMPLE;
         public ProductGroup ProductGroup { get; set; } = ProductGroup.COMMODITY;
 
