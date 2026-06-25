@@ -25,6 +25,7 @@ public class ProductClientDTO
     public bool IsHazmat { get; set; }
     public bool IsNeedBox { get; set; }
     public bool IsFragile { get; set; }
+    public decimal? DiscountedPrice { get; set; }
     public IEnumerable<ProductVariantClientGetDTO> ProductVariants { get; set; } = [];
     public IEnumerable<ProductDiscountTierDTO> DiscountRules { get; set; } = [];
     public IEnumerable<ContentKeyValue> Accordions { get; set; } = [];

@@ -70,12 +70,14 @@ public class ProductFeatureHandler(
 
         var accordions = await settingKeyValueService.GetSettingContentsAsync("Product_Accordion");
 
+        var tiersArray = discountTiers.ToArray();
         var dto = new ProductClientDTO(product)
         {
             Images = images.Select(i => i.FileURL).ToArray(),
             ProductVariants = variantDTOs,
-            DiscountRules = discountTiers,
-            Accordions = accordions
+            DiscountRules = tiersArray,
+            Accordions = accordions,
+            DiscountedPrice = (product.IsCombo || product.IsExpand) ? null : ComputeDiscountedPrice(product.Price, tiersArray),
         };
 
         if (product.IsCombo || product.IsExpand)
@@ -91,5 +93,16 @@ public class ProductFeatureHandler(
         }
 
         return dto;
+    }
+
+    private static decimal? ComputeDiscountedPrice(decimal? price, IEnumerable<ProductDiscountTierDTO> tiers)
+    {
+        if (price is null or <= 0) return null;
+        var best = tiers
+            .Where(t => t.MinQuantity <= 1 && (t.MaxQuantity == null || t.MaxQuantity >= 1))
+            .OrderByDescending(t => t.DiscountPercent + t.DiscountAmount)
+            .FirstOrDefault();
+        if (best == null) return null;
+        return Math.Max(0, Math.Round(price.Value * (1 - best.DiscountPercent / 100) - best.DiscountAmount, 2));
     }
 }

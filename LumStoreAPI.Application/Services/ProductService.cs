@@ -131,12 +131,21 @@ IDiscountRuleService discountRuleService)
 
         var productDTOs = products.Select(x =>
         {
+            var resolvedImages = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray();
+            if (resolvedImages.Length == 0)
+            {
+                var fallback = variantsByProduct.GetValueOrDefault(x.NodeID)?.FirstOrDefault()?.Images.FirstOrDefault();
+                if (fallback != null) resolvedImages = [fallback];
+            }
+
+            var tiers = discountTiers.GetValueOrDefault(x.NodeID, []);
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
+                Images = resolvedImages,
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
-                DiscountRules = discountTiers.GetValueOrDefault(x.NodeID, []),
+                DiscountRules = tiers,
+                DiscountedPrice = x.IsCombo ? null : ComputeDiscountedPrice(x.Price, tiers),
             };
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
@@ -205,12 +214,21 @@ IDiscountRuleService discountRuleService)
 
         var productDTOs = productList.Select(x =>
         {
+            var resolvedImages = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray();
+            if (resolvedImages.Length == 0)
+            {
+                var fallback = variantsByProduct.GetValueOrDefault(x.NodeID)?.FirstOrDefault()?.Images.FirstOrDefault();
+                if (fallback != null) resolvedImages = [fallback];
+            }
+
+            var tiers = discountTiers.GetValueOrDefault(x.NodeID, []);
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
+                Images = resolvedImages,
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
-                DiscountRules = discountTiers.GetValueOrDefault(x.NodeID, []),
+                DiscountRules = tiers,
+                DiscountedPrice = x.IsCombo ? null : ComputeDiscountedPrice(x.Price, tiers),
             };
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
@@ -246,12 +264,21 @@ IDiscountRuleService discountRuleService)
 
         return products.Select(x =>
         {
+            var resolvedImages = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray();
+            if (resolvedImages.Length == 0)
+            {
+                var fallback = variantsByProduct.GetValueOrDefault(x.NodeID)?.FirstOrDefault()?.Images.FirstOrDefault();
+                if (fallback != null) resolvedImages = [fallback];
+            }
+
+            var tiers = discountTiers.GetValueOrDefault(x.NodeID, []);
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
+                Images = resolvedImages,
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
-                DiscountRules = discountTiers.GetValueOrDefault(x.NodeID, []),
+                DiscountRules = tiers,
+                DiscountedPrice = x.IsCombo ? null : ComputeDiscountedPrice(x.Price, tiers),
             };
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
@@ -309,6 +336,7 @@ IDiscountRuleService discountRuleService)
             decimal price = cp?.TotalPrice ?? p.Price;
             decimal priceDiscount = p.IsCombo ? 0 : p.PriceDiscount;
 
+            var categoryTiers = discountTiers.GetValueOrDefault(p.NodeID, []);
             var fields = new CategoryProductFieldsDTO
             {
                 ProductName = p.ProductName,
@@ -318,6 +346,7 @@ IDiscountRuleService discountRuleService)
                 IsCombo = p.IsCombo,
                 Price = price,
                 PriceDiscount = priceDiscount,
+                DiscountedPrice = p.IsCombo ? null : ComputeDiscountedPrice(p.Price, categoryTiers),
                 Images = productImageUrls,
                 Stock = variants.Sum(v => v.Stock),
                 ComboStock = cp?.ComboStock ?? 0,
@@ -332,7 +361,7 @@ IDiscountRuleService discountRuleService)
                     SKU = v.SKU,
                     Images = [.. productImageUrls, .. v.Images]
                 }).ToList(),
-                DiscountRules = discountTiers.GetValueOrDefault(p.NodeID, []),
+                DiscountRules = categoryTiers,
             };
             return new DocumentClientGetDTO(fields, p);
         });
@@ -411,7 +440,26 @@ IDiscountRuleService discountRuleService)
             : new Dictionary<int, ComboPriceResult>();
         var comboPriceMap = comboResults.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
 
-        var allGuids = sorted.Where(p => p.Images.Length > 0).Select(p => p.Images[0]).Distinct().ToArray();
+        var productImageGuids = sorted.Where(p => p.Images.Length > 0).Select(p => p.Images[0]).Distinct().ToArray();
+
+        var noImageNodeIds = sorted.Where(p => p.Images.Length == 0).Select(p => p.NodeID).ToList();
+        Dictionary<int, Guid> variantFallbackGuids = [];
+        if (noImageNodeIds.Count > 0)
+        {
+            var variantData = await _lumStoreContext.ProductVariants
+                .Where(v => noImageNodeIds.Contains(v.ProductID))
+                .OrderBy(v => v.ItemID)
+                .Select(v => new { v.ProductID, v.Images })
+                .ToListAsync();
+
+            variantFallbackGuids = variantData
+                .GroupBy(v => v.ProductID)
+                .Select(g => new { ProductID = g.Key, FirstImages = g.FirstOrDefault(v => v.Images.Length > 0)?.Images })
+                .Where(x => x.FirstImages != null && x.FirstImages.Length > 0)
+                .ToDictionary(x => x.ProductID, x => x.FirstImages![0]);
+        }
+
+        var allGuids = productImageGuids.Concat(variantFallbackGuids.Values).Distinct().ToArray();
         var mediaMap = allGuids.Length > 0
             ? (await _mediaService.GetMediaItemsAsync(allGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
             : [];
@@ -437,7 +485,11 @@ IDiscountRuleService discountRuleService)
                 Fields = new SearchSuggestionFieldsDTO
                 {
                     ProductName = p.ProductName,
-                    Images = p.Images.Length > 0 && mediaMap.TryGetValue(p.Images[0], out var url) ? [url] : [],
+                    Images = p.Images.Length > 0 && mediaMap.TryGetValue(p.Images[0], out var url)
+                        ? [url]
+                        : variantFallbackGuids.TryGetValue(p.NodeID, out var fbGuid) && mediaMap.TryGetValue(fbGuid, out var fbUrl)
+                            ? [fbUrl]
+                            : [],
                     Price = displayPrice,
                     PriceDiscount = displayPriceDiscount,
                     CategoryName = p.ParentNodeID.HasValue ? categoryMap.GetValueOrDefault(p.ParentNodeID.Value) : null
@@ -454,7 +506,7 @@ IDiscountRuleService discountRuleService)
         var matchingVariants = await _lumStoreContext.ProductVariants
             .AsNoTracking()
             .Where(v => v.ShiprelayId > 0 && v.VariantName != null && v.ColorId == colorId)
-            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.SKU, ColorValue = v.Color != null ? v.Color.ColorValue : null, ColorImageId = v.Color != null ? v.Color.ColorImageId : (Guid?)null })
+            .Select(v => new { v.ItemID, v.ProductID, v.Stock, v.VariantName, v.SKU, v.Images, ColorValue = v.Color != null ? v.Color.ColorValue : null, ColorImageId = v.Color != null ? v.Color.ColorImageId : (Guid?)null })
             .ToListAsync();
 
         if (matchingVariants.Count == 0)
@@ -532,8 +584,11 @@ IDiscountRuleService discountRuleService)
         var comboPriceMap = comboResults.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
 
         var imageGuids = pageItems
-            .Where(x => x.product.Images.Length > 0)
-            .Select(x => x.product.Images[0])
+            .Select(x => x.product.Images.Length > 0
+                ? x.product.Images[0]
+                : x.variant.Images.Length > 0 ? x.variant.Images[0] : (Guid?)null)
+            .Where(g => g.HasValue)
+            .Select(g => g!.Value)
             .Distinct()
             .ToArray();
 
@@ -554,7 +609,7 @@ IDiscountRuleService discountRuleService)
         {
             string? imageUrl = x.product.Images.Length > 0
                 ? (mediaMap.TryGetValue(x.product.Images[0], out var url) ? url : null)
-                : null;
+                : x.variant.Images.Length > 0 && mediaMap.TryGetValue(x.variant.Images[0], out var fbUrl) ? fbUrl : null;
 
             decimal displayPrice = x.product.IsCombo
                 ? (comboPriceMap.TryGetValue(x.product.NodeID, out var cp) ? cp : x.product.Price)
@@ -624,6 +679,21 @@ IDiscountRuleService discountRuleService)
         {
             var media = await _mediaService.GetMediaItemsAsync([product.Images[0]]);
             imageUrl = media.FirstOrDefault()?.FileURL;
+        }
+        else
+        {
+            var variantImagesList = await _lumStoreContext.ProductVariants
+                .Where(v => v.ProductID == product.NodeID)
+                .OrderBy(v => v.ItemID)
+                .Select(v => v.Images)
+                .ToListAsync();
+
+            var firstImages = variantImagesList.FirstOrDefault(imgs => imgs.Length > 0);
+            if (firstImages != null)
+            {
+                var media = await _mediaService.GetMediaItemsAsync([firstImages[0]]);
+                imageUrl = media.FirstOrDefault()?.FileURL;
+            }
         }
 
         string? availableIn = null;
@@ -702,12 +772,21 @@ IDiscountRuleService discountRuleService)
 
         return related.Select(x =>
         {
+            var resolvedImages = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray();
+            if (resolvedImages.Length == 0)
+            {
+                var fallback = variantsByProduct.GetValueOrDefault(x.NodeID)?.FirstOrDefault()?.Images.FirstOrDefault();
+                if (fallback != null) resolvedImages = [fallback];
+            }
+
+            var tiers = discountTiers.GetValueOrDefault(x.NodeID, []);
             var productItem = new ProductClientDTO(x)
             {
-                Images = images.Where(i => x.Images.Contains(i.FileID)).OrderBy(i => x.Images.IndexOf(i.FileID)).Select(i => i.FileURL).ToArray(),
+                Images = resolvedImages,
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
-                DiscountRules = discountTiers.GetValueOrDefault(x.NodeID, []),
+                DiscountRules = tiers,
+                DiscountedPrice = x.IsCombo ? null : ComputeDiscountedPrice(x.Price, tiers),
             };
 
             if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
@@ -738,6 +817,21 @@ IDiscountRuleService discountRuleService)
             .Take(limit)
             .Select(p => p.ProductName)
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// Computes the discounted price at quantity=1 from already-fetched discount tiers.
+    /// Returns null if no applicable rule exists (price is unchanged).
+    /// </summary>
+    private static decimal? ComputeDiscountedPrice(decimal? price, IEnumerable<ProductDiscountTierDTO> tiers)
+    {
+        if (price is null or <= 0) return null;
+        var best = tiers
+            .Where(t => t.MinQuantity <= 1 && (t.MaxQuantity == null || t.MaxQuantity >= 1))
+            .OrderByDescending(t => t.DiscountPercent + t.DiscountAmount)
+            .FirstOrDefault();
+        if (best == null) return null;
+        return Math.Max(0, Math.Round(price.Value * (1 - best.DiscountPercent / 100) - best.DiscountAmount, 2));
     }
 
     /// <summary>
