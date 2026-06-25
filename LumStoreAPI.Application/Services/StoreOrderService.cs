@@ -153,7 +153,7 @@ internal class StoreOrderService : IStoreOrderService
             {
                 shipmentItems.Add(new ShiprelayItemDTO
                 {
-                    ProductId = cartItem.NodeID,
+                    ProductId = variant?.ShiprelayId ?? 0,
                     Quantity = cartItem.Quantity,
                     Price = cartItem.UnitPrice
                 });
@@ -602,7 +602,7 @@ internal class StoreOrderService : IStoreOrderService
             {
                 previewRateItems.Add(new ShiprelayItemDTO
                 {
-                    ProductId = cartItem.NodeID,
+                    ProductId = variant?.ShiprelayId ?? 0,
                     Quantity = cartItem.Quantity,
                     Price = cartItem.UnitPrice
                 });
