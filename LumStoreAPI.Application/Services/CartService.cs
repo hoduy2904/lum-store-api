@@ -160,6 +160,7 @@ internal class CartService : ICartService
                 unitPrice = ApplyBestDiscount(discountTiers.GetValueOrDefault(item.NodeID, []), basePrice, item.Quantity);
             }
             item.UnitPrice = unitPrice;
+            item.BasePrice = basePrice;
 
             subtotal += unitPrice * item.Quantity;
 

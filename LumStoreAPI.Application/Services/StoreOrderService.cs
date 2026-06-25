@@ -1,5 +1,4 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
-using LumStoreAPI.Application.DTOs.ProductComboDTO;
 using LumStoreAPI.Application.DTOs.ProductDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
@@ -12,7 +11,6 @@ using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Infrastructure;
 using LumStoreAPI.Infrastructure.Extensions;
-using LumStoreAPI.Libraries.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -91,14 +89,6 @@ internal class StoreOrderService : IStoreOrderService
     {
         var userId = GetCurrentUserId();
 
-        // Load cart
-        var cartItems = (await _ctx.UserCarts
-            .AsNoTracking()
-            .Where(c => c.UserId == userId)
-            .ToListAsync(ct));
-
-        if (cartItems.Count == 0)
-            return APIResponse<StoreOrderSummaryDTO>.Failure("Cart is empty");
 
         // Verify address ownership
         var address = await _ctx.CustomerAddresses
@@ -113,103 +103,67 @@ internal class StoreOrderService : IStoreOrderService
         if (user is null)
             return APIResponse<StoreOrderSummaryDTO>.Failure("User not found");
 
-        // Ensure customer profile exists (auto-create if first order)
-        var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
-
-        // Load products for snapshot
-        var nodeIds = cartItems.Select(c => c.NodeId).Distinct().ToArray();
-        var products = await _ctx.Products
-            .AsNoTracking()
-            .Where(p => (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) && nodeIds.Contains(p.NodeID))
-            .ToListAsync(ct);
-
-        // Load variants
-        var variantIds = cartItems.Where(c => c.VariantId.HasValue).Select(c => c.VariantId!.Value).ToArray();
-        var variants = variantIds.Length > 0
-            ? await _ctx.ProductVariants.AsNoTracking().Where(v => v.ShiprelayId > 0 && variantIds.Contains(v.ItemID)).ToListAsync(ct)
-            : [];
-
-        // Load first image for each product
-        var allImageGuids = products.SelectMany(p => p.Images).Distinct().ToArray();
-        var mediaByGuid = allImageGuids.Length > 0
-            ? await _ctx.MediaLibraries
-                .AsNoTracking()
-                .Where(m => allImageGuids.Contains(m.FileID))
-                .ToDictionaryAsync(m => m.FileID, ct)
-            : new Dictionary<Guid, Core.Entities.Systems.MediaLibrary>();
-
-        // Batch-load discount data before the loop — eliminates N+1 queries
-        var nonComboNodeIds = products.Where(p => !p.IsCombo).Select(p => p.NodeID).ToArray();
-        var discountTiers = nonComboNodeIds.Length > 0
-            ? await _discountRuleService.GetDiscountTiersForProductsAsync(nonComboNodeIds)
-            : new Dictionary<int, IEnumerable<ProductDiscountTierDTO>>();
-
-        var comboNodeIds = products.Where(p => p.IsCombo).Select(p => p.NodeID).Distinct().ToArray();
-        var comboResults = comboNodeIds.Length > 0
-            ? await _discountRuleService.CalculateBatchComboPricesAsync(comboNodeIds)
-            : new Dictionary<int, ComboPriceResult>();
-
-        // Load ShiprelayIds for combo sub-variants (needed for rate/shipment calculation)
-        var comboSubVariantIds = comboResults.Values
-            .SelectMany(r => r.Items)
-            .Select(i => i.VariantId)
-            .Distinct()
-            .ToArray();
-        var comboSubVariants = comboSubVariantIds.Length > 0
-            ? await _ctx.ProductVariants.AsNoTracking().Where(v => comboSubVariantIds.Contains(v.ItemID)).ToListAsync(ct)
-            : [];
-
-        // Build order items
         var orderItems = new List<OrderItem>();
+        var shipmentItems = new List<ShiprelayItemDTO>();
+        var previewSnapshots = new List<OrderPreviewItemDTO>();
+
         decimal subTotal = 0;
 
-        foreach (var cartItem in cartItems)
+        var cartItems = await _cartService.BuildCartResponseAsync(userId, (comboPrices, cartItem) =>
         {
-            var product = products.FirstOrDefault(p => p.NodeID == cartItem.NodeId);
-            if (product is null) continue;
-
+            var product = (cartItem.Product!.Fields as ProductClientDTO)!;
             var variant = cartItem.VariantId.HasValue
-                ? variants.FirstOrDefault(v => v.ItemID == cartItem.VariantId)
+                ? product.ProductVariants.FirstOrDefault(v => v.VariantId == cartItem.VariantId)
                 : null;
 
-            decimal basePrice;
-            decimal unitPrice;
-            if (product.IsCombo)
-            {
-                var comboResult = comboResults.GetValueOrDefault(product.NodeID);
-                basePrice = comboResult?.TotalPrice ?? product.Price;
-                unitPrice = basePrice;
-            }
-            else
-            {
-                basePrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
-                var tiers = discountTiers.GetValueOrDefault(product.NodeID, []);
-                unitPrice = ApplyBestDiscount(tiers, basePrice, cartItem.Quantity);
-            }
 
-            var discountPerUnit = basePrice - unitPrice;
-            var lineTotal = unitPrice * cartItem.Quantity;
+            var discountPerUnit = cartItem.BasePrice - cartItem.UnitPrice;
+            var lineTotal = cartItem.UnitPrice * cartItem.Quantity;
             subTotal += lineTotal;
-
-            // Resolve first image URL
-            string? imageUrl = null;
-            if (product.Images.Length > 0 && mediaByGuid.TryGetValue(product.Images[0], out var media))
-                imageUrl = MediaLibraryHelper.GetFileURL(media);
 
             orderItems.Add(new OrderItem
             {
-                ProductId = cartItem.NodeId,
+                ProductId = cartItem.NodeID,
                 VariantId = cartItem.VariantId,
                 ProductName = product.ProductName,
                 VariantName = variant?.VariantName,
                 SKU = variant?.SKU,
-                ImageUrl = imageUrl,
+                ImageUrl = product.Images.FirstOrDefault(),
                 Quantity = cartItem.Quantity,
-                UnitPrice = basePrice,
+                UnitPrice = cartItem.BasePrice,
                 Discount = discountPerUnit,
                 Total = lineTotal
             });
-        }
+
+            if (product?.IsCombo == true)
+            {
+                var comboResult = comboPrices.GetValueOrDefault(cartItem.NodeID);
+                if (comboResult?.Items is not null)
+                    foreach (var ci in comboResult.Items)
+                    {
+                        shipmentItems.Add(new ShiprelayItemDTO
+                        {
+                            ProductId = ci.ShiprelayId,
+                            Quantity = cartItem.Quantity,
+                            Price = ci.DiscountedPrice
+                        });
+                    }
+            }
+            else
+            {
+                shipmentItems.Add(new ShiprelayItemDTO
+                {
+                    ProductId = cartItem.NodeID,
+                    Quantity = cartItem.Quantity,
+                    Price = cartItem.UnitPrice
+                });
+            }
+        });
+
+        if (cartItems.ItemCount == 0)
+            return APIResponse<StoreOrderSummaryDTO>.Failure("Cart is empty");
+        // Ensure customer profile exists (auto-create if first order)
+        var profileDto = await _customerService.GetOrCreateProfileAsync(userId);
 
         if (orderItems.Count == 0)
             return APIResponse<StoreOrderSummaryDTO>.Failure("No valid products found in cart");
@@ -231,35 +185,6 @@ internal class StoreOrderService : IStoreOrderService
             shippingThreshold = parsedThreshold;
 
         // Build items list for CreateShipment — combo items expanded into their sub-variants
-        var shipmentItems = new List<ShiprelayItemDTO>();
-        foreach (var item in orderItems)
-        {
-            var shipProduct = products.FirstOrDefault(p => p.NodeID == item.ProductId);
-            if (shipProduct?.IsCombo == true)
-            {
-                var comboResult = comboResults.GetValueOrDefault(item.ProductId);
-                if (comboResult?.Items is not null)
-                    foreach (var ci in comboResult.Items)
-                    {
-                        var cv = comboSubVariants.FirstOrDefault(v => v.ItemID == ci.VariantId);
-                        shipmentItems.Add(new ShiprelayItemDTO
-                        {
-                            ProductId = cv?.ShiprelayId ?? 0,
-                            Quantity = item.Quantity,
-                            Price = ci.DiscountedPrice
-                        });
-                    }
-            }
-            else
-            {
-                shipmentItems.Add(new ShiprelayItemDTO
-                {
-                    ProductId = variants.FirstOrDefault(v => v.ItemID == item.VariantId)?.ShiprelayId ?? 0,
-                    Quantity = item.Quantity,
-                    Price = item.UnitPrice
-                });
-            }
-        }
 
         // Guard: all items must be synced to ShipRelay before an order can be placed
         if (shipmentItems.Any(i => i.ProductId == 0))
@@ -419,14 +344,10 @@ internal class StoreOrderService : IStoreOrderService
         // Build preview snapshot for the summary (max 3 items)
         var previewItemsSnapshot = orderItems.Take(3).Select(i =>
         {
-            var p = products.FirstOrDefault(x => x.NodeID == i.ProductId);
-            string? imgUrl = null;
-            if (p?.Images.Length > 0 && mediaByGuid.TryGetValue(p.Images[0], out var m))
-                imgUrl = MediaLibraryHelper.GetFileURL(m);
             return new OrderPreviewItemDTO
             {
                 ProductName = i.ProductName,
-                Image = imgUrl,
+                Image = i.ImageUrl,
                 VariantName = i.VariantName,
                 Price = i.UnitPrice,
                 Quantity = i.Quantity
@@ -649,8 +570,6 @@ internal class StoreOrderService : IStoreOrderService
             var lineTotal = cartItem.UnitPrice * cartItem.Quantity;
             subTotal += lineTotal;
 
-            var basePrice = product.PriceDiscount > 0 ? product.PriceDiscount : product.Price;
-
             previewItems.Add(new StoreCheckoutPreviewItemDTO
             {
                 NodeId = cartItem.NodeID,
@@ -658,7 +577,7 @@ internal class StoreOrderService : IStoreOrderService
                 VariantName = variant?.VariantName,
                 SKU = variant?.SKU,
                 Image = product.Images.FirstOrDefault(),
-                OriginalPrice = basePrice ?? 0,
+                OriginalPrice = cartItem.BasePrice,
                 UnitPrice = cartItem.UnitPrice,
                 Quantity = cartItem.Quantity,
                 LineTotal = lineTotal,
