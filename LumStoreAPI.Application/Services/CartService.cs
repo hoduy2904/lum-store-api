@@ -153,7 +153,8 @@ internal class CartService : ICartService
 
             if (p.IsCombo)
             {
-                unitPrice = comboPrices.TryGetValue(item.NodeID, out var cp) ? cp : p.Price;
+                basePrice = comboPrices.TryGetValue(item.NodeID, out var cp) ? cp : p.Price;
+                unitPrice = basePrice;
             }
             else
             {
