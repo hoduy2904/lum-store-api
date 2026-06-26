@@ -75,7 +75,14 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                     SubProductPrice = x.ProductVariant.Product!.Price,
                     SubProductPriceDiscount = x.ProductVariant.Product!.PriceDiscount,
                     Stock = x.ProductVariant.Stock,
-                    ShiprelayId = x.ProductVariant.ShiprelayId
+                    ShiprelayId = x.ProductVariant.ShiprelayId,
+                    Images = x.ProductVariant.Images,
+                    SKU = x.ProductVariant.SKU,
+                    UPC = x.ProductVariant.UPC,
+                    Color = x.ProductVariant.Color != null ? x.ProductVariant.Color.ColorValue : null,
+                    ColorImageId = x.ProductVariant.Color != null ? x.ProductVariant.Color.ColorImageId : null,
+                    ColorId = x.ProductVariant.ColorId,
+                    ParentId = x.ProductVariant.ParentId,
                 }).ToListAsync();
         }
 

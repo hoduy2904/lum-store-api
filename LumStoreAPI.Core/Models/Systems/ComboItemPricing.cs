@@ -11,5 +11,12 @@ namespace LumStoreAPI.Core.Models.Systems
         public decimal SubProductPriceDiscount { get; set; }
         public int Stock { get; set; }
         public int ShiprelayId { get; set; }
+        public Guid[] Images { get; set; } = [];
+        public string? SKU { get; set; }
+        public string? UPC { get; set; }
+        public string? Color { get; set; }
+        public Guid? ColorImageId { get; set; }
+        public int? ColorId { get; set; }
+        public int? ParentId { get; set; }
     }
 }

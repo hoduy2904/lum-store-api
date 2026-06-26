@@ -11,11 +11,13 @@ public class DiscountRuleService : IDiscountRuleService
 {
     private readonly IDiscountRuleRepository _ruleRepo;
     private readonly IProductComboRepository _comboRepo;
+    private readonly IMediaService _mediaService;
 
-    public DiscountRuleService(IDiscountRuleRepository ruleRepo, IProductComboRepository comboRepo)
+    public DiscountRuleService(IDiscountRuleRepository ruleRepo, IProductComboRepository comboRepo, IMediaService mediaService)
     {
         _ruleRepo = ruleRepo;
         _comboRepo = comboRepo;
+        _mediaService = mediaService;
     }
 
     public async Task<IEnumerable<DiscountRuleGetDTO>> GetRulesAsync(int? productId = null, bool activeOnly = false)
@@ -116,6 +118,17 @@ public class DiscountRuleService : IDiscountRuleService
         var allNodeIds = comboItems.Select(x => x.SubProductNodeId).Append(comboProductNodeId).Distinct().ToArray();
         var rules = (await _ruleRepo.GetActiveRulesBatchAsync(allNodeIds)).ToList();
 
+        // Batch-resolve all image GUIDs
+        var allImageGuids = comboItems.SelectMany(x => x.Images).Distinct().ToArray();
+        var imageMap = allImageGuids.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(allImageGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : new Dictionary<Guid, string>();
+
+        var colorImageGuids = comboItems.Where(x => x.ColorImageId.HasValue).Select(x => x.ColorImageId!.Value).Distinct().ToArray();
+        var colorImageMap = colorImageGuids.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(colorImageGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : new Dictionary<Guid, string>();
+
         decimal subTotal = 0;
         var itemDetails = new List<ComboItemDetailDTO>();
         int comboStock = comboItems.Count > 0 ? comboItems.Min(x => x.Stock) : 0;
@@ -131,10 +144,19 @@ public class DiscountRuleService : IDiscountRuleService
                 VariantId = item.VariantId,
                 VariantName = item.VariantName,
                 ProductName = item.SubProductName,
+                ProductID = item.SubProductNodeId,
                 UnitPrice = basePrice,
                 DiscountedPrice = discountedPrice,
                 Stock = item.Stock,
-                ShiprelayId = item.ShiprelayId
+                ShiprelayId = item.ShiprelayId,
+                Images = item.Images.Select(g => imageMap.TryGetValue(g, out var url) ? url : null!).Where(u => u != null).ToArray(),
+                SKU = item.SKU,
+                UPC = item.UPC,
+                Color = item.Color,
+                ColorImageId = item.ColorImageId,
+                ColorImage = item.ColorImageId.HasValue && colorImageMap.TryGetValue(item.ColorImageId.Value, out var cu) ? cu : null,
+                ColorId = item.ColorId,
+                ParentId = item.ParentId,
             });
         }
 
@@ -166,6 +188,17 @@ public class DiscountRuleService : IDiscountRuleService
             ? (await _ruleRepo.GetActiveRulesBatchAsync(allNodeIds)).ToList()
             : [];
 
+        // Batch-resolve all image GUIDs across all combo items
+        var allImageGuids = allComboItems.SelectMany(x => x.Images).Distinct().ToArray();
+        var imageMap = allImageGuids.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(allImageGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : new Dictionary<Guid, string>();
+
+        var colorImageGuids = allComboItems.Where(x => x.ColorImageId.HasValue).Select(x => x.ColorImageId!.Value).Distinct().ToArray();
+        var colorImageMap = colorImageGuids.Length > 0
+            ? (await _mediaService.GetMediaItemsAsync(colorImageGuids)).ToDictionary(m => m.FileID, m => m.FileURL)
+            : new Dictionary<Guid, string>();
+
         var result = new Dictionary<int, ComboPriceResult>(comboNodeIds.Length);
         foreach (var comboId in comboNodeIds)
         {
@@ -185,9 +218,19 @@ public class DiscountRuleService : IDiscountRuleService
                     VariantId = item.VariantId,
                     VariantName = item.VariantName,
                     ProductName = item.SubProductName,
+                    ProductID = item.SubProductNodeId,
                     UnitPrice = basePrice,
                     DiscountedPrice = discountedPrice,
-                    ShiprelayId = item.ShiprelayId
+                    Stock = item.Stock,
+                    ShiprelayId = item.ShiprelayId,
+                    Images = item.Images.Select(g => imageMap.TryGetValue(g, out var url) ? url : null!).Where(u => u != null).ToArray(),
+                    SKU = item.SKU,
+                    UPC = item.UPC,
+                    Color = item.Color,
+                    ColorImageId = item.ColorImageId,
+                    ColorImage = item.ColorImageId.HasValue && colorImageMap.TryGetValue(item.ColorImageId.Value, out var cu) ? cu : null,
+                    ColorId = item.ColorId,
+                    ParentId = item.ParentId,
                 });
             }
 

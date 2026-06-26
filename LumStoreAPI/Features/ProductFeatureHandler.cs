@@ -83,10 +83,23 @@ public class ProductFeatureHandler(
         if (product.IsCombo || product.IsExpand)
         {
             var comboResult = await discountRuleService.CalculateComboPriceAsync(product.NodeID);
-            dto.Price = comboResult.SubTotal;
-            dto.PriceDiscount = comboResult.TotalPrice < comboResult.SubTotal
-                ? comboResult.TotalPrice
-                : null;
+
+            if (product.IsCombo)
+            {
+                dto.Price = comboResult.SubTotal;
+                dto.PriceDiscount = comboResult.TotalPrice < comboResult.SubTotal
+                    ? comboResult.TotalPrice
+                    : null;
+            }
+            else // IsExpand: comboItems are selectable options — price reflects a single item
+            {
+                var firstItem = comboResult.Items.FirstOrDefault();
+                dto.Price = firstItem?.UnitPrice ?? product.Price;
+                dto.PriceDiscount = firstItem != null && firstItem.DiscountedPrice < firstItem.UnitPrice
+                    ? firstItem.DiscountedPrice
+                    : null;
+            }
+
             dto.DiscountRules = [];
             dto.ComboItems = comboResult.Items;
             dto.ComboStock = comboResult.ComboStock;
