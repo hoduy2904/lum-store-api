@@ -88,7 +88,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                     await tx.RollbackAsync();
                     throw;
                 }
-                tx.Commit();
+                await tx.CommitAsync();
             }
             else
             {
