@@ -1,5 +1,6 @@
 using LumStoreAPI.Application.DTOs.CartDTO;
 using LumStoreAPI.Application.DTOs.ProductComboDTO;
+using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 
 namespace LumStoreAPI.Application.Interfaces;
@@ -12,5 +13,8 @@ public interface ICartService
     Task<APIResponseBase> RemoveFromCartAsync(int cartItemId, CancellationToken ct = default);
     Task<APIResponseBase> ClearCartAsync(CancellationToken ct = default);
     Task<APIResponse<CartResponseDTO>> SyncCartAsync(CartSyncRequest request, CancellationToken ct = default);
-    Task<CartResponseDTO> BuildCartResponseAsync(int userId, Action<Dictionary<int, ComboPriceResult>, CartItemDTO>? action = null, CancellationToken ct = default);
+
+    Task<CartResponseDTO> BuildCartResponseAsync(int userId,
+        Action<Dictionary<int, ComboPriceResult>, CartItemDTO, IEnumerable<ProductVariantClientGetDTO>>? action = null,
+        CancellationToken ct = default);
 }

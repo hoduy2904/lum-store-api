@@ -1,6 +1,7 @@
 using LumStoreAPI.Application.DTOs.CartDTO;
 using LumStoreAPI.Application.DTOs.ProductComboDTO;
 using LumStoreAPI.Application.DTOs.ProductDTO;
+using LumStoreAPI.Application.DTOs.ProductVariantDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Customers;
@@ -74,7 +75,7 @@ internal class CartService : ICartService
         return comboResult.ComboStock;
     }
 
-    public async Task<CartResponseDTO> BuildCartResponseAsync(int userId, Action<Dictionary<int, ComboPriceResult>, CartItemDTO>? action = null, CancellationToken ct = default)
+    public async Task<CartResponseDTO> BuildCartResponseAsync(int userId, Action<Dictionary<int, ComboPriceResult>, CartItemDTO, IEnumerable<ProductVariantClientGetDTO>>? action = null, CancellationToken ct = default)
     {
         var cartItems = (await _cartRepo.GetByUserIdAsync(userId, ct)).ToList();
         if (cartItems.Count == 0) return new CartResponseDTO();
@@ -87,7 +88,7 @@ internal class CartService : ICartService
 
         // Extract price data from already-loaded products — avoids a redundant DB round-trip
         var prices = products
-           .Where(kvp => kvp.Value.Fields is ProductClientDTO f && f != null)
+           .Where(kvp => kvp.Value.Fields is ProductClientDTO)
            .ToDictionary(
             kvp => kvp.Key,
             kvp =>
@@ -103,6 +104,8 @@ internal class CartService : ICartService
                     DiscountRules = f.DiscountRules
                 };
             });
+        
+        var allVariants = prices.Values.SelectMany(p => p.Variants).Distinct().ToArray();
 
         var items = cartItems.Select(c =>
         {
@@ -135,6 +138,7 @@ internal class CartService : ICartService
             {
                 basePrice = variantPrice.PriceDiscount > 0 ? variantPrice.PriceDiscount : variantPrice.Price;
                 discountPrice = variantPrice.PriceDiscount;
+                item.VariantName = variantPrice.Variants.FirstOrDefault(v => v.VariantId == item.VariantId)?.VariantName;
             }
             else if (p.IsExpand)
             {
@@ -158,7 +162,7 @@ internal class CartService : ICartService
 
             subtotal += unitPrice * item.Quantity;
 
-            action?.Invoke(comboPriceResults, item);
+            action?.Invoke(comboPriceResults, item,allVariants);
         }
 
         return new CartResponseDTO

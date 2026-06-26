@@ -15,6 +15,7 @@ public class CartItemDTO
     public int NodeID { get; set; }
     public int Quantity { get; set; }
     public int? VariantId { get; set; }
+    public string? VariantName { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal BasePrice { get; set; }
     public DocumentClientGetDTO? Product { get; set; }
