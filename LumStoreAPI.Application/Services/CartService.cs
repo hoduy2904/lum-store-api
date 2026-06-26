@@ -123,9 +123,6 @@ internal class CartService : ICartService
             ? (await _discountRuleService.CalculateBatchComboPricesAsync(comboNodeIds))
             : [];
 
-        var comboPrices = comboPriceResults
-                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
-
         var variantComboResults = comboPriceResults.Values.SelectMany(s => s.Items);
 
         decimal subtotal = 0;
@@ -148,9 +145,9 @@ internal class CartService : ICartService
 
             if (p.IsCombo)
             {
-                // comboPrices already incorporates the combo-level discount rule — do not apply again
-                basePrice = comboPrices.TryGetValue(item.NodeID, out var cp) ? cp : p.Price;
-                unitPrice = basePrice;
+                var comboResult = comboPriceResults.GetValueOrDefault(item.NodeID);
+                basePrice = comboResult?.SubTotal ?? p.Price;
+                unitPrice = comboResult?.TotalPrice ?? basePrice;
             }
             else
             {
