@@ -99,7 +99,8 @@ internal class CartService : ICartService
                     PriceDiscount = f.PriceDiscount ?? 0m,
                     Variants = f.ProductVariants,
                     IsCombo = f.IsCombo,
-                    IsExpand = f.IsExpand
+                    IsExpand = f.IsExpand,
+                    DiscountRules = f.DiscountRules
                 };
             });
 
@@ -115,12 +116,6 @@ internal class CartService : ICartService
                 Product = product,
             };
         }).ToList();
-
-        // Batch-load discount tiers for all non-combo products — 1 query instead of 1 per item
-        var nonComboNodeIds = nodeIds.Where(id => prices.TryGetValue(id, out var p) && !p.IsCombo).ToArray();
-        var discountTiers = nonComboNodeIds.Length > 0
-            ? await _discountRuleService.GetDiscountTiersForProductsAsync(nonComboNodeIds)
-            : new Dictionary<int, IEnumerable<ProductDiscountTierDTO>>();
 
         // Batch-load combo prices in 2 queries total regardless of combo count
         var comboNodeIds = nodeIds.Where(id => prices.TryGetValue(id, out var p) && p.IsCombo).Distinct().ToArray();
@@ -153,12 +148,13 @@ internal class CartService : ICartService
 
             if (p.IsCombo)
             {
+                // comboPrices already incorporates the combo-level discount rule — do not apply again
                 basePrice = comboPrices.TryGetValue(item.NodeID, out var cp) ? cp : p.Price;
                 unitPrice = basePrice;
             }
             else
             {
-                unitPrice = ApplyBestDiscount(discountTiers.GetValueOrDefault(item.NodeID, []), basePrice, item.Quantity);
+                unitPrice = ApplyBestDiscount(p.DiscountRules, basePrice, item.Quantity);
             }
             item.UnitPrice = unitPrice;
             item.BasePrice = basePrice;

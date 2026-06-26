@@ -637,10 +637,14 @@ internal class StoreOrderService : IStoreOrderService
         });
         var tax = Math.Round(subTotal * taxRate, 2);
         var total = subTotal + shippingFee + tax;
+        var originalTotal = previewItems.Sum(i => i.OriginalPrice * i.Quantity);
+        var discount = Math.Round(originalTotal - subTotal, 2);
 
         return APIResponse<StoreCheckoutPreviewDTO>.Success(new StoreCheckoutPreviewDTO
         {
+            OriginalTotal = originalTotal,
             Subtotal = subTotal,
+            Discount = discount,
             ShippingFee = shippingFee,
             Tax = tax,
             Total = total,
