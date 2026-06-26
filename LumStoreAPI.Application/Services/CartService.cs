@@ -121,7 +121,7 @@ internal class CartService : ICartService
         }).ToList();
 
         // Batch-load combo prices in 2 queries total regardless of combo count
-        var comboNodeIds = nodeIds.Where(id => prices.TryGetValue(id, out var p) && p.IsCombo).Distinct().ToArray();
+        var comboNodeIds = nodeIds.Where(id => prices.TryGetValue(id, out var p) && (p.IsCombo || p.IsExpand)).Distinct().ToArray();
         var comboPriceResults = comboNodeIds.Length > 0
             ? (await _discountRuleService.CalculateBatchComboPricesAsync(comboNodeIds))
             : [];
@@ -133,18 +133,23 @@ internal class CartService : ICartService
         {
             if (!prices.TryGetValue(item.NodeID, out var p)) continue;
             decimal unitPrice = 0m, basePrice = 0m, discountPrice = 0m;
-            var variantPrice = prices.Values.FirstOrDefault(x => x.Variants.Any(v => v.VariantId == item.VariantId));
-            if (variantPrice != null)
-            {
-                basePrice = variantPrice.PriceDiscount > 0 ? variantPrice.PriceDiscount : variantPrice.Price;
-                discountPrice = variantPrice.PriceDiscount;
-                item.VariantName = variantPrice.Variants.FirstOrDefault(v => v.VariantId == item.VariantId)?.VariantName;
-            }
-            else if (p.IsExpand)
+
+            if (p.IsExpand)
             {
                 var comboPrice = variantComboResults.FirstOrDefault(x => x.VariantId == item.VariantId);
                 basePrice = comboPrice?.UnitPrice ?? 0m;
                 discountPrice = comboPrice?.DiscountedPrice ?? 0m;
+                item.VariantName = comboPrice?.VariantName ?? item.VariantName;
+            }
+            else
+            {
+                var variantPrice = prices.Values.FirstOrDefault(x => x.Variants.Any(v => v.VariantId == item.VariantId));
+                if (variantPrice != null)
+                {
+                    basePrice = variantPrice.PriceDiscount > 0 ? variantPrice.PriceDiscount : variantPrice.Price;
+                    discountPrice = variantPrice.PriceDiscount;
+                    item.VariantName = variantPrice.Variants.FirstOrDefault(v => v.VariantId == item.VariantId)?.VariantName;
+                }
             }
 
             if (p.IsCombo)
@@ -152,6 +157,10 @@ internal class CartService : ICartService
                 var comboResult = comboPriceResults.GetValueOrDefault(item.NodeID);
                 basePrice = comboResult?.SubTotal ?? p.Price;
                 unitPrice = comboResult?.TotalPrice ?? basePrice;
+            }
+            else if (p.IsExpand)
+            {
+                unitPrice = discountPrice > 0 ? discountPrice : basePrice;
             }
             else
             {
