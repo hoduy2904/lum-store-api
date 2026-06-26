@@ -45,6 +45,7 @@ namespace LumStoreAPI.ClientControllers
         [AllowAnonymous]
         public async Task<IActionResult> GetRelatedProducts([FromRoute] string relativeUrl, [FromQuery] int limit = 8)
         {
+            relativeUrl = System.Web.HttpUtility.UrlDecode(relativeUrl);
             limit = Math.Clamp(limit, 1, 15);
             var products = await _productService.GetRelatedProductsAsync(relativeUrl, limit);
             return Ok(APIResponse<IEnumerable<DocumentClientGetDTO>>.Success(products));
