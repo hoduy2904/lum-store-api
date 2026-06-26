@@ -24,10 +24,7 @@ internal class StoreOrderService : IStoreOrderService
     private readonly LumStoreContext _ctx;
     private readonly IPaymentService _paymentService;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IDiscountRuleService _discountRuleService;
-    private readonly IEmailService _emailService;
     private readonly ICartService _cartService;
-
     public StoreOrderService(
         ICustomerService customerService,
         IShiprelayService shiprelayService,
@@ -35,8 +32,6 @@ internal class StoreOrderService : IStoreOrderService
         LumStoreContext ctx,
         IHttpContextAccessor httpContextAccessor,
         IPaymentService paymentService,
-        IDiscountRuleService discountRuleService,
-        IEmailService emailService,
         ICartService cartService)
     {
         _customerService = customerService;
@@ -45,8 +40,6 @@ internal class StoreOrderService : IStoreOrderService
         _ctx = ctx;
         _httpContextAccessor = httpContextAccessor;
         _paymentService = paymentService;
-        _discountRuleService = discountRuleService;
-        _emailService = emailService;
         _cartService = cartService;
     }
 
@@ -109,11 +102,11 @@ internal class StoreOrderService : IStoreOrderService
 
         decimal subTotal = 0;
 
-        var cartItems = await _cartService.BuildCartResponseAsync(userId, (comboPrices, cartItem) =>
+        var cartItems = await _cartService.BuildCartResponseAsync(userId, (comboPrices, cartItem, variants) =>
         {
             var product = (cartItem.Product!.Fields as ProductClientDTO)!;
             var variant = cartItem.VariantId.HasValue
-                ? product.ProductVariants.FirstOrDefault(v => v.VariantId == cartItem.VariantId)
+                ? variants.FirstOrDefault(v => v.VariantId == cartItem.VariantId)
                 : null;
 
 
@@ -560,12 +553,13 @@ internal class StoreOrderService : IStoreOrderService
         if (address is null)
             return APIResponse<StoreCheckoutPreviewDTO>.Failure("Address not found");
 
-        var cartItems = await _cartService.BuildCartResponseAsync(userId, (comboPrices, cartItem) =>
+        var cartItems = await _cartService.BuildCartResponseAsync(userId, (comboPrices, cartItem, variants) =>
         {
             var product = (cartItem.Product!.Fields as ProductClientDTO)!;
             var variant = cartItem.VariantId.HasValue
-                ? product.ProductVariants.FirstOrDefault(v => v.VariantId == cartItem.VariantId)
+                ? variants.FirstOrDefault(v => v.VariantId == cartItem.VariantId)
                 : null;
+            
 
             var lineTotal = cartItem.UnitPrice * cartItem.Quantity;
             subTotal += lineTotal;
