@@ -12,6 +12,7 @@ public class ProductClientDTO
     public string? Description { get; set; }
     public bool IsBestSeller { get; set; }
     public bool IsCombo { get; set; }
+    public bool IsExpand { get; set; }
     public decimal? Price { get; set; }
     public decimal? PriceDiscount { get; set; }
     public string[] Images { get; set; } = [];
@@ -24,6 +25,7 @@ public class ProductClientDTO
     public bool IsHazmat { get; set; }
     public bool IsNeedBox { get; set; }
     public bool IsFragile { get; set; }
+    public decimal? DiscountedPrice { get; set; }
     public IEnumerable<ProductVariantClientGetDTO> ProductVariants { get; set; } = [];
     public IEnumerable<ProductDiscountTierDTO> DiscountRules { get; set; } = [];
     public IEnumerable<ContentKeyValue> Accordions { get; set; } = [];
@@ -48,5 +50,6 @@ public class ProductClientDTO
         this.IsNeedBox = product.IsNeedBox;
         this.IsFragile = product.IsFragile;
         this.IsCombo = product.IsCombo;
+        this.IsExpand = product.IsExpand;
     }
 }

@@ -75,6 +75,7 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
                     SubProductPrice = x.ProductVariant.Product!.Price,
                     SubProductPriceDiscount = x.ProductVariant.Product!.PriceDiscount,
                     Stock = x.ProductVariant.Stock,
+                    ShiprelayId = x.ProductVariant.ShiprelayId
                 }).ToListAsync();
         }
 

@@ -9,6 +9,7 @@ public class CategoryProductFieldsDTO
     public bool IsCombo { get; set; }
     public decimal Price { get; set; }
     public decimal PriceDiscount { get; set; }
+    public decimal? DiscountedPrice { get; set; }
     public string[] Images { get; set; } = [];
     /// <summary>Sum of all variant stocks (0 if no variants).</summary>
     public int Stock { get; set; }
