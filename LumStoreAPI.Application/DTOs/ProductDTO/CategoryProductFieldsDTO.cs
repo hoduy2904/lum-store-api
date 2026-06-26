@@ -7,6 +7,7 @@ public class CategoryProductFieldsDTO
     public string? Description { get; set; }
     public bool IsBestSeller { get; set; }
     public bool IsCombo { get; set; }
+    public bool IsExpand { get; set; }
     public decimal Price { get; set; }
     public decimal PriceDiscount { get; set; }
     public decimal? DiscountedPrice { get; set; }

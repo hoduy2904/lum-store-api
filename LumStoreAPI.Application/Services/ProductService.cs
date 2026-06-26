@@ -86,7 +86,7 @@ IDiscountRuleService discountRuleService)
         var products = await _pageRetrieveContext.GetPagedPagesAsync<Product>(query =>
          {
              query.Where(where)
-             .Where(x => x.IsCombo || x.ProductVariants.Any(v => v.ShiprelayId > 0))
+             .Where(x => x.IsCombo || x.IsExpand || x.ProductVariants.Any(v => v.ShiprelayId > 0))
              .Paged(page, pageSize)
              .Select(x => new Product
              {
@@ -114,6 +114,7 @@ IDiscountRuleService discountRuleService)
                  Price = x.Price,
                  PriceDiscount = x.PriceDiscount,
                  IsCombo = x.IsCombo,
+                 IsExpand = x.IsExpand,
              });
 
              if (categoryId != 0)
@@ -144,13 +145,26 @@ IDiscountRuleService discountRuleService)
                 Images = resolvedImages,
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
+                IsExpand = x.IsExpand,
                 DiscountRules = tiers,
-                DiscountedPrice = x.IsCombo ? null : ComputeDiscountedPrice(x.Price, tiers),
+                DiscountedPrice = (x.IsCombo || x.IsExpand) ? null : ComputeDiscountedPrice(x.Price, tiers),
             };
 
-            if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
+            if ((x.IsCombo || x.IsExpand) && comboPrices.TryGetValue(x.NodeID, out var cp))
             {
-                productItem.Price = cp.TotalPrice;
+                if (x.IsCombo)
+                {
+                    productItem.Price = cp.SubTotal;
+                    productItem.DiscountedPrice = cp.TotalPrice < cp.SubTotal ? cp.TotalPrice : null;
+                }
+                else
+                {
+                    var firstItem = cp.Items.FirstOrDefault();
+                    productItem.Price = firstItem?.UnitPrice ?? x.Price;
+                    productItem.DiscountedPrice = firstItem != null && firstItem.DiscountedPrice < firstItem.UnitPrice
+                        ? firstItem.DiscountedPrice
+                        : null;
+                }
                 productItem.PriceDiscount = null;
                 productItem.ComboStock = cp.ComboStock;
             }
@@ -171,7 +185,7 @@ IDiscountRuleService discountRuleService)
         var products = await _pageRetrieveContext.GetPagesAsync<Product>(query =>
          {
              query.Where(where)
-             .Where(x => x.IsCombo || x.ProductVariants.Any(v => v.ShiprelayId > 0))
+             .Where(x => x.IsCombo || x.IsExpand || x.ProductVariants.Any(v => v.ShiprelayId > 0))
              .IncludeQueryable(x => orderByLatest
                  ? x.OrderByDescending(p => p.CreatedAt).Take(topN)
                  : x.Take(topN))
@@ -201,6 +215,7 @@ IDiscountRuleService discountRuleService)
                  Price = x.Price,
                  PriceDiscount = x.PriceDiscount,
                  IsCombo = x.IsCombo,
+                 IsExpand = x.IsExpand,
              });
          });
 
@@ -227,13 +242,26 @@ IDiscountRuleService discountRuleService)
                 Images = resolvedImages,
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
+                IsExpand = x.IsExpand,
                 DiscountRules = tiers,
-                DiscountedPrice = x.IsCombo ? null : ComputeDiscountedPrice(x.Price, tiers),
+                DiscountedPrice = (x.IsCombo || x.IsExpand) ? null : ComputeDiscountedPrice(x.Price, tiers),
             };
 
-            if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
+            if ((x.IsCombo || x.IsExpand) && comboPrices.TryGetValue(x.NodeID, out var cp))
             {
-                productItem.Price = cp.TotalPrice;
+                if (x.IsCombo)
+                {
+                    productItem.Price = cp.SubTotal;
+                    productItem.DiscountedPrice = cp.TotalPrice < cp.SubTotal ? cp.TotalPrice : null;
+                }
+                else
+                {
+                    var firstItem = cp.Items.FirstOrDefault();
+                    productItem.Price = firstItem?.UnitPrice ?? x.Price;
+                    productItem.DiscountedPrice = firstItem != null && firstItem.DiscountedPrice < firstItem.UnitPrice
+                        ? firstItem.DiscountedPrice
+                        : null;
+                }
                 productItem.PriceDiscount = null;
                 productItem.ComboStock = cp.ComboStock;
             }
@@ -251,7 +279,7 @@ IDiscountRuleService discountRuleService)
 
         var products = (await _pageRetrieveContext.GetPagesAsync<Product>(query =>
         {
-            query.Where(x => (x.IsCombo || x.ProductVariants.Any(v => v.ShiprelayId > 0)) && nodeIds.Contains(x.NodeID));
+            query.Where(x => (x.IsCombo || x.IsExpand || x.ProductVariants.Any(v => v.ShiprelayId > 0)) && nodeIds.Contains(x.NodeID));
         })).ToList();
 
         if (products.Count == 0) return Enumerable.Empty<DocumentClientGetDTO>();
@@ -277,13 +305,26 @@ IDiscountRuleService discountRuleService)
                 Images = resolvedImages,
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
+                IsExpand = x.IsExpand,
                 DiscountRules = tiers,
-                DiscountedPrice = x.IsCombo ? null : ComputeDiscountedPrice(x.Price, tiers),
+                DiscountedPrice = (x.IsCombo || x.IsExpand) ? null : ComputeDiscountedPrice(x.Price, tiers),
             };
 
-            if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
+            if ((x.IsCombo || x.IsExpand) && comboPrices.TryGetValue(x.NodeID, out var cp))
             {
-                productItem.Price = cp.TotalPrice;
+                if (x.IsCombo)
+                {
+                    productItem.Price = cp.SubTotal;
+                    productItem.DiscountedPrice = cp.TotalPrice < cp.SubTotal ? cp.TotalPrice : null;
+                }
+                else
+                {
+                    var firstItem = cp.Items.FirstOrDefault();
+                    productItem.Price = firstItem?.UnitPrice ?? x.Price;
+                    productItem.DiscountedPrice = firstItem != null && firstItem.DiscountedPrice < firstItem.UnitPrice
+                        ? firstItem.DiscountedPrice
+                        : null;
+                }
                 productItem.PriceDiscount = null;
                 productItem.ComboStock = cp.ComboStock;
             }
@@ -332,9 +373,12 @@ IDiscountRuleService discountRuleService)
                 .Select(img => img.FileURL)
                 .ToArray();
 
-            var cp = p.IsCombo && comboPrices.TryGetValue(p.NodeID, out var cpResult) ? cpResult : null;
-            decimal price = cp?.TotalPrice ?? p.Price;
-            decimal priceDiscount = p.IsCombo ? 0 : p.PriceDiscount;
+            var cp = (p.IsCombo || p.IsExpand) && comboPrices.TryGetValue(p.NodeID, out var cpResult) ? cpResult : null;
+            var firstItem = p.IsExpand ? cp?.Items.FirstOrDefault() : null;
+            decimal price = p.IsCombo ? (cp?.SubTotal ?? p.Price)
+                : p.IsExpand ? (firstItem?.UnitPrice ?? p.Price)
+                : p.Price;
+            decimal priceDiscount = (p.IsCombo || p.IsExpand) ? 0 : p.PriceDiscount;
 
             var categoryTiers = discountTiers.GetValueOrDefault(p.NodeID, []);
             var fields = new CategoryProductFieldsDTO
@@ -344,9 +388,12 @@ IDiscountRuleService discountRuleService)
                 Description = p.Description,
                 IsBestSeller = p.IsBestSeller,
                 IsCombo = p.IsCombo,
+                IsExpand = p.IsExpand,
                 Price = price,
                 PriceDiscount = priceDiscount,
-                DiscountedPrice = p.IsCombo ? null : ComputeDiscountedPrice(p.Price, categoryTiers),
+                DiscountedPrice = p.IsCombo ? (cp != null && cp.TotalPrice < cp.SubTotal ? cp.TotalPrice : null)
+                    : p.IsExpand ? (firstItem != null && firstItem.DiscountedPrice < firstItem.UnitPrice ? firstItem.DiscountedPrice : null)
+                    : ComputeDiscountedPrice(p.Price, categoryTiers),
                 Images = productImageUrls,
                 Stock = variants.Sum(v => v.Stock),
                 ComboStock = cp?.ComboStock ?? 0,
@@ -406,7 +453,7 @@ IDiscountRuleService discountRuleService)
                 !p.IsDeleted &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now) &&
-                (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
+                (p.IsCombo || p.IsExpand || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
                 (p.ProductName.Contains(q) ||
                  (p.ShortDescription != null && p.ShortDescription.Contains(q)) ||
                  skuMatchIds.Contains(p.NodeID)))
@@ -420,6 +467,7 @@ IDiscountRuleService discountRuleService)
                 p.PriceDiscount,
                 p.Images,
                 p.IsCombo,
+                p.IsExpand,
                 ParentNodeID = p.Node.ParentNodeID,
             })
             .Take(200)  // cap DB load before in-memory rerank
@@ -434,11 +482,10 @@ IDiscountRuleService discountRuleService)
         if (sorted.Count == 0) return [];
 
         // Batch-compute combo prices — 2 DB queries total regardless of combo count
-        var comboIds = sorted.Where(p => p.IsCombo).Select(p => p.NodeID).Distinct().ToArray();
+        var comboIds = sorted.Where(p => p.IsCombo || p.IsExpand).Select(p => p.NodeID).Distinct().ToArray();
         var comboResults = comboIds.Length > 0
             ? await _discountRuleService.CalculateBatchComboPricesAsync(comboIds)
             : new Dictionary<int, ComboPriceResult>();
-        var comboPriceMap = comboResults.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
 
         var productImageGuids = sorted.Where(p => p.Images.Length > 0).Select(p => p.Images[0]).Distinct().ToArray();
 
@@ -473,10 +520,16 @@ IDiscountRuleService discountRuleService)
 
         return sorted.Select(p =>
         {
-            decimal displayPrice = p.IsCombo
-                ? (comboPriceMap.TryGetValue(p.NodeID, out var cp) ? cp : p.Price)
+            var cpData = (p.IsCombo || p.IsExpand) && comboResults.TryGetValue(p.NodeID, out var cpr) ? cpr : null;
+            var firstItem = p.IsExpand ? cpData?.Items.FirstOrDefault() : null;
+            decimal displayPrice = p.IsCombo ? (cpData?.SubTotal ?? p.Price)
+                : p.IsExpand ? (firstItem?.UnitPrice ?? p.Price)
                 : p.Price;
-            decimal? displayPriceDiscount = p.IsCombo ? null : (p.PriceDiscount > 0 ? p.PriceDiscount : null);
+            decimal? displayPriceDiscount = p.IsCombo
+                ? (cpData != null && cpData.TotalPrice < cpData.SubTotal ? cpData.TotalPrice : null)
+                : p.IsExpand
+                    ? (firstItem != null && firstItem.DiscountedPrice < firstItem.UnitPrice ? firstItem.DiscountedPrice : null)
+                    : (p.PriceDiscount > 0 ? p.PriceDiscount : null);
 
             return new SearchSuggestionDTO
             {
@@ -563,6 +616,7 @@ IDiscountRuleService discountRuleService)
                 p.PriceDiscount,
                 p.IsBestSeller,
                 p.IsCombo,
+                p.IsExpand,
                 p.Images,
             })
             .ToListAsync();
@@ -577,11 +631,10 @@ IDiscountRuleService discountRuleService)
             return Enumerable.Empty<ProductByColorItemDTO>().AsPagedEnumerable(totalRecords);
 
         // Batch-compute combo prices — 2 DB queries total regardless of combo count
-        var comboIds = pageItems.Where(x => x.product.IsCombo).Select(x => x.product.NodeID).Distinct().ToArray();
+        var comboIds = pageItems.Where(x => x.product.IsCombo || x.product.IsExpand).Select(x => x.product.NodeID).Distinct().ToArray();
         var comboResults = comboIds.Length > 0
             ? await _discountRuleService.CalculateBatchComboPricesAsync(comboIds)
             : new Dictionary<int, ComboPriceResult>();
-        var comboPriceMap = comboResults.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.TotalPrice);
 
         var imageGuids = pageItems
             .Select(x => x.product.Images.Length > 0
@@ -611,10 +664,16 @@ IDiscountRuleService discountRuleService)
                 ? (mediaMap.TryGetValue(x.product.Images[0], out var url) ? url : null)
                 : x.variant.Images.Length > 0 && mediaMap.TryGetValue(x.variant.Images[0], out var fbUrl) ? fbUrl : null;
 
-            decimal displayPrice = x.product.IsCombo
-                ? (comboPriceMap.TryGetValue(x.product.NodeID, out var cp) ? cp : x.product.Price)
+            var cpData = (x.product.IsCombo || x.product.IsExpand) && comboResults.TryGetValue(x.product.NodeID, out var cpr) ? cpr : null;
+            var firstItem = x.product.IsExpand ? cpData?.Items.FirstOrDefault() : null;
+            decimal displayPrice = x.product.IsCombo ? (cpData?.SubTotal ?? x.product.Price)
+                : x.product.IsExpand ? (firstItem?.UnitPrice ?? x.product.Price)
                 : x.product.Price;
-            decimal displayPriceDiscount = x.product.IsCombo ? 0 : x.product.PriceDiscount;
+            decimal displayPriceDiscount = x.product.IsCombo
+                ? (cpData != null && cpData.TotalPrice < cpData.SubTotal ? cpData.TotalPrice : 0)
+                : x.product.IsExpand
+                    ? (firstItem != null && firstItem.DiscountedPrice < firstItem.UnitPrice ? firstItem.DiscountedPrice : 0)
+                    : x.product.PriceDiscount;
 
             return new ProductByColorItemDTO
             {
@@ -721,7 +780,7 @@ IDiscountRuleService discountRuleService)
         var now = DateTimeOffset.UtcNow;
 
         var current = await _lumStoreContext.Products
-            .Where(p => (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) && p.Node.RelativeUrl == relativeUrl && !p.IsDeleted)
+            .Where(p => (p.IsCombo || p.IsExpand || p.ProductVariants.Any(v => v.ShiprelayId > 0)) && p.Node.RelativeUrl == relativeUrl && !p.IsDeleted)
             .Select(p => new { p.NodeID, ParentNodeID = p.Node.ParentNodeID })
             .FirstOrDefaultAsync();
 
@@ -732,7 +791,7 @@ IDiscountRuleService discountRuleService)
             .Where(p =>
                 p.Node.ParentNodeID == current.ParentNodeID.Value &&
                 p.NodeID != current.NodeID &&
-                (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
+                (p.IsCombo || p.IsExpand || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
                 !p.IsDeleted &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now))
@@ -748,6 +807,7 @@ IDiscountRuleService discountRuleService)
                 PriceDiscount = p.PriceDiscount,
                 IsBestSeller = p.IsBestSeller,
                 IsCombo = p.IsCombo,
+                IsExpand = p.IsExpand,
                 Images = p.Images,
                 ShortDescription = p.ShortDescription,
                 PublishedFrom = p.PublishedFrom,
@@ -785,13 +845,26 @@ IDiscountRuleService discountRuleService)
                 Images = resolvedImages,
                 ProductVariants = variantsByProduct.GetValueOrDefault(x.NodeID, []),
                 IsCombo = x.IsCombo,
+                IsExpand = x.IsExpand,
                 DiscountRules = tiers,
-                DiscountedPrice = x.IsCombo ? null : ComputeDiscountedPrice(x.Price, tiers),
+                DiscountedPrice = (x.IsCombo || x.IsExpand) ? null : ComputeDiscountedPrice(x.Price, tiers),
             };
 
-            if (x.IsCombo && comboPrices.TryGetValue(x.NodeID, out var cp))
+            if ((x.IsCombo || x.IsExpand) && comboPrices.TryGetValue(x.NodeID, out var cp))
             {
-                productItem.Price = cp.TotalPrice;
+                if (x.IsCombo)
+                {
+                    productItem.Price = cp.SubTotal;
+                    productItem.DiscountedPrice = cp.TotalPrice < cp.SubTotal ? cp.TotalPrice : null;
+                }
+                else
+                {
+                    var firstItem = cp.Items.FirstOrDefault();
+                    productItem.Price = firstItem?.UnitPrice ?? x.Price;
+                    productItem.DiscountedPrice = firstItem != null && firstItem.DiscountedPrice < firstItem.UnitPrice
+                        ? firstItem.DiscountedPrice
+                        : null;
+                }
                 productItem.PriceDiscount = null;
                 productItem.ComboStock = cp.ComboStock;
             }
@@ -809,7 +882,7 @@ IDiscountRuleService discountRuleService)
         return await _lumStoreContext.Products
             .Where(p =>
                 !p.IsDeleted &&
-                (p.IsCombo || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
+                (p.IsCombo || p.IsExpand || p.ProductVariants.Any(v => v.ShiprelayId > 0)) &&
                 (p.PublishedFrom == null || p.PublishedFrom <= now) &&
                 (p.PublishedTo == null || p.PublishedTo > now) &&
                 (p.IsBestSeller || p.CreatedAt >= sevenDaysAgo))
@@ -841,7 +914,7 @@ IDiscountRuleService discountRuleService)
     /// </summary>
     private async Task<Dictionary<int, ComboPriceResult>> GetComboPricesAsync(IEnumerable<Product> products)
     {
-        var comboIds = products.Where(x => x.IsCombo).Select(x => x.NodeID).Distinct().ToArray();
+        var comboIds = products.Where(x => x.IsCombo || x.IsExpand).Select(x => x.NodeID).Distinct().ToArray();
         if (comboIds.Length == 0) return [];
         return await _discountRuleService.CalculateBatchComboPricesAsync(comboIds);
     }
