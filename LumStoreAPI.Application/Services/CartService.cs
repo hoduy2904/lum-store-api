@@ -135,6 +135,7 @@ internal class CartService : ICartService
             {
                 basePrice = variantPrice.PriceDiscount > 0 ? variantPrice.PriceDiscount : variantPrice.Price;
                 discountPrice = variantPrice.PriceDiscount;
+                item.VariantName = variantPrice.Variants.FirstOrDefault(v => v.VariantId == item.VariantId)?.VariantName;
             }
             else if (p.IsExpand)
             {
