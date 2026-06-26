@@ -4,7 +4,9 @@ namespace LumStoreAPI.Application.DTOs.StoreOrderDTO;
 
 public class StoreCheckoutPreviewDTO
 {
+    public decimal OriginalTotal { get; set; }
     public decimal Subtotal { get; set; }
+    public decimal Discount { get; set; }
     public decimal ShippingFee { get; set; }
     public decimal Tax { get; set; }
     public decimal Total { get; set; }
