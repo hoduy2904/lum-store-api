@@ -136,7 +136,6 @@ namespace LumStoreAPI.Application
                 {
                     opt.DefaultPolicy = new AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()
-                    .RequireRole(nameof(UserRole.ADMIN), nameof(UserRole.USER), nameof(UserRole.MANAGER))
                     .Build();
                     
                     opt.AddPolicy(nameof(RoleType.ADMIN_TYPE), policy =>
