@@ -46,9 +46,10 @@ namespace LumStoreAPI.Infrastructure.Repositories.Presentations
             {
                 query = func.Invoke(query);
             }
-            query = query.Skip((page - 1) * pageSize).Take(pageSize);
-
+            
             int totalRecords = await query.CountAsync();
+            
+            query = query.Skip((page - 1) * pageSize).Take(pageSize);
 
             var data = await query.ToArrayAsync();
             return new PagedEnumerable<User>(data, totalRecords);
