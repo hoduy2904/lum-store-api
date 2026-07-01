@@ -161,7 +161,7 @@ namespace LumStoreAPI.Controllers
         }
 
         [HttpDelete("{nodeID}")]
-        [Authorize(Roles = nameof(RoleType.MANAGER_TYPE))]
+        [Authorize(Policy = nameof(RoleType.MANAGER_TYPE))]
         public async Task<IActionResult> DeleteNode(int nodeID)
         {
             var result = await _treeNodeRepository.DeleteAsync(nodeID, true);
