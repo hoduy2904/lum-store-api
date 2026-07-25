@@ -19,8 +19,37 @@ namespace LumStoreAPI.Tasks.BackgroundServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await DoWork();
-                await Task.Delay(10000);
+                try
+                {
+                    await DoWork();
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    await LogWorkException(ex);
+                }
+
+                try
+                {
+                    await Task.Delay(10000, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }
+
+        private async Task LogWorkException(Exception ex)
+        {
+            try
+            {
+                using var serviceScoped = _serviceScopeFactory.CreateScope();
+                var eventLogService = serviceScoped.ServiceProvider.GetRequiredService<IEventLogService>();
+                await eventLogService.LogException("EmailSender", "DoWork", "", ex);
+            }
+            catch
+            {
+                // Swallow: logging must never crash the background service.
             }
         }
 
