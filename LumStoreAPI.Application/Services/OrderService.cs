@@ -139,13 +139,8 @@ public class OrderService : IOrderService
         }
 
         // Cancel shipment on ShipRelay before persisting — fire and forget errors (admin can resolve manually)
-        if (dto.NewStatus == OrderStatus.Cancelled && !string.IsNullOrEmpty(order.ShiprelayShipmentId))
-        {
-            var cancelled = await _shiprelayService.CancelShipmentAsync(order.ShiprelayShipmentId);
-            if (!cancelled)
-                await _eventLog.LogWarning("OrderService", "SHIPRELAY_CANCEL_FAILED",
-                    $"Failed to cancel ShipRelay shipment {order.ShiprelayShipmentId} for OrderId={orderId}");
-        }
+        if (dto.NewStatus == OrderStatus.Cancelled)
+            await CancelShiprelayShipmentAsync(order, "order cancelled");
 
         var updated = await _orderRepo.UpdateOrderAsync(order, o =>
         {
@@ -381,7 +376,14 @@ public class OrderService : IOrderService
         };
 
     public async Task<bool> DeleteOrderAsync(int orderId)
-        => await _orderRepo.DeleteOrderAsync(orderId);
+    {
+        var order = await _orderRepo.GetOrderAsync(orderId);
+        if (order == null) return false;
+
+        await CancelShiprelayShipmentAsync(order, "order deleted");
+
+        return await _orderRepo.DeleteOrderAsync(orderId);
+    }
 
     // ── History ───────────────────────────────────────────────────────────
 
@@ -569,7 +571,10 @@ public class OrderService : IOrderService
         });
 
         if (newOrderStatus == OrderStatus.Returned)
+        {
+            await CancelShiprelayShipmentAsync(orderUpdate, "return refunded");
             await RevokeOrderCompletionPointsAsync(orderUpdate);
+        }
 
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED_STRIPE",
             $"Return #{orderReturn.ItemID} reviewed: {orderReturnReview.Decision} by Stripe");
@@ -624,7 +629,10 @@ public class OrderService : IOrderService
             await AwardOrderCompletionPointsAsync(ret.Order);
 
         if (newOrderStatus == OrderStatus.Returned)
+        {
+            await CancelShiprelayShipmentAsync(ret.Order, "return approved");
             await RevokeOrderCompletionPointsAsync(ret.Order);
+        }
 
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED",
             $"Return #{returnId} reviewed: {dto.Decision} by {reviewerName}");
@@ -633,6 +641,17 @@ public class OrderService : IOrderService
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
+
+    // Cancel the ShipRelay shipment if one exists — errors are logged but do not block the caller
+    private async Task CancelShiprelayShipmentAsync(Order order, string context)
+    {
+        if (string.IsNullOrEmpty(order.ShiprelayShipmentId)) return;
+
+        var cancelled = await _shiprelayService.CancelShipmentAsync(order.ShiprelayShipmentId);
+        if (!cancelled)
+            await _eventLog.LogWarning("OrderService", "SHIPRELAY_CANCEL_FAILED",
+                $"Failed to cancel ShipRelay shipment {order.ShiprelayShipmentId} for OrderId={order.ItemID} ({context})");
+    }
 
     private async Task AwardOrderCompletionPointsAsync(Order order)
     {
