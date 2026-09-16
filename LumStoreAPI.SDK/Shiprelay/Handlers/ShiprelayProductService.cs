@@ -60,7 +60,11 @@ internal class ShiprelayProductService(
         else
         {
             if (response.IsSuccessStatusCode) shiprelayProduct = await response.Content.ReadFromJsonAsync<ShiprelayProduct>();
-            else return null;
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception(error);
+            }
         }
         if (shiprelayProduct is not null && shiprelayProduct.ArchivedAt is not null)
         {
@@ -84,7 +88,7 @@ internal class ShiprelayProductService(
                 var product = await this.GetShiprelayProductsAsync(new ShiprelayProductGetRequest { Page = 1, PerPage = 1, SKU = request.SKU });
                 if (product is null || !product.Data.Any()) throw new Exception(error);
                 var id = product.Data.First().Id;
-                return await this.UpdateProductAsync(id, request, productType, true);
+                return await this.UpdateProductAsync(id, request, productType, false);
             }
             else
             {
