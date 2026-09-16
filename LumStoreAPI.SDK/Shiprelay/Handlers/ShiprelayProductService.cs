@@ -88,6 +88,7 @@ internal class ShiprelayProductService(
                 var product = await this.GetShiprelayProductsAsync(new ShiprelayProductGetRequest { Page = 1, PerPage = 1, SKU = request.SKU });
                 if (product is null || !product.Data.Any()) throw new Exception(error);
                 var id = product.Data.First().Id;
+                request.Settings.RemoveUnescessaryUpdate();
                 return await this.UpdateProductAsync(id, request, productType, false);
             }
             else
