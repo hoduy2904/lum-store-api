@@ -169,6 +169,13 @@ internal class StripeWebhookService : IStripeWebhookService
         string currency = session.Currency?.ToUpper() ?? "USD";
         string note = $"Paid via Stripe (payment: {session.PaymentIntentId ?? "N/A"}) ({paymentMethod}): {amountRaw / 100m:F2} {currency}";
 
+        // Reconcile Stripe amount with Orders.Total — log only, never block the payment update
+        long expectedAmount = (long)Math.Round(order.Total * 100, MidpointRounding.AwayFromZero);
+        if (amountRaw != expectedAmount)
+            await _eventLogService.LogWarning("STRIPE_WEBHOOK", "AMOUNT_MISMATCH",
+                $"Order {order.OrderCode}: Stripe amount does not match order total",
+                $"Expected: {expectedAmount / 100m:F2} {currency}, actual: {amountRaw / 100m:F2} {currency}, session: {session.Id}");
+
         await _orderService.UpdateOrderStatusAsync(orderId, new OrderUpdateStatusDTO
         {
             NewStatus = OrderStatus.Confirmed,

@@ -3,6 +3,7 @@ using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Orders;
 using LumStoreAPI.Core.Interfaces.Sytems;
 using LumStoreAPI.Core.Models.Constants;
+using LumStoreAPI.Core.Models.Enums;
 using LumStoreAPI.Libraries.Helpers;
 using Stripe;
 using Stripe.Checkout;
@@ -70,7 +71,8 @@ namespace LumStoreAPI.Application.Services
             {
                 PriceData = new SessionLineItemPriceDataOptions
                 {
-                    UnitAmount = (long)Math.Round(item.UnitPrice * 100),
+                    // OrderItem.UnitPrice is the price BEFORE discount — charge the discounted unit price
+                    UnitAmount = (long)Math.Round((item.UnitPrice - item.Discount) * 100, MidpointRounding.AwayFromZero),
                     Currency = "usd",
                     ProductData = new SessionLineItemPriceDataProductDataOptions
                     {
@@ -110,6 +112,14 @@ namespace LumStoreAPI.Application.Services
                         }
                     }
                 });
+
+            // Stripe charges the sum of line items — it must equal Orders.Total
+            var expectedAmount = (long)Math.Round(request.Order.Total * 100, MidpointRounding.AwayFromZero);
+            var chargedAmount = lineItems.Sum(x => (x.PriceData.UnitAmount ?? 0) * (x.Quantity ?? 0));
+            if (chargedAmount != expectedAmount)
+                await _eventLogService.LogEvent(EventLogType.ERROR, "PAYMENT", "AMOUNT_MISMATCH",
+                    $"Order {request.Order.OrderCode}: Stripe amount does not match order total",
+                    $"Expected: {expectedAmount / 100m:F2} USD, actual: {chargedAmount / 100m:F2} USD");
 
             var options = new SessionCreateOptions
             {
