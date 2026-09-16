@@ -125,8 +125,17 @@ public class CustomerService : ICustomerService
         });
     }
 
+    // Order-linked ledger rows only come from award/revoke, so their sum is what the order currently holds
+    private async Task<int> GetOrderHeldPointsAsync(int profileId, int orderId)
+        => (await _customerRepo.GetLoyaltyPointsAsync(profileId))
+            .Where(lp => lp.OrderId == orderId)
+            .Sum(lp => lp.Points);
+
     public async Task AwardPointsAsync(int profileId, int points, string description, int? orderId = null)
     {
+        // An order earns points once: skip while it still holds points
+        if (orderId.HasValue && await GetOrderHeldPointsAsync(profileId, orderId.Value) > 0) return;
+
         await _customerRepo.InsertLoyaltyPointAsync(new LoyaltyPoint
         {
             CustomerProfileId = profileId,
@@ -146,25 +155,22 @@ public class CustomerService : ICustomerService
 
     public async Task RevokeOrderPointsAsync(int profileId, int orderId, string description)
     {
-        var loyaltyPoints = await _customerRepo.GetLoyaltyPointsAsync(profileId);
-        var earnedForOrder = loyaltyPoints
-            .Where(lp => lp.OrderId == orderId && lp.Points > 0)
-            .Sum(lp => lp.Points);
-
-        if (earnedForOrder <= 0) return;
+        // Only revoke what the order still holds, so a repeated call is a no-op
+        var heldByOrder = await GetOrderHeldPointsAsync(profileId, orderId);
+        if (heldByOrder <= 0) return;
 
         await _customerRepo.InsertLoyaltyPointAsync(new LoyaltyPoint
         {
             CustomerProfileId = profileId,
-            Points = -earnedForOrder,
+            Points = -heldByOrder,
             Description = description,
             OrderId = orderId
         });
 
         await _customerRepo.UpdateProfileAsync(profileId, p =>
         {
-            p.TotalPoints = Math.Max(0, p.TotalPoints - earnedForOrder);
-            p.AvailablePoints = Math.Max(0, p.AvailablePoints - earnedForOrder);
+            p.TotalPoints = Math.Max(0, p.TotalPoints - heldByOrder);
+            p.AvailablePoints = Math.Max(0, p.AvailablePoints - heldByOrder);
         });
 
         await RecalculateTierAsync(profileId);
