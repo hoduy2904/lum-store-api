@@ -1,6 +1,7 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
+using LumStoreAPI.Application.Exceptions;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Entities.Orders;
 using LumStoreAPI.Core.Interfaces.Sytems;
@@ -587,43 +588,88 @@ public class OrderService : IOrderService
     {
         var ret = await _orderRepo.GetOrderReturnAsync(returnId)
                   ?? throw new KeyNotFoundException($"OrderReturn {returnId} not found");
+
+        var decision = dto.Decision;
+        var refundAmount = dto.RefundAmoutLong; // USD -> cent, same unit as OrderReturns.RefundAmount and Stripe
+        string? stripeRefundId = null;
+        var hasStripePayment = !string.IsNullOrWhiteSpace(ret.Order.PaymentIntentId);
+
+        if (refundAmount < 0)
+            throw new RefundException("Refund amount cannot be negative");
+        if (hasStripePayment && decision == ReturnStatus.Refunded && refundAmount == 0)
+            throw new RefundException("Refund amount must be greater than 0");
+
+        // Refund on Stripe BEFORE persisting anything — a rejected refund must leave return, order and points untouched.
+        // Approve without an amount only accepts the return, it does not refund.
+        if (hasStripePayment && decision is (ReturnStatus.Approved or ReturnStatus.Refunded) && refundAmount > 0)
+        {
+            if (!string.IsNullOrEmpty(ret.StripeRefundId))
+                throw new RefundException($"Return #{returnId} already has a Stripe refund ({ret.StripeRefundId})");
+
+            var orderTotal = (long)Math.Round(ret.Order.Total * 100, MidpointRounding.AwayFromZero);
+            var refundedAmount = (await _orderRepo.GetOrderReturnsAsync(ret.OrderId))
+                .Where(r => !string.IsNullOrEmpty(r.StripeRefundId) && r.Status != ReturnStatus.Rejected)
+                .Sum(r => r.RefundAmount);
+            var refundableAmount = Math.Max(0, orderTotal - refundedAmount);
+            if (refundAmount > refundableAmount)
+                throw new RefundException(
+                    $"Refund amount ${refundAmount / 100m:F2} exceeds the refundable amount ${refundableAmount / 100m:F2} " +
+                    $"(order total ${orderTotal / 100m:F2}, already refunded ${refundedAmount / 100m:F2})");
+
+            Stripe.Refund refund;
+            try
+            {
+                refund = await _paymentService.CreateRefundAsync(
+                    new DTOs.PaymentDTO.ReturnRequestDTO(returnId, ret.Order.OrderCode, ret.Order.PaymentIntentId!,
+                        refundAmount));
+            }
+            catch (Stripe.StripeException ex)
+            {
+                throw new RefundException($"Stripe refund failed: {ex.StripeError?.Message ?? ex.Message}", ex);
+            }
+
+            decision = refund.Status switch
+            {
+                "succeeded" => ReturnStatus.Refunded,
+                "pending" or "requires_action" => ReturnStatus.Approved, // webhook refund.updated completes it
+                _ => throw new RefundException($"Stripe refund {refund.Id} is {refund.Status}: {refund.FailureReason}")
+            };
+            stripeRefundId = refund.Id;
+        }
+
         var updated = await _orderRepo.UpdateOrderReturnAsync(returnId, r =>
         {
-            r.Status = dto.Decision;
+            r.Status = decision;
             r.AdminNote = dto.AdminNote;
-            r.RefundAmount = dto.RefundAmoutLong;
+            // Never overwrite the amount of an existing Stripe refund — refundable amount is computed from it
+            if (string.IsNullOrEmpty(r.StripeRefundId))
+                r.RefundAmount = refundAmount;
+            if (stripeRefundId != null)
+                r.StripeRefundId = stripeRefundId;
             r.ReviewedByUserId = reviewerId;
             r.ReviewedAt = DateTimeOffset.UtcNow;
         });
 
         // Update order status (and payment status when refunded)
-        var newOrderStatus = dto.Decision == ReturnStatus.Approved || dto.Decision == ReturnStatus.Refunded
+        var newOrderStatus = decision == ReturnStatus.Approved || decision == ReturnStatus.Refunded
             ? OrderStatus.Returned
             : OrderStatus.Completed;
 
         await _orderRepo.UpdateOrderAsync(ret.OrderId, o =>
         {
             o.Status = newOrderStatus;
-            if (dto.Decision == ReturnStatus.Refunded)
+            if (decision == ReturnStatus.Refunded)
                 o.PaymentStatus = PaymentStatus.Refunded;
         });
         await _orderRepo.InsertOrderHistoryAsync(new OrderHistory
         {
             OrderId = ret.OrderId,
             ToStatus = newOrderStatus,
-            Comment = $"Return {dto.Decision} by {reviewerName}. {dto.AdminNote}",
+            Comment = $"Return {decision} by {reviewerName}. {dto.AdminNote}",
             ChangedByUserId = reviewerId,
             ChangedByName = reviewerName,
             IsSystemAction = false
         });
-
-        if (!string.IsNullOrWhiteSpace(ret.Order.PaymentIntentId) &&
-            ret is { Status: ReturnStatus.Approved or ReturnStatus.Refunded })
-        {
-            await _paymentService.CreateRefundAsync(
-                new DTOs.PaymentDTO.ReturnRequestDTO(returnId, ret.Order.OrderCode, ret.Order.PaymentIntentId,
-                    updated.RefundAmount * 100));
-        }
 
         if (newOrderStatus == OrderStatus.Completed)
             await AwardOrderCompletionPointsAsync(ret.Order);
@@ -635,7 +681,7 @@ public class OrderService : IOrderService
         }
 
         await _eventLog.LogInformation("OrderService", "RETURN_REVIEWED",
-            $"Return #{returnId} reviewed: {dto.Decision} by {reviewerName}");
+            $"Return #{returnId} reviewed: {decision} by {reviewerName}");
 
         return MapReturnToDTO(updated);
     }
@@ -741,7 +787,7 @@ public class OrderService : IOrderService
         CustomerEmail = r.Order?.CustomerEmail,
         Reason = r.Reason,
         Status = r.Status,
-        RefundAmount = r.RefundAmount,
+        RefundAmount = r.RefundAmount / 100m, // OrderReturns.RefundAmount is cent, DTO is USD
         AdminNote = r.AdminNote,
         ReviewedByName = r.ReviewedBy != null
             ? $"{r.ReviewedBy.FirstName} {r.ReviewedBy.LastName}".Trim()

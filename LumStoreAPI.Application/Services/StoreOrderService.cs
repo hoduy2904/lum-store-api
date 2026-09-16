@@ -688,9 +688,13 @@ internal class StoreOrderService : IStoreOrderService
                 Reason = "Cancelled order"
             });
 
-            var stripeReturn = await _paymentService.CreateRefundAsync(new(localRefund.ReturnId, order.OrderCode, order.PaymentIntentId), order);
-            if (stripeReturn is null)
+            try
             {
+                await _paymentService.CreateRefundAsync(new(localRefund.ReturnId, order.OrderCode, order.PaymentIntentId), order);
+            }
+            catch (Exception)
+            {
+                // Already logged as Payment/REFUND by PaymentService — the order stays cancelled, customer contacts the shop
                 refundMessage = "Cancelled success, but need contact us to refund";
             }
         }

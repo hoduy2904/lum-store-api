@@ -1,6 +1,7 @@
 using LumStoreAPI.Application.DTOs.OrderDTO;
 using LumStoreAPI.Application.DTOs.Responses;
 using LumStoreAPI.Application.DTOs.ShiprelayDTO;
+using LumStoreAPI.Application.Exceptions;
 using LumStoreAPI.Application.Interfaces;
 using LumStoreAPI.Core.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -178,8 +179,16 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> ReviewReturn(int returnId, [FromBody] OrderReturnReviewDTO dto)
     {
         var (userId, userName) = GetCurrentUserInfo();
-        var ret = await _orderService.ReviewReturnAsync(returnId, dto, userId ?? 0, userName);
-        return Ok(APIResponse<OrderReturnGetDTO>.Success(ret, ["Return reviewed"]));
+        try
+        {
+            var ret = await _orderService.ReviewReturnAsync(returnId, dto, userId ?? 0, userName);
+            return Ok(APIResponse<OrderReturnGetDTO>.Success(ret, ["Return reviewed"]));
+        }
+        catch (RefundException ex)
+        {
+            // ProblemDetails.detail is what the admin UI shows in its error toast
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "Refund failed");
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

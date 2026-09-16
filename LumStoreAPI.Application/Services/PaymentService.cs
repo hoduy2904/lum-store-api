@@ -22,12 +22,15 @@ namespace LumStoreAPI.Application.Services
             _emailService = emailService;
         }
 
-        public async Task<Refund?> CreateRefundAsync(ReturnRequestDTO request, Order? order = null)
+        public async Task<Refund> CreateRefundAsync(ReturnRequestDTO request, Order? order = null)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(request.PaymentIntentId)) throw new ArgumentNullException(nameof(request.PaymentIntentId), "payment intent cannot null");
                 var service = new RefundService(_stripeClient);
+                // Amount is part of the key: Stripe rejects a reused key with different parameters,
+                // so without it a failed refund could not be retried with a corrected amount
+                var idempotencyKey = "refund_" + request.OrderCode + "_" + request.RefundId + "_" + (request.Amount?.ToString() ?? "full");
                 var refund = await service.CreateAsync(new()
                 {
                     PaymentIntent = request.PaymentIntentId,
@@ -38,7 +41,7 @@ namespace LumStoreAPI.Application.Services
                         ["refund_id"] = request.RefundId.ToString()
                     },
                     Amount = request.Amount,
-                }, new() { IdempotencyKey = "refund_" + request.OrderCode + "_" + request.RefundId });
+                }, new() { IdempotencyKey = idempotencyKey });
                 if (order is not null && refund is not null)
                 {
                     var cancelEmailUser = await EmailHelper.MacroEmailTemplate(EmailTemplateConstant.USER_CANCELLED_ORDER, order);
@@ -60,7 +63,7 @@ namespace LumStoreAPI.Application.Services
             catch (Exception ex)
             {
                 await _eventLogService.LogException("Payment", "REFUND", "Refund Failed", ex);
-                return null;
+                throw;
             }
         }
 

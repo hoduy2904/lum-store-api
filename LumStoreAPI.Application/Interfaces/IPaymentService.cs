@@ -13,6 +13,7 @@ namespace LumStoreAPI.Application.Interfaces
         /// <param name="request"></param>
         /// <param name="order"></param>
         /// <returns></returns>
-        Task<Refund?> CreateRefundAsync(ReturnRequestDTO request, Order? order = null);
+        /// <exception cref="StripeException">Stripe rejected the refund (logged before rethrowing)</exception>
+        Task<Refund> CreateRefundAsync(ReturnRequestDTO request, Order? order = null);
     }
 }
