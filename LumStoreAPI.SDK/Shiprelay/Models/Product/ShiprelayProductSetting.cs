@@ -47,7 +47,7 @@ public class ShiprelayProductSetting
     [JsonPropertyName("min_product_stock_threshold")]
     public int? MinProductStockThreshold { get; set; }
     [JsonPropertyName("default_retail_price_per_unit")]
-    public decimal DefaultRetailPricePerUnit { get; set; }
+    public decimal? DefaultRetailPricePerUnit { get; set; }
 
     public void RemoveUnescessaryUpdate()
     {
