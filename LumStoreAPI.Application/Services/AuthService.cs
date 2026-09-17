@@ -91,7 +91,12 @@ namespace LumStoreAPI.Application.Services
 
         public async Task LogoutAsync()
         {
-            string? token = _httpContextAccessor.HttpContext?.Request.Cookies[AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME];
+            var request = _httpContextAccessor.HttpContext?.Request;
+            // Same order as JwtBearer OnMessageReceived: Bearer header (storefront BFF), then SID cookie (admin)
+            string? authHeader = request?.Headers["Authorization"].FirstOrDefault();
+            string? token = !string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ")
+                ? authHeader.Substring("Bearer ".Length).Trim()
+                : request?.Cookies[AuthSystemConstants.ACCESS_TOKEN_COOKIE_NAME];
             if (string.IsNullOrWhiteSpace(token)) return;
 
             var tokenInfo = JwtTokenHelper.GetJwtSecurityToken(token);
@@ -130,7 +135,8 @@ namespace LumStoreAPI.Application.Services
 
                 var securityToken = JwtTokenHelper.GetJwtSecurityToken(accessToken);
 
-                await _userTokenRepository.DeleteToken(Guid.Parse(securityToken.Id));
+                // Revoke the pair being refreshed: its jti comes from the OLD access token
+                await _userTokenRepository.DeleteToken(Guid.Parse(tokenSecurity.Id));
                 await _userTokenRepository.InsertToken(new Core.Entities.Systems.UserToken
                 {
                     RefreshToken = response.RefreshToken,
